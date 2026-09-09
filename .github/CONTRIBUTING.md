@@ -1,11 +1,17 @@
-# Signalement de vulnérabilité
+## Flux de contribution
 
-Si tu identifies une vulnérabilité dans le moteur du skill lui-même
-(par exemple une règle qui masquerait un pattern dangereux, ou une
-faille dans le format des schémas permettant une injection dans le
-pipeline de patch), signale-la en privé via l'onglet **Security**
-de ce dépôt GitHub (Security → Report a vulnerability), pas via une
-issue publique.
+Ce dépôt n'accepte aucune modification directe sur `main`. Toute
+contribution passe par une Pull Request depuis un fork, et n'est
+fusionnée qu'après revue explicite d'un mainteneur — jamais
+automatiquement, quel que soit l'état des vérifications automatiques.
 
-Pour un faux négatif ou un faux positif ordinaire sur une règle de
-détection, une issue publique classique convient.
+1. Fork du dépôt, branche dédiée (`feat/xxe-rust-example`,
+   `fix/cwe-mapping-idor`, ...).
+2. Une PR par sujet — pas de PR qui mélange dix vulnérabilités
+   différentes, ça ralentit la revue et retarde ta contribution.
+3. Respecte le gabarit de la vulnérabilité concernée (voir plus bas) :
+   CWE réel et vérifié, portée strictement défensive, pas de payload
+   d'exploitation fonctionnel.
+4. Un mainteneur revoit, demande des ajustements si besoin, fusionne.
+   Aucune contribution n'est appliquée sans cette étape.
+
