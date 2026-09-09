@@ -1,0 +1,8 @@
+# Toute PR nécessite ta revue par défaut
+* @kraaxiom
+
+# Le comportement de l'agent — jamais mergé sans ta revue explicite
+/SKILL.md @kraaxiom
+/rules/ @kraaxiom
+/prompts/ @kraaxiom
+/schemas/ @kraaxiom
