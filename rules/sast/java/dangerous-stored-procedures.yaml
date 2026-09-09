@@ -1,0 +1,36 @@
+id: dangerous-stored-procedures
+language: java
+category: database
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code JDBC/Hibernate Java, l'appel de procédures
+    stockées dangereuses par nature (exécution de commandes système,
+    manipulation de fichiers) ou la construction dynamique du nom/paramètres
+    d'une procédure stockée par concaténation de chaînes issues d'une entrée
+    utilisateur.
+  patterns:
+    - "CallableStatement cs = connection.prepareCall(\"{call \" + procName + \"(\" + userInput + \")}\") — nom de procédure ou paramètres construits par concaténation d'entrée utilisateur"
+    - "Statement.execute(\"EXEC xp_cmdshell '\" + input + \"'\") ou appel de procédures système dangereuses (xp_cmdshell SQL Server, sp_execute avec SQL dynamique) depuis du code applicatif"
+    - "@Procedure ou @NamedStoredProcedureQuery Hibernate/JPA avec un paramètre non typé/non validé transmis directement depuis une entrée HTTP"
+    - "procédure stockée exécutant elle-même du SQL dynamique concaténé (EXEC(@sql) côté base) appelée avec des paramètres utilisateur non échappés en amont"
+
+message: >
+  Procédure stockée dangereuse (exécution système) ou appelée avec des
+  paramètres construits par concaténation d'entrée utilisateur — expose à
+  une injection SQL ou à une exécution de commande via la base de données.
+  Utiliser des paramètres liés (CallableStatement.setString/setInt),
+  désactiver les procédures système dangereuses (xp_cmdshell) et valider
+  strictement les entrées avant tout appel de procédure.
+
+false_positive_notes:
+  - "Si tous les paramètres sont liés via setXxx() du CallableStatement plutôt que concaténés dans la chaîne d'appel, ce n'est pas un cas positif."
+  - "Les procédures système dangereuses désactivées explicitement au niveau du SGBD (ex: xp_cmdshell disabled) présentent un risque réduit — vérifier la configuration serveur."
+
+remediation_ref: rules/remediation/dangerous-stored-procedures.md
+knowledge_ref: knowledge/database/dangerous-stored-procedures.md

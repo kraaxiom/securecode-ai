@@ -1,0 +1,35 @@
+id: dangling-markup
+language: python
+category: modern
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée utilisateur insérée dans un attribut HTML ou entre
+    balises via un template Jinja2/Django Template sans échappement, en
+    utilisant `|safe`, `mark_safe()`, ou `{% autoescape off %}`, permettant
+    l'injection d'une balise non fermée qui capture le contenu suivant.
+  patterns:
+    - "{{ user_input|safe }} dans un template Jinja2, sans validation préalable du contenu"
+    - "mark_safe(user_input) (Django) avant insertion dans le rendu HTML"
+    - "{% autoescape off %} ... {{ user_input }} ... {% endautoescape %}"
+  exclude_if:
+    - "le contenu marqué safe/non-échappé provient exclusivement d'une source interne de confiance (pas d'entrée utilisateur directe ou indirecte)"
+    - "une politique CSP stricte avec base-uri et object-src restreints est en place ET le contenu est également filtré contre les caractères < > \" avant marquage safe"
+
+message: >
+  Donnée utilisateur insérée dans le HTML sans échappement (`|safe`,
+  `mark_safe`, autoescape désactivé) — un attaquant peut injecter une balise
+  non fermée pour exfiltrer le contenu de la page sans exécution de
+  JavaScript (voir rules/remediation/dangling-markup.md).
+
+false_positive_notes:
+  - "Une CSP stricte limite l'impact mais ne neutralise pas totalement le dangling markup si les directives img-src/form-action restent permissives."
+  - "Si le contenu marqué safe est systématiquement passé par un sanitizer HTML (ex: bleach) qui supprime les balises non fermées, reclasser en `low`."
+
+remediation_ref: rules/remediation/dangling-markup.md
+knowledge_ref: knowledge/modern/dangling-markup.md

@@ -1,0 +1,12 @@
+id: csv-injection
+category: injections
+cwe: CWE-1236
+type: rasp
+guard:
+  sink: écriture de cellule CSV/Excel (fputcsv, CSVWriter.writeNext, csv.writer.writerow)
+  block_condition: Une valeur taintée commence par un caractère déclencheur de formule (=, +, -, @) sans préfixe neutralisant appliqué avant écriture.
+  action: sanitize
+  fail_mode: fail-open
+severity: medium
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

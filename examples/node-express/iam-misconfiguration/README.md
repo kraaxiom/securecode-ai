@@ -1,0 +1,3 @@
+## Mauvaise configuration IAM (CWE-269)
+
+Le code vulnérable utilise des identifiants AWS statiques rattachés à une policy IAM accordant `Action: *` et `Resource: *`, si bien qu'une route censée seulement lister un bucket applicatif dispose en réalité d'un accès total au compte AWS, et qu'une fuite de ces clés compromettrait l'ensemble de l'infrastructure. La correction remplace ces clés statiques par un rôle IAM temporaire assumé via `AssumeRoleCommand` (STS), dont la policy est scoped aux seules actions et ressources nécessaires (lecture d'un bucket précis) et dont les identifiants expirent automatiquement après une courte durée. Cette approche applique le principe du moindre privilège et limite fortement l'impact d'une éventuelle fuite de credentials.

@@ -1,0 +1,12 @@
+id: ssi
+category: injections
+cwe: CWE-97
+type: rasp
+guard:
+  sink: écriture de contenu dans un fichier ou une réponse interprétée par le moteur SSI du serveur web
+  block_condition: la donnée écrite contient une séquence de directive SSI ("<!--#") provenant d'une source utilisateur non assainie
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/ssi.md
+knowledge_ref: knowledge/injections/ssi.md

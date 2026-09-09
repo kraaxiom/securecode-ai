@@ -1,0 +1,34 @@
+id: backup-exposure
+language: java
+category: database
+cwe: CWE-538
+owasp: A05:2021-Security-Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code Java d'export/sauvegarde de base de données
+    (batch, scheduler Spring @Scheduled), l'écriture de dumps de base de
+    données vers un emplacement accessible publiquement ou sans chiffrement
+    ni contrôle d'accès.
+  patterns:
+    - "ProcessBuilder(\"mysqldump\"/\"pg_dump\", ...) redirigeant la sortie vers un répertoire servi statiquement par l'application (ex: src/main/resources/static/backups/) accessible via HTTP"
+    - "@Scheduled(cron=...) méthode d'export uploadant un dump vers un bucket cloud (S3Client.putObject) sans chiffrement côté serveur (ServerSideEncryption) ni ACL privée explicite"
+    - "fichier de sauvegarde créé avec Files.write(_, dumpBytes) sans restriction de permissions (Files.setPosixFilePermissions) dans un répertoire accessible par d'autres services"
+    - "chaîne de connexion ou identifiants de base de données embarqués en clair dans le nom de fichier ou les métadonnées du dump exporté"
+
+message: >
+  Sauvegarde de base de données écrite vers un emplacement accessible
+  publiquement ou sans chiffrement (backup exposure) — expose l'intégralité
+  des données en cas d'accès non autorisé. Stocker les dumps chiffrés
+  (AES-256) dans un emplacement privé avec contrôle d'accès strict, ne
+  jamais servir les backups depuis un répertoire web public.
+
+false_positive_notes:
+  - "Si le bucket/répertoire de destination applique un chiffrement au repos et des ACL strictement privées (vérifiables dans la configuration infra), reclasser en `medium`."
+  - "Les exports temporaires supprimés automatiquement en fin de job dans un répertoire non exposé présentent un risque réduit."
+
+remediation_ref: rules/remediation/backup-exposure.md
+knowledge_ref: knowledge/database/backup-exposure.md

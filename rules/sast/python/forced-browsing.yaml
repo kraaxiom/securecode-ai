@@ -1,0 +1,34 @@
+id: forced-browsing
+language: python
+category: authorization
+cwe: CWE-425
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route administrative ou interne dont la seule protection
+    repose sur le fait qu'elle n'est pas liée dans l'interface (sécurité
+    par l'obscurité) — absence de décorateur d'authentification/autorisation
+    sur une route au chemin prévisible (/admin, /internal, /debug, /backup).
+  patterns:
+    - "@app.route('/admin/export')\ndef export_data(): ...  # sans @login_required"
+    - "path('internal/debug/', debug_view)  # sans decorator de permission dans urls.py"
+  exclude_if:
+    - "la route est protégée par @login_required combiné à une vérification de rôle, ou par un middleware d'authentification appliqué globalement au préfixe"
+
+message: >
+  Route sensible accessible directement sans contrôle d'accès, protégée
+  uniquement par le fait qu'elle n'est pas visible dans l'interface —
+  un attaquant peut la découvrir par force brute d'URLs (forced browsing).
+  Appliquer un contrôle d'authentification/autorisation explicite sur
+  toute route sensible, quel que soit son niveau de visibilité (voir
+  rules/remediation/forced-browsing.md).
+
+false_positive_notes:
+  - "Une route de debug strictement désactivée en production (DEBUG=False empêchant son enregistrement) n'est pas exploitable en production — vérifier la configuration de déploiement avant d'alerter."
+
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

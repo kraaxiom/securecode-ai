@@ -1,0 +1,30 @@
+id: infinite-redemption
+language: js
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'un flag "reward_claimed" suivie d'une mise à
+    jour dans des appels db.query séparés non transactionnels.
+  patterns:
+    - "await db.query(\"SELECT reward_claimed\", _); ... await db.query(\"UPDATE\", _, \"reward_claimed = true\")"
+  exclude_if:
+    - "Les opérations sont encapsulées dans db.transaction() avec SELECT ... FOR UPDATE"
+    - "Une contrainte d'unicité en base empêche l'insertion multiple d'un événement de récompense"
+
+message: >
+  Octroi d'avantage vérifié puis marqué hors transaction — risque de
+  réclamation multiple concurrente (voir
+  rules/remediation/infinite-redemption.md).
+
+false_positive_notes:
+  - "Un système de file d'attente (queue) traitant les réclamations séquentiellement par utilisateur atténue le risque même sans verrou SQL explicite."
+  - "Vérifier la présence d'une contrainte unique sur la table d'événements avant de conclure à l'exploitabilité."
+
+remediation_ref: rules/remediation/infinite-redemption.md
+knowledge_ref: knowledge/business-logic/infinite-redemption.md

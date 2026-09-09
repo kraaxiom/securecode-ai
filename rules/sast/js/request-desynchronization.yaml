@@ -1,0 +1,33 @@
+id: request-desynchronization
+language: js
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur/proxy Node.js (http.createServer, http-proxy) qui
+    relaie une requête vers un backend sans rejeter explicitement les
+    requêtes portant simultanément Content-Length et Transfer-Encoding.
+  patterns:
+    - "http.createServer((req, res) => { ... proxyRequest(req, res) ... }) without checking ('transfer-encoding' in req.headers) && ('content-length' in req.headers)"
+    - "http-proxy / http-proxy-middleware configuration without a pre-proxy validation rejecting ambiguous headers"
+  exclude_if:
+    - "une vérification explicite rejette (400) toute requête portant simultanément Content-Length et Transfer-Encoding avant le relais"
+    - "le composant n'agit jamais en tant que reverse proxy/relais HTTP"
+
+message: >
+  Relais de requêtes HTTP sans rejet des requêtes ambiguës
+  (Content-Length + Transfer-Encoding) — risque de désynchronisation
+  (request smuggling) entre le frontal et le backend (voir
+  rules/remediation/request-desynchronization.md).
+
+false_positive_notes:
+  - "Si un reverse proxy managé en amont (Nginx/Envoy à jour) applique déjà ce rejet avant d'atteindre ce code Node.js, risque réduit."
+  - "Serveurs n'exposant jamais de logique de proxy/relais (uniquement endpoints applicatifs terminaux) : non applicable."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

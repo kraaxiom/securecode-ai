@@ -1,0 +1,38 @@
+id: dns-rebinding-modern
+language: csharp
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un service Kestrel/ASP.NET Core (API interne, service de
+    développement exposé via `0.0.0.0`) qui accorde l'accès en se basant
+    uniquement sur l'en-tête `Host` ou `Origin` reçu, sans validation
+    stricte contre une allowlist, ni jeton d'authentification indépendant —
+    y compris via `HttpClient` effectuant un appel sortant vers une URL dont
+    le host a été résolu juste avant sans revalidation (SSRF combiné au DNS
+    rebinding).
+  patterns:
+    - "webBuilder.UseUrls(\"http://0.0.0.0:_\") avec un endpoint qui autorise l'accès selon Request.Host sans allowlist"
+    - "middleware qui accorde l'accès en se basant uniquement sur Request.Headers[\"Origin\"] sans vérification de jeton indépendant"
+    - "HttpClient.GetAsync(userSuppliedUrl) sans validation de l'IP résolue ni épinglage du certificat/host avant l'appel sortant"
+  exclude_if:
+    - "un middleware vérifie un jeton indépendant du Host/Origin (ex: en-tête personnalisé secret, session serveur) avant tout traitement"
+    - "Request.Host (ou l'URL cible d'un HttpClient) est validé contre une liste blanche explicite d'hôtes/IP avant traitement"
+
+message: >
+  Service ASP.NET Core accessible sans validation stricte du Host ni
+  authentification par jeton — vulnérable au DNS rebinding, un site distant
+  pourrait atteindre ce service via une résolution DNS manipulée (voir
+  rules/remediation/dns-rebinding-modern.md).
+
+false_positive_notes:
+  - "Si le service tourne uniquement dans un environnement conteneurisé isolé sans navigateur pouvant l'atteindre, le risque réel est réduit."
+  - "Un serveur de développement (dotnet run avec UseUrls 0.0.0.0 en environnement Development) n'est jamais destiné à la production — signaler comme risque de configuration si trouvé hors contexte dev."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

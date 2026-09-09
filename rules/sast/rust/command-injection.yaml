@@ -1,0 +1,28 @@
+id: command-injection
+language: rust
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'exécution d'un processus/shell avec des arguments construits par concaténation d'une entrée utilisateur (injection de commande).
+  patterns:
+    - "Command::new(\"sh\").arg(\"-c\").arg(format!(_, $var))"
+    - "Command::new(...).arg(string_concat(_, $var, _))"
+  exclude_if:
+    - "Command::new appelle le binaire directement avec .arg() séparés, sans passer par sh -c"
+    - "$var est validée par une liste blanche stricte avant utilisation"
+
+message: >
+  Injection de commande détectée — préférer l'exécution directe du binaire avec arguments séparés (sans shell) et une liste blanche stricte (voir rules/remediation/command-injection.md).
+
+false_positive_notes:
+  - "Si les arguments sont passés séparément sans invocation d'un interpréteur shell, le risque d'injection de métacaractères shell est fortement réduit — reclasser en `medium`."
+  - "Si $var provient d'une constante interne, non exploitable."
+
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

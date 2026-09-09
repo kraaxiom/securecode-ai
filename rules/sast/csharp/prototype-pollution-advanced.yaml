@@ -1,0 +1,42 @@
+id: prototype-pollution-advanced
+language: csharp
+category: modern
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Adaptation C# du concept de prototype pollution JavaScript : détecte une
+    fusion récursive (deep merge) d'un `JObject`/`JsonNode` contrôlé par
+    l'attaquant dans un objet de configuration interne via réflexion
+    (`PropertyInfo.SetValue`) ou `JObject.Merge`, sans filtrage des clés
+    dangereuses (`$type`, propriétés de contrôle de désérialisation
+    polymorphe Newtonsoft/System.Text.Json), permettant de modifier des
+    attributs internes voire d'atteindre une désérialisation de type
+    arbitraire (gadget) si `TypeNameHandling` est mal configuré.
+  patterns:
+    - "JObject.Merge(config, JObject.Parse(userJson), new JsonMergeSettings { MergeArrayHandling = MergeArrayHandling.Union }) sans filtrage des clés"
+    - "foreach (var prop in userDict) { targetType.GetProperty(prop.Key)?.SetValue(target, prop.Value); } sans allowlist de propriétés"
+    - "JsonConvert.DeserializeObject(userJson, settings) avec TypeNameHandling != TypeNameHandling.None appliqué à une entrée utilisateur non fiable"
+  exclude_if:
+    - "les clés/propriétés du JSON source sont validées contre une allowlist stricte (ou un DTO fortement typé avec [JsonIgnore] sur les champs sensibles) avant toute fusion/assignation"
+    - "TypeNameHandling est explicitement None (ou un SerializationBinder restrictif est configuré) et la fusion cible exclusivement des données simples sans jamais atteindre un objet exécutable via réflexion"
+
+message: >
+  Fusion récursive d'un JSON contrôlé par l'attaquant dans un objet de
+  configuration via réflexion ou JObject.Merge sans filtrage des clés
+  dangereuses — équivalent C# de la pollution de prototype, pouvant altérer
+  le comportement interne de l'application ou, combiné à une désérialisation
+  polymorphe non sécurisée (TypeNameHandling), mener à une exécution de code
+  (voir rules/remediation/prototype-pollution-advanced.md).
+
+false_positive_notes:
+  - "Note d'adaptation : le concept JS original (Object.prototype) n'existe pas en C# ; ce rapprochement cible la fusion non filtrée via réflexion/JObject.Merge et la désérialisation polymorphe non sécurisée, les vecteurs C# les plus proches en impact."
+  - "Si la fusion utilise exclusivement des DTO fortement typés désérialisés via System.Text.Json sans TypeNameHandling ni réflexion dynamique, le risque d'exécution de code est nul — reclasser en `medium`."
+  - "TypeNameHandling.None (comportement par défaut sécurisé) ou un SerializationBinder strict élimine le vecteur de désérialisation — reclasser en `low`."
+
+remediation_ref: rules/remediation/prototype-pollution-advanced.md
+knowledge_ref: knowledge/modern/prototype-pollution-advanced.md

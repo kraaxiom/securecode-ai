@@ -1,0 +1,38 @@
+id: ssti
+language: java
+category: injections
+cwe: CWE-1336
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la compilation/rendu dynamique d'un template (Thymeleaf,
+    FreeMarker, Velocity, Pebble) où le contenu du template lui-même
+    (pas seulement les variables injectées) provient d'une entrée
+    utilisateur, permettant l'injection de directives de template (RCE).
+  patterns:
+    - "TemplateEngine.process(string_concat(_, $var, _), _)"
+    - "Configuration.getTemplate(...).process combiné à un template chargé depuis $var (StringTemplateLoader avec contenu utilisateur)"
+    - "Velocity.evaluate(_, _, _, string_concat(_, $var, _))"
+    - "PebbleEngine.getLiteralTemplate($var)"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "seules les variables de contexte (pas la structure/syntaxe du template) proviennent de l'utilisateur"
+
+message: >
+  Le contenu ou la structure du template est construit à partir d'une entrée
+  utilisateur puis compilé/évalué par le moteur de template — un attaquant
+  peut injecter des directives (${...}, #set, <#...>) menant à une exécution
+  de code arbitraire (SSTI) ; ne jamais laisser l'utilisateur influencer la
+  syntaxe du template, seulement les données injectées dans un template figé
+  (voir rules/remediation/ssti.md).
+
+false_positive_notes:
+  - "Si l'entrée utilisateur n'alimente que le modèle de données (context/variables) d'un template statique, il s'agit d'un rendu normal, pas d'une SSTI."
+  - "Les moteurs configurés en mode sandbox strict (ex: Pebble avec whitelist d'attributs) réduisent le risque mais restent à vérifier manuellement."
+
+remediation_ref: rules/remediation/ssti.md
+knowledge_ref: knowledge/injections/ssti.md

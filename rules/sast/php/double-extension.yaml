@@ -1,0 +1,34 @@
+id: double-extension
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'extension de fichier téléversé basée sur une
+    recherche de sous-chaîne (strpos, str_contains, regex permissive) dans le
+    nom complet plutôt que sur l'extraction de la dernière extension réelle
+    via pathinfo(), permettant un contournement par double extension
+    (ex: shell.php.jpg).
+  patterns:
+    - "strpos($_FILES[_]['name'], string_literal_extension) !== false"
+    - "str_contains($_FILES[_]['name'], string_literal_extension)"
+    - "preg_match(regex_without_anchor_end, $_FILES[_]['name'])"
+  exclude_if:
+    - "l'extension est extraite via pathinfo($filename, PATHINFO_EXTENSION) et comparée par égalité stricte à une liste blanche"
+    - "le nombre de points dans le nom de fichier est vérifié et limité avant validation"
+
+message: >
+  Validation d'extension par recherche de sous-chaîne, contournable par double
+  extension (ex: shell.php.jpg) — voir rules/remediation/double-extension.md.
+
+false_positive_notes:
+  - "Si le nom de fichier est intégralement régénéré côté serveur avant tout usage (le nom client n'est jamais utilisé pour le stockage), l'impact du contournement est neutralisé."
+  - "Une regex ancrée en fin de chaîne (`/\\.jpg$/`) sur la valeur complète n'est pas vulnérable à cette technique — vérifier l'ancrage avant de confirmer."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

@@ -1,0 +1,37 @@
+id: code-injection
+language: java
+category: injections
+cwe: CWE-94
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'exécution dynamique de code via les moteurs de script
+    embarqués (ScriptEngine/Nashorn/GraalVM JS, Groovy Shell/GroovyShell,
+    BeanShell) avec une chaîne incluant une entrée non fiable, ou via
+    ClassLoader avec chargement dynamique piloté par l'utilisateur.
+  patterns:
+    - "ScriptEngine.eval(string_concat(_, $var, _))"
+    - "GroovyShell.evaluate(string_concat(_, $var, _))"
+    - "Interpreter.eval(string_concat(_, $var, _))"
+    - "MethodHandles/ClassLoader.loadClass($var).newInstance()"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var est validé par whitelist stricte de scripts pré-approuvés (identifiant, pas contenu libre)"
+
+message: >
+  Code dynamique (script Groovy/JS/BeanShell) construit avec une entrée non
+  fiable et évalué à l'exécution — un attaquant peut exécuter du code
+  Java/JVM arbitraire (RCE) ; ne jamais évaluer une entrée utilisateur comme
+  code, utiliser un bac à sable strict ou une whitelist de scripts figés
+  (voir rules/remediation/code-injection.md).
+
+false_positive_notes:
+  - "Un moteur de script en sandbox strict (classes/packages autorisés explicitement restreints) réduit le risque mais ne le supprime pas — la règle reste conservatrice."
+  - "Si $var ne provient d'aucune entrée externe, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

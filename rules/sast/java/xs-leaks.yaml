@@ -1,0 +1,43 @@
+id: xs-leaks
+language: java
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse Spring MVC dont le comportement observable
+    (redirection conditionnelle, code de statut différent, taille de
+    réponse variable selon l'état d'authentification/l'existence d'une
+    ressource) fuit une information binaire à un site tiers, en l'absence
+    d'en-têtes d'isolation (`Cross-Origin-Opener-Policy`,
+    `Cross-Origin-Resource-Policy`, `X-Frame-Options`/`frame-ancestors`)
+    empêchant l'observation cross-origin (XS-Leaks).
+  patterns:
+    - "@GetMapping($_) ResponseEntity<$T> $method(...) { if ($condition) return ResponseEntity.status(302)...; else return ResponseEntity.status(404)...; } // pas d'en-tête Cross-Origin-Resource-Policy"
+    - "SecurityFilterChain $chain(HttpSecurity $http) { ... } // aucune configuration headers().crossOriginOpenerPolicy() ni crossOriginResourcePolicy()"
+  exclude_if:
+    - "headers().crossOriginOpenerPolicy(COOP::sameOrigin) et crossOriginResourcePolicy(CORP::sameOrigin) sont configurés dans la SecurityFilterChain"
+    - "La réponse ne varie jamais de façon observable selon l'état d'authentification ou l'existence d'une ressource (comportement uniforme, ex: toujours 200 avec contenu générique)"
+
+message: >
+  L'application ne définit pas d'en-têtes d'isolation cross-origin
+  (`Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`) alors que
+  certaines réponses varient de façon observable selon l'état
+  d'authentification ou l'existence d'une ressource — un site tiers peut
+  déduire des informations sensibles en mesurant ces différences (statut,
+  redirection, taille, timing) sans lire directement le contenu (XS-Leaks).
+  Configurer `Cross-Origin-Opener-Policy: same-origin` et
+  `Cross-Origin-Resource-Policy: same-origin` globalement, et uniformiser
+  les réponses (statut/taille) indépendamment de l'état d'authentification
+  lorsque c'est possible.
+
+false_positive_notes:
+  - "Les XS-Leaks reposent souvent sur des différences fines de timing/taille difficiles à confirmer par analyse statique seule — traiter ces résultats comme des pistes à valider manuellement, confidence par défaut basse."
+  - "Si l'application sert exclusivement une API interne sans navigation cross-origin possible (pas de CORS, pas d'iframe autorisée), le risque est très réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/xs-leaks.md
+knowledge_ref: knowledge/modern/xs-leaks.md

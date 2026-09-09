@@ -1,0 +1,3 @@
+## Time-Based Blind SQL Injection (CWE-89)
+
+Le code vulnérable concatène l'identifiant dans la requête SQL sans timeout d'exécution, alors que les erreurs de base de données sont masquées côté réponse. Un attaquant peut injecter une condition provoquant une pause (ex: `SLEEP`) et inférer des informations en observant le délai de réponse, sans qu'aucune donnée ni erreur ne soit directement exposée. La correction utilise une requête préparée avec paramètre lié — qui élimine la classe de vulnérabilité entière, pas seulement la variante temporelle — combinée à un timeout d'exécution au niveau du pool de connexion.

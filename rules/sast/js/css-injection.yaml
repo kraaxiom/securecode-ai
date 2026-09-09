@@ -1,0 +1,32 @@
+id: css-injection
+language: js
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'assignation d'une valeur utilisateur non validée à
+    `innerHTML` contenant une balise `<style>`, ou l'interpolation directe
+    dans un attribut `style` via une template literal.
+  patterns:
+    - "el.innerHTML = `<style>${userInput}</style>`"
+    - "el.setAttribute('style', userInput)"
+    - "el.style.cssText = userInput"
+  exclude_if:
+    - "userInput est validé contre une regex stricte (ex: couleur hexadécimale) avant usage"
+    - "la valeur est appliquée via style.setProperty avec une clé fixe et une valeur validée, pas du texte libre concaténé"
+
+message: >
+  Valeur utilisateur injectée dans du CSS sans validation de format — voir
+  rules/remediation/css-injection.md.
+
+false_positive_notes:
+  - "Valeur provenant d'une énumération fixe côté serveur (pas de texte libre utilisateur) : reclasser en `info`."
+  - "userInput déjà passé par une bibliothèque de sanitisation CSS dédiée avant l'assignation : vérifier la couverture avant de confirmer."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

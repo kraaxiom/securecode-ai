@@ -1,0 +1,35 @@
+id: dns-rebinding-modern
+language: python
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Python (Flask dev server, `http.server`, service
+    interne exposé via `0.0.0.0` ou `127.0.0.1`) qui accorde l'accès en se
+    basant uniquement sur l'en-tête `Host` ou `Origin` reçu, sans validation
+    stricte contre une allowlist, ni jeton d'authentification indépendant.
+  patterns:
+    - "app.run(host='0.0.0.0') avec une vue qui autorise l'accès selon request.host sans allowlist"
+    - "handler accorde l'accès en se basant uniquement sur request.headers.get('Origin') sans vérification de jeton"
+    - "service local (ex: API de développement, agent local) sans middleware d'authentification sur les routes internes"
+  exclude_if:
+    - "un middleware vérifie un jeton indépendant du Host/Origin (ex: en-tête personnalisé secret, session serveur) avant tout traitement"
+    - "request.host (ou SERVER_NAME) est validé contre une liste blanche explicite avant traitement de la requête"
+
+message: >
+  Service Python accessible sans validation stricte du Host ni
+  authentification par jeton — vulnérable au DNS rebinding, un site distant
+  pourrait atteindre ce service via une résolution DNS manipulée (voir
+  rules/remediation/dns-rebinding-modern.md).
+
+false_positive_notes:
+  - "Si le service tourne uniquement dans un environnement conteneurisé isolé sans navigateur pouvant l'atteindre, le risque réel est réduit."
+  - "Un serveur de développement (Flask debug=True) n'est jamais destiné à la production — signaler comme risque de configuration si trouvé hors contexte dev."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

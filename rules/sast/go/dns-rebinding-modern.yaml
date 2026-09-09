@@ -1,0 +1,37 @@
+id: dns-rebinding-modern
+language: go
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Go (net/http écoutant sur `0.0.0.0`, service interne
+    exposé) qui accorde l'accès en se basant uniquement sur l'en-tête `Host`
+    ou `Origin` reçu, ou un client HTTP (`net.Dial`, `http.Client`) qui
+    résout une cible SSRF sans revalider l'adresse IP entre la résolution
+    DNS et la connexion réelle.
+  patterns:
+    - "http.ListenAndServe(\"0.0.0.0:8080\", handler) avec un handler qui autorise l'accès selon r.Host sans allowlist"
+    - "handler accorde l'accès en se basant uniquement sur r.Header.Get(\"Origin\") sans vérification de jeton indépendant"
+    - "net.Dial(\"tcp\", userControlledHost) ou http.Client{}.Get(userControlledURL) sans revalidation de l'IP résolue avant l'envoi de la requête (pas de DialContext custom vérifiant l'IP)"
+  exclude_if:
+    - "un middleware vérifie un jeton indépendant du Host/Origin (en-tête personnalisé secret, session serveur) avant tout traitement"
+    - "r.Host est validé contre une liste blanche explicite avant traitement, ou le client HTTP utilise un net.Dialer.Control/DialContext personnalisé qui revalide l'IP juste avant connexion (protection anti-DNS-rebinding)"
+
+message: >
+  Service Go accessible sans validation stricte du Host ni authentification
+  par jeton, ou client HTTP effectuant une requête sortante sans revalider
+  l'IP résolue — vulnérable au DNS rebinding, un site distant ou une cible
+  SSRF peut exploiter une résolution DNS manipulée entre la vérification et
+  l'usage (voir rules/remediation/dns-rebinding-modern.md).
+
+false_positive_notes:
+  - "Si le service tourne uniquement dans un environnement conteneurisé isolé sans navigateur pouvant l'atteindre, le risque réel est réduit."
+  - "Un serveur de développement (pprof, debug endpoints) n'est jamais destiné à la production — signaler comme risque de configuration si trouvé hors contexte dev."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

@@ -1,0 +1,32 @@
+id: service-worker-abuse
+language: php
+category: frontend
+cwe: CWE-494
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte du code PHP générant dynamiquement un script d'enregistrement de
+    service worker dont l'URL provient d'une entrée utilisateur, ou l'absence
+    de directive CSP `worker-src` dans le bootstrap applicatif.
+  patterns:
+    - "echo \"<script>navigator.serviceWorker.register('\" . $_GET[_] . \"')</script>\""
+    - "header('Content-Security-Policy: ' . _)" # sans worker-src dans la valeur générée
+  exclude_if:
+    - "l'URL du service worker généré est une constante codée en dur, jamais dérivée d'une entrée utilisateur"
+    - "la CSP générée inclut worker-src 'self'"
+
+message: >
+  Script généré côté serveur enregistrant un service worker depuis une entrée
+  utilisateur, ou CSP sans restriction worker-src — voir
+  rules/remediation/service-worker-abuse.md.
+
+false_positive_notes:
+  - "Application ne servant aucun service worker (aucune fonctionnalité offline/PWA) : non applicable — reclasser en `info`."
+  - "CSP worker-src héritée d'une directive default-src restrictive déjà en place : vérifier la couverture avant de confirmer."
+
+remediation_ref: rules/remediation/service-worker-abuse.md
+knowledge_ref: knowledge/frontend/service-worker-abuse.md

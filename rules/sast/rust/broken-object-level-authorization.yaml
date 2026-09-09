@@ -1,0 +1,33 @@
+id: broken-object-level-authorization
+language: rust
+category: api
+cwe: CWE-639
+owasp: API1:2023-Broken Object Level Authorization
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler actix-web/axum qui récupère une ressource à partir
+    d'un identifiant extrait du chemin (Path<$T>) et exécute une requête
+    base de données sans filtrer sur l'utilisateur authentifié courant.
+  patterns:
+    - "async fn $handler(Path(id): Path<i64>) -> impl Responder { $table.filter($col.eq(id)).first($conn) }"
+    - "async fn $handler(id: web::Path<i64>) -> impl Responder { $repo.get_by_id(*id).await }"
+  exclude_if:
+    - "la requête inclut une clause de filtrage sur l'utilisateur courant (ex: .filter(user_id.eq(current_user.id)))"
+    - "un extracteur/middleware d'autorisation vérifie explicitement la propriété de la ressource avant l'exécution du handler"
+
+message: >
+  Récupération d'une ressource par identifiant de chemin sans vérification
+  que l'utilisateur authentifié courant en est propriétaire — ajouter un
+  filtre sur l'utilisateur courant ou une vérification d'autorisation
+  explicite (voir rules/remediation/broken-object-level-authorization.md).
+
+false_positive_notes:
+  - "Si le handler est réservé à un rôle admin vérifié par un extracteur dédié, reclasser en `info`."
+  - "Vérifier que la couche repository n'applique pas déjà un filtre implicite par utilisateur avant de remonter en `high`."
+
+remediation_ref: rules/remediation/broken-object-level-authorization.md
+knowledge_ref: knowledge/api/broken-object-level-authorization.md

@@ -1,0 +1,31 @@
+id: md5
+language: go
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'import et l'appel du paquet crypto/md5 (md5.Sum, md5.New) pour
+    hacher un mot de passe ou produire une preuve d'intégrité opposable.
+  patterns:
+    - "import \"crypto/md5\""
+    - "md5.Sum(_)"
+    - "md5.New()"
+  exclude_if:
+    - "usage exclusif comme clé de cache non adversariale (ex: clé de dictionnaire interne) sans enjeu de sécurité"
+
+message: >
+  MD5 (crypto/md5) est une fonction de hachage cassée (collisions triviales) —
+  pour un mot de passe utiliser golang.org/x/crypto/bcrypt ou argon2, pour une
+  intégrité opposable utiliser crypto/sha256.
+
+false_positive_notes:
+  - "Si MD5 sert uniquement de somme de contrôle non adversariale (détection de corruption accidentelle), reclasser en `low`."
+  - "Vérifier si le résultat sert à un hachage de mot de passe : dans ce cas maintenir `high`, pas `medium`."
+
+remediation_ref: rules/remediation/md5.md
+knowledge_ref: knowledge/crypto/md5.md

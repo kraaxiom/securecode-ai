@@ -1,0 +1,28 @@
+id: redis-ssrf
+language: js
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une destination réseau (hôte/port) à partir d'une entrée utilisateur dans un contexte pouvant atteindre un service Redis interne.
+  patterns:
+    - "redis.createClient({ host: $userHost })"
+    - "net.connect({ host: $userHost, port: 6379 })"
+  exclude_if:
+    - "$userHost/$userPort sont validés contre une whitelist fermée de destinations constantes"
+    - "L'instance Redis cible impose une authentification (requirepass/ACL) vérifiée indépendamment"
+
+message: >
+  Destination réseau (hôte/port) potentiellement dérivée d'une entrée utilisateur pouvant atteindre un service Redis interne non authentifié — voir rules/remediation/redis-ssrf.md.
+
+false_positive_notes:
+  - "Si la destination est fixée en configuration serveur (pas d'entrée utilisateur), ce n'est pas exploitable."
+  - "Si Redis impose une authentification et n'est joignable que depuis un segment réseau dédié, le risque résiduel est réduit."
+
+remediation_ref: rules/remediation/redis-ssrf.md
+knowledge_ref: knowledge/ssrf/redis-ssrf.md

@@ -1,0 +1,35 @@
+id: oauth-misconfiguration
+language: java
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration Spring Security OAuth2/OIDC (`ClientRegistration`,
+    `application.yml` sous `spring.security.oauth2.client`) avec un `redirect-uri`
+    permissif (wildcard), ou un flux d'autorisation sans génération/vérification du
+    paramètre `state`/`nonce`.
+  patterns:
+    - "redirect-uri: \"{baseUrl}/*\"  # motif large plutôt que correspondance exacte"
+    - "OAuth2AuthorizationRequest.authorizationUri(...) ... sans state configuré explicitement"
+    - "OidcIdTokenDecoderFactory ... sans validation explicite de issuer/audience"
+  exclude_if:
+    - "le redirect-uri est enregistré par correspondance exacte, sans wildcard"
+    - "state et nonce sont générés et vérifiés systématiquement (comportement par défaut de Spring Security OAuth2 non désactivé)"
+
+message: >
+  Configuration OAuth2/OIDC avec redirect_uri permissif ou vérification insuffisante de
+  state/nonce/jeton d'identité — enregistrer les redirect_uri par correspondance exacte et
+  valider intégralement le jeton d'identité (émetteur, audience, signature, expiration)
+  (voir rules/remediation/oauth-misconfiguration.md).
+
+false_positive_notes:
+  - "Spring Security OAuth2 Client applique par défaut la génération/vérification de state — ce pattern ne s'applique qu'aux implémentations personnalisées désactivant ce comportement."
+  - "Vérifier la configuration réelle du fournisseur d'identité avant de conclure, car certains registrars imposent déjà une correspondance stricte côté fournisseur."
+
+remediation_ref: rules/remediation/oauth-misconfiguration.md
+knowledge_ref: knowledge/auth/oauth-misconfiguration.md

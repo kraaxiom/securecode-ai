@@ -1,0 +1,35 @@
+id: web-shell-upload
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'ensemble des conditions permettant le dépôt puis l'exécution d'un
+    web shell via un upload Spring/Servlet: absence de liste blanche
+    d'extension, écriture dans un répertoire exécutable par le conteneur, et
+    absence de scan de contenu.
+  patterns:
+    - "MultipartFile.transferTo(...) vers un répertoire sous le webroot déployé (webapp/, ROOT/), avec le nom de fichier original conservé et sans liste blanche d'extension"
+    - "endpoint d'upload accessible sans authentification/autorisation stricte permettant à un attaquant non authentifié de déposer un fichier exécutable"
+  exclude_if:
+    - "le fichier est stocké hors du webroot déployé (stockage objet, répertoire non exécutable) et servi uniquement via un contrôleur dédié en lecture"
+    - "une liste blanche stricte d'extensions non exécutables est combinée à un renommage systématique du fichier (UUID)"
+
+message: >
+  Combinaison de facteurs permettant le dépôt d'un web shell exploitable :
+  écriture dans un répertoire exécutable par le conteneur, nom de fichier non
+  neutralisé, absence de liste blanche stricte. Stocker les fichiers hors
+  webroot, appliquer une liste blanche stricte d'extensions et renommer via
+  UUID, désactiver l'exécution de scripts sur le répertoire de stockage.
+
+false_positive_notes:
+  - "Si le stockage cible est hors du webroot déployé et jamais interprété par le conteneur, ce risque critique ne s'applique pas directement — reclasser en `medium` sous forme de défense en profondeur manquante."
+  - "Un contrôle d'authentification strict sur l'endpoint réduit la surface mais ne supprime pas le risque en cas de compte compromis — ne pas exclure sur ce seul critère."
+
+remediation_ref: rules/remediation/web-shell-upload.md
+knowledge_ref: knowledge/upload/web-shell-upload.md

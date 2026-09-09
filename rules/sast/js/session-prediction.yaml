@@ -1,0 +1,31 @@
+id: session-prediction
+language: js
+category: auth
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction de génération d'ID de session/token construite à
+    partir de Date.now(), Math.random() ou d'un compteur incrémental au lieu
+    de crypto.randomBytes.
+  patterns:
+    - "`sess_${Date.now()}_${counter++}`"
+    - "Math.random().toString(36)"
+    - "genid: () => Date.now() + Math.random()"
+  exclude_if:
+    - "La valeur générée n'est pas utilisée comme identifiant de session, cookie d'authentification ou token de réinitialisation"
+    - "crypto.randomBytes ou équivalent CSPRNG encadre la valeur finale utilisée"
+
+message: >
+  Génération d'identifiant de session à partir d'une source non
+  cryptographique/prévisible — voir rules/remediation/session-prediction.md.
+
+false_positive_notes:
+  - "Math.random() peut être légitime pour des besoins non sécuritaires (ex: animation UI) — vérifier l'usage réel avant de confirmer."
+
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

@@ -1,0 +1,38 @@
+id: jsp-upload
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent générique de l'upload de fichier exécutable côté conteneur
+    d'application (transposé de la classe JSP/Servlet vers un service
+    Rust) — détecte l'enregistrement d'un fichier téléversé dans un
+    répertoire servi statiquement (actix-files::Files, tower-http
+    ServeDir) sans validation stricte de l'extension.
+  patterns:
+    - "File::create($staticDir.join($field.content_disposition().get_filename()))"
+    - "Files::new(_, $uploadDir)"
+    - "ServeDir::new($uploadDir)"
+  exclude_if:
+    - "l'extension est validée par une liste blanche stricte avant File::create"
+    - "le répertoire d'upload n'est jamais exposé via Files::new/ServeDir ou un handler statique équivalent"
+    - "le nom de fichier de destination est généré côté serveur sans réutiliser le nom fourni par le client"
+
+message: >
+  Enregistrement d'un fichier téléversé dans un répertoire servi
+  statiquement par le service Rust sans validation stricte de
+  l'extension — risque de dépôt d'un fichier destiné à être interprété si
+  le pipeline de déploiement l'exécute (voir
+  rules/remediation/jsp-upload.md).
+
+false_positive_notes:
+  - "Si le répertoire d'upload est physiquement distinct du répertoire servi par Files::new/ServeDir, l'impact direct est écarté — reclasser en `info`."
+  - "Si une liste blanche d'extensions stricte et un renommage aléatoire sont déjà appliqués avant File::create, le risque est neutralisé."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

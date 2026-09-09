@@ -1,0 +1,3 @@
+# Forced Browsing
+
+La version vulnérable sert un répertoire de sauvegardes en statique sans contrôle d'accès et affiche la page finale d'un tunnel de paiement sans vérifier côté serveur que les étapes précédentes ont réellement été complétées, s'appuyant à tort sur l'absence de lien visible dans l'UI. La version corrigée remplace le service statique par un contrôleur qui vérifie l'authentification et le rôle avant de délivrer chaque fichier, et revalide côté serveur l'état d'avancement du flux de paiement avant d'afficher la confirmation. Cela correspond à **CWE-425 (Direct Request / Forced Browsing)**, catégorie OWASP A01:2021-Broken Access Control.

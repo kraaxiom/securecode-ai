@@ -1,0 +1,38 @@
+id: race-condition
+language: python
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pattern lire-vérifier-écrire (check-then-act) non atomique sur
+    une ressource partagée (solde, stock, quota) en Python — vérification
+    d'une condition en mémoire/requête séparée suivie d'une écriture, sans
+    verrou/transaction/contrainte atomique, exploitable par des requêtes
+    concurrentes.
+  patterns:
+    - "solde = Model.objects.get(id=_).solde; if solde >= montant: Model.objects.filter(id=_).update(solde=solde-montant) — lecture puis écriture non atomiques (Django ORM)"
+    - "row = session.query(Model).filter_by(id=_).first(); if row.stock > 0: row.stock -= 1; session.commit() — sans select_for_update()/with_for_update() ni transaction verrouillée (SQLAlchemy)"
+    - "cursor.execute('SELECT stock FROM t WHERE id=%s', (_,)); ... cursor.execute('UPDATE t SET stock=%s WHERE id=%s', (new_stock, _)) — deux requêtes psycopg2 séparées sans verrou explicite ni transaction sérialisable"
+  exclude_if:
+    - "la lecture et l'écriture sont enveloppées dans select_for_update()/with_for_update() (verrou pessimiste) ou une contrainte atomique SQL (UPDATE ... SET x = x - 1 WHERE x >= montant) garantissant l'atomicité"
+    - "un verrou applicatif distribué (Redis SETNX, threading.Lock pour mono-processus) protège explicitement la section critique de bout en bout"
+
+message: >
+  Vérification et mise à jour d'une ressource partagée effectuées en deux
+  opérations séparées non atomiques — des requêtes concurrentes peuvent
+  toutes deux passer la vérification avant l'écriture (double dépense,
+  survente de stock). Utiliser select_for_update()/with_for_update(), une
+  contrainte SQL atomique (UPDATE conditionnel), ou une transaction
+  sérialisable — voir rules/remediation/race-condition.md.
+
+false_positive_notes:
+  - "Si la ressource n'est jamais accédée en concurrence (traitement strictement séquentiel, ex: tâche cron unique) le risque est nul."
+  - "Un verrou au niveau infrastructure (queue de traitement unique, worker unique garanti) peut mitiger le risque sans être visible dans le code — vérifier l'architecture avant de confirmer `high`."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

@@ -1,0 +1,28 @@
+id: blind-ssrf
+language: php
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête HTTP sortante déclenchée par une entrée utilisateur dans un contexte asynchrone (job, worker, callback) où la réponse n'est jamais renvoyée à l'appelant.
+  patterns:
+    - "Queue::push(_, $url)"
+    - "curl_init($url) // dans un contexte job/worker"
+  exclude_if:
+    - "$url est validée contre une whitelist explicite avant l'exécution du job"
+    - "Le job applique la même validation IP/DNS qu'une requête synchrone (whitelist + filtrage plages privées)"
+
+message: >
+  Requête sortante asynchrone (job/worker/callback) dont la destination dérive d'une entrée utilisateur non validée — risque de SSRF aveugle, voir rules/remediation/blind-ssrf.md.
+
+false_positive_notes:
+  - "Si le job applique la whitelist + filtrage de plages privées avant exécution, reclasser en `info`."
+  - "Les jobs strictement internes sans donnée utilisateur en entrée ne sont pas concernés."
+
+remediation_ref: rules/remediation/blind-ssrf.md
+knowledge_ref: knowledge/ssrf/blind-ssrf.md

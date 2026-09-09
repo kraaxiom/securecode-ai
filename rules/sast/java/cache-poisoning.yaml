@@ -1,0 +1,40 @@
+id: cache-poisoning
+language: java
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse Spring MVC/WebFlux dont le contenu ou la clé de
+    cache HTTP dépend d'un en-tête non canonicalisé (`X-Forwarded-Host`,
+    `X-Forwarded-Scheme`, `X-Original-URL`) réinjecté dans la réponse ou
+    utilisé pour construire des URL, sans que ces en-têtes ne fassent partie
+    de la clé de cache côté reverse proxy — un attaquant peut empoisonner le
+    cache partagé avec une réponse malveillante.
+  patterns:
+    - "request.getHeader(\"X-Forwarded-Host\") // réinjecté dans un lien, une redirection ou un fragment de page mis en cache"
+    - "@GetMapping($_) $ret $method(HttpServletRequest $req) { ... $req.getHeader(\"X-Forwarded-*\") ... return $cacheableResponse; }"
+    - "response.setHeader(\"Location\", string_concat(_, request.getHeader(\"X-Forwarded-Host\"), _)) // sur une ressource cacheable"
+  exclude_if:
+    - "L'en-tête X-Forwarded-* est validé contre une liste blanche de hosts avant réutilisation"
+    - "La réponse porte explicitement Cache-Control: private ou no-store, l'empêchant d'être mise en cache par un proxy partagé"
+
+message: >
+  Un en-tête non fiable (`X-Forwarded-Host` ou équivalent) influence le
+  contenu d'une réponse mise en cache par un reverse proxy sans faire partie
+  de la clé de cache — un attaquant peut empoisonner le cache partagé et
+  servir du contenu malveillant à tous les utilisateurs suivants. Valider
+  les en-têtes `X-Forwarded-*` contre une liste blanche, ou exclure du cache
+  toute réponse dont le contenu dépend d'en-têtes contrôlables par le
+  client.
+
+false_positive_notes:
+  - "Si le reverse proxy (nginx/CDN) inclut déjà ces en-têtes dans sa clé de cache, l'empoisonnement n'est pas possible depuis l'application — vérifier la configuration du proxy avant de reclasser."
+  - "Si la ressource concernée porte Cache-Control: private/no-store, ce n'est pas exploitable en cache poisoning partagé."
+
+remediation_ref: rules/remediation/cache-poisoning.md
+knowledge_ref: knowledge/modern/cache-poisoning.md

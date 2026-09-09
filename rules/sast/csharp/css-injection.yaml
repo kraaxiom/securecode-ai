@@ -1,0 +1,37 @@
+id: css-injection
+language: csharp
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une valeur utilisateur concaténée directement dans un bloc
+    `<style>` ou un attribut `style` au sein d'une vue Razor, sans encodage
+    ni validation de format, permettant l'injection de règles CSS arbitraires.
+  patterns:
+    - "<style>@Html.Raw($userInput)</style>"
+    - "<div style=\"@Html.Raw($userInput)\">"
+    - "<style>@(string_concat(_, $userInput, _))</style>"
+    - "Html.Raw(string_concat(\"<style>\", $userInput, \"</style>\"))"
+  exclude_if:
+    - "$userInput passe par une validation stricte de format avant rendu (ex: regex couleur hexadécimale ^#[0-9a-fA-F]{6}$)"
+    - "la valeur provient d'une liste blanche de constantes applicatives (enum de thèmes) et non d'une entrée libre"
+    - "@Html.Raw n'est pas utilisé et l'encodage Razor par défaut (@) s'applique"
+
+message: >
+  Une valeur utilisateur est insérée sans encodage (via Html.Raw) dans un bloc
+  `<style>` ou un attribut `style` d'une vue Razor — cela permet l'injection de
+  règles CSS arbitraires pouvant exfiltrer des données ou tromper l'utilisateur
+  (voir rules/remediation/css-injection.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une regex stricte (ex: couleur hexadécimale) avant rendu, le risque d'injection est écarté."
+  - "L'encodage Razor par défaut (@valeur sans Html.Raw) échappe déjà le HTML/CSS — seul l'usage explicite de Html.Raw est concerné."
+  - "Si la valeur provient d'une énumération serveur fermée (thèmes prédéfinis), il n'y a pas d'entrée utilisateur libre à injecter."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

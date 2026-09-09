@@ -1,0 +1,32 @@
+id: jwt-algorithm-confusion
+language: php
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel JWT::decode (firebase/php-jwt) où l'algorithme n'est
+    pas fixé explicitement (Key avec algo vide/null, ou ancienne API avec
+    tableau d'algorithmes multiples incluant à la fois HS* et RS*).
+  patterns:
+    - "JWT::decode($_, new Key($_, null))"
+    - "JWT::decode($_, new Key($_, ''))"
+    - "JWT::decode($_, $_, ['HS256', 'RS256'])"
+  exclude_if:
+    - "Le second argument de Key précise un unique algorithme fort (ex: 'RS256')"
+
+message: >
+  Vérification JWT sans algorithme explicite/unique imposé — un attaquant
+  peut forger un token avec un algorithme différent (voir
+  rules/remediation/jwt-algorithm-confusion.md).
+
+false_positive_notes:
+  - "Si la bibliothèque utilisée impose déjà une restriction stricte par défaut (vérifier la version), le risque peut être réévalué."
+  - "Confirmer si la clé publique RSA est réellement exposée publiquement avant de maintenir la sévérité `critical`."
+
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

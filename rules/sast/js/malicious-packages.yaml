@@ -1,0 +1,33 @@
+id: malicious-packages
+language: javascript
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte des indicateurs de paquet malveillant dans package.json : script
+    de cycle de vie (postinstall, preinstall) exécutant du code réseau ou
+    obscurci (base64, eval dynamique), ou dépendance correspondant à un
+    paquet npm connu comme compromis.
+  patterns:
+    - "scripts.postinstall ou scripts.preinstall invoquant curl|wget|eval|Buffer.from(...,'base64') sur une source distante"
+    - "dependencies.<package> correspondant à un nom de paquet listé comme compromis dans une advisory publique (npm security advisory / GHSA)"
+  exclude_if:
+    - "ignore-scripts=true est actif dans .npmrc pour l'environnement CI/production"
+    - "La version installée est antérieure à la période de compromission connue du paquet"
+
+message: >
+  Indicateur de paquet malveillant détecté (script d'installation suspect ou
+  paquet listé comme compromis) — retirer immédiatement le paquet, révoquer
+  les secrets potentiellement exposés (voir rules/remediation/malicious-packages.md).
+
+false_positive_notes:
+  - "Un postinstall légitime de build (ex: compilation de binding natif) peut ressembler à un faux positif — vérifier l'absence d'appel réseau externe."
+  - "Confirmer la compromission via l'advisory officielle avant de bloquer un build en CI."
+
+remediation_ref: rules/remediation/malicious-packages.md
+knowledge_ref: knowledge/supply-chain/malicious-packages.md

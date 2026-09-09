@@ -1,0 +1,3 @@
+# Indirect Prompt Injection (CWE-1427)
+
+Le code vulnérable injecte le contenu brut d'une page web externe dans le prompt, sans marquage de provenance, alors que l'agent dispose simultanément d'un outil d'envoi d'e-mail qu'il peut déclencher directement à partir de ce contenu non fiable. La correction sépare strictement la phase de lecture (aucun outil exposé, contenu externe délimité et étiqueté non fiable) de la phase d'exécution, et exige une confirmation humaine explicite avant toute action à fort impact déclenchée par l'analyse du contenu externe. Élimine la classe de vulnérabilité CWE-1427 (Improper Neutralization of Input Used for LLM Prompting).

@@ -1,0 +1,36 @@
+id: missing-audit
+language: rust
+category: database
+cwe: CWE-778
+owasp: A09:2021-Security-Logging-and-Monitoring-Failures
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des opérations Rust sensibles sur la base de données
+    (suppression, modification de données financières/PII, changement de
+    privilèges) effectuées via sqlx ou diesel sans journalisation d'audit
+    associée (qui, quoi, quand).
+  patterns:
+    - "diesel::delete(users.filter(id.eq(user_id))).execute(conn) / sqlx::query(\"DELETE FROM users WHERE id=$1\").execute(pool) sur une entité sensible sans appel à un logger d'audit ni enregistrement dans une table d'historique"
+    - "diesel::update(users).set(is_admin.eq(true)).execute(conn) (élévation de privilèges) sans trace d'audit (qui a effectué le changement, quand, depuis quelle requête)"
+    - "sqlx::query(\"UPDATE accounts SET balance=$1 ...\").execute(pool) sur une table financière sans insertion correspondante dans une table de journal d'audit (audit_log/transaction_history)"
+  exclude_if:
+    - "l'opération sensible est systématiquement accompagnée d'un enregistrement d'audit (table dédiée, transaction englobant l'écriture applicative et l'écriture d'audit, ou trigger SQL d'audit) capturant l'acteur et l'horodatage"
+
+message: >
+  Opération sensible sur la base de données (suppression, changement de
+  privilèges, modification financière) sans journalisation d'audit associée
+  — en cas d'incident, impossible de reconstituer qui a fait quoi. Journaliser
+  systématiquement les opérations sensibles (acteur, horodatage, valeur
+  avant/après) dans une table d'audit immuable, dans la même transaction que
+  l'écriture applicative — voir rules/remediation/missing-audit.md.
+
+false_positive_notes:
+  - "Si la journalisation est centralisée (wrapper de repository commun pour tous les modèles sensibles) plutôt qu'à chaque appel, vérifier la couverture réelle avant de signaler chaque occurrence individuellement."
+  - "Les opérations sur des données non sensibles (préférences UI, cache) ne nécessitent pas d'audit."
+
+remediation_ref: rules/remediation/missing-audit.md
+knowledge_ref: knowledge/database/missing-audit.md

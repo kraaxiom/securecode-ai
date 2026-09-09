@@ -1,0 +1,33 @@
+id: magic-byte-bypass
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une validation de type de fichier basee uniquement sur
+    l'extension ou le Content-Type declare par le client, sans lecture des
+    premiers octets (magic bytes) du fichier reel.
+  patterns:
+    - "file.filename.split('.')[-1] in ALLOWED_EXTENSIONS utilise comme unique controle, sans verification du contenu binaire"
+    - "request.files[$_].content_type utilise comme seul critere d'acceptation (en-tete fourni par le client, falsifiable)"
+    - "Absence d'appel a imghdr / python-magic / filetype pour verifier la signature binaire reelle du fichier"
+  exclude_if:
+    - "Le contenu reel est verifie via python-magic (magic.from_buffer) ou une lecture manuelle des premiers octets, en plus de l'extension"
+
+message: >
+  Validation du type de fichier basee uniquement sur l'extension ou le
+  Content-Type declare (controlables par l'attaquant) - un fichier malveillant
+  renomme (ex: shell.php renomme en shell.jpg) contourne ce controle. Verifier
+  la signature binaire reelle (magic bytes) avec python-magic ou une lecture
+  des premiers octets, en complement de l'extension.
+
+false_positive_notes:
+  - "imghdr est deprecie depuis Python 3.11 - signaler aussi son usage comme dette technique, pas seulement l'absence de controle."
+
+remediation_ref: rules/remediation/magic-byte-bypass.md
+knowledge_ref: knowledge/upload/magic-byte-bypass.md

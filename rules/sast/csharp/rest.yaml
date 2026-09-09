@@ -1,0 +1,35 @@
+id: rest
+language: csharp
+category: api
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des incohérences de contrôle d'accès entre les différentes
+    méthodes HTTP d'un même contrôleur REST ASP.NET Core (ex: [Authorize]
+    présent sur Get mais absent sur Delete/Put de la même ressource), ou
+    une configuration CORS permissive combinée à des credentials.
+  patterns:
+    - "[HttpDelete(\"{id}\")] public IActionResult $Action(int id) { ... }"
+    - "options.AddPolicy($policy, builder => builder.AllowAnyOrigin().AllowCredentials())"
+    - "app.UseDeveloperExceptionPage()"
+  exclude_if:
+    - "toutes les méthodes HTTP du contrôleur portent le même niveau de protection [Authorize] (vérifié explicitement au niveau classe ou de chaque action)"
+    - "UseDeveloperExceptionPage est appelé uniquement sous une garde if (env.IsDevelopment())"
+
+message: >
+  Incohérence de contrôle d'accès entre les méthodes HTTP d'une même
+  ressource, ou configuration CORS/erreurs trop permissive en production —
+  harmoniser [Authorize] sur toutes les actions et restreindre CORS à une
+  liste blanche d'origines (voir rules/remediation/rest.md).
+
+false_positive_notes:
+  - "Si la méthode non protégée est intentionnellement publique (lecture seule non sensible), documenter l'exception plutôt que corriger."
+  - "Vérifier qu'un filtre d'autorisation global (middleware ou [Authorize] au niveau du contrôleur) ne couvre pas déjà toutes les actions avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/rest.md
+knowledge_ref: knowledge/api/rest.md

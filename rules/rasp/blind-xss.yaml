@@ -1,0 +1,15 @@
+id: blind-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: fonction de rendu HTML d'une interface d'administration/back-office (template engine, concaténation de réponse HTML)
+  block_condition: >
+    Donnée marquée non fiable provenant d'une soumission externe non authentifiée (formulaire de
+    contact, log HTTP, en-tête journalisé) atteint le sink de rendu admin sans avoir traversé de
+    fonction d'encodage contextuel enregistrée dans la chaîne d'exécution.
+  action: sanitize
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

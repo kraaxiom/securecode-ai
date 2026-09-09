@@ -1,0 +1,3 @@
+## Secret JWT faible ou codé en dur (CWE-1391)
+
+Le code vulnérable signe les tokens JWT avec la chaîne littérale `'mysecret'`, un secret court et prévisible codé en dur dans le source, ce qui permet à un attaquant de le retrouver par bruteforce hors ligne ou simple lecture du code et de forger des tokens valides pour n'importe quel utilisateur. La correction charge le secret depuis `process.env.JWT_SECRET`, généré avec au moins 256 bits d'entropie et stocké hors du code, épingle explicitement l'algorithme `HS256` côté signature, et applique une expiration courte (`expiresIn: '15m'`) pour limiter l'impact d'une compromission. Lorsque la vérification doit être distribuée à plusieurs services, une signature asymétrique (RS256/ES256) est préférable à un secret partagé.

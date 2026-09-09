@@ -1,0 +1,33 @@
+id: account-takeover
+language: php
+category: business-logic
+cwe: CWE-640
+owasp: A07:2021-Identification-and-Authentication-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un jeton de réinitialisation/vérification à partir
+    d'une source prévisible (md5/sha1 sur timestamp/ID, uniqid sans entropie
+    cryptographique) au lieu d'un générateur cryptographiquement sûr.
+  patterns:
+    - "md5(string_concat(_, time()))"
+    - "sha1(string_concat($userId, _))"
+    - "uniqid()"
+    - "md5(uniqid())"
+  exclude_if:
+    - "Le jeton est généré via random_bytes() ou random_int()"
+    - "La valeur produite n'est pas utilisée comme jeton de sécurité (reset password, vérification email)"
+
+message: >
+  Jeton de sécurité généré de façon prévisible — utiliser random_bytes(32) et
+  stocker un hash à usage unique avec expiration (voir rules/remediation/account-takeover.md).
+
+false_positive_notes:
+  - "uniqid() utilisé uniquement à des fins d'identifiant non sécuritaire (ex: nom de fichier temporaire) n'est pas concerné."
+  - "Si le jeton est immédiatement remplacé par un appel à random_bytes() avant stockage, reclasser en `info`."
+
+remediation_ref: rules/remediation/account-takeover.md
+knowledge_ref: knowledge/business-logic/account-takeover.md

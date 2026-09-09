@@ -1,0 +1,19 @@
+id: code-injection
+category: injections
+cwe: CWE-94
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête, champ de formulaire ou champ JSON transmis à un moteur d'évaluation dynamique
+  technique: out-of-band
+  indicators:
+    - Requête sortante (DNS/HTTP) reçue par un collaborateur externe après soumission d'une entrée déclenchant une évaluation de code côté serveur.
+    - Différence de comportement applicatif (crash, changement d'état interne, code HTTP 500) lorsqu'une expression syntaxiquement valide dans le langage cible est injectée.
+    - Temps de réponse anormalement élevé lorsqu'une opération coûteuse est injectée dans une expression évaluée dynamiquement.
+false_positive_notes:
+  - Fonctionnalités légitimes de moteur de règles/formules acceptant volontairement des expressions utilisateur en environnement sandboxé.
+  - Timeout applicatif générique pouvant masquer ou imiter un signal d'évaluation dynamique.
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

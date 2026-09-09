@@ -1,0 +1,32 @@
+id: weak-tls
+language: go
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration tls.Config affaiblie malgré une version de
+    protocole correcte : InsecureSkipVerify activé, CipherSuites limité à des
+    suites CBC non-AEAD, ou absence de HSTS sur les réponses HTTP.
+  patterns:
+    - "tls.Config{InsecureSkipVerify: true}"
+    - "CipherSuites limité explicitement à des constantes *_CBC_*"
+    - "absence d'en-tête Strict-Transport-Security dans les réponses d'un handler HTTPS"
+  exclude_if:
+    - "InsecureSkipVerify est strictement conditionné à un environnement non-production vérifiable dans le code"
+
+message: >
+  Configuration TLS affaiblie (InsecureSkipVerify ou absence de HSTS) —
+  retirer InsecureSkipVerify et ajouter l'en-tête Strict-Transport-Security
+  avec includeSubDomains sur les réponses HTTPS.
+
+false_positive_notes:
+  - "Si InsecureSkipVerify est strictement conditionné à un environnement non-production vérifiable, reclasser en `low`."
+  - "Vérifier que la configuration ne s'applique pas aussi au trafic sortant vers des services tiers sensibles."
+
+remediation_ref: rules/remediation/weak-tls.md
+knowledge_ref: knowledge/crypto/weak-tls.md

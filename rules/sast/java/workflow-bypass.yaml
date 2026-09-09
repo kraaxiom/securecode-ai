@@ -1,0 +1,36 @@
+id: workflow-bypass
+language: java
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java implémentant un workflow multi-étapes
+    (validation de commande, processus d'approbation, KYC), l'absence de
+    vérification de l'étape précédente avant de traiter une étape suivante,
+    permettant de sauter des étapes obligatoires en appelant directement un
+    endpoint avancé du workflow.
+  patterns:
+    - "@PostMapping(\"/order/{id}/ship\") appelant orderService.ship(id) sans vérifier order.getStatus() == PAID (transition directe depuis n'importe quel état)"
+    - "méthode approve(Long requestId) ne vérifiant pas que les étapes préalables obligatoires (ex: reviewedBy != null, documentsValidated == true) sont satisfaites avant de passer à APPROVED"
+    - "endpoint exposant directement une étape avancée du workflow (ex: /kyc/finalize) accessible sans passer par /kyc/submit-documents ni vérification d'état intermédiaire en base"
+    - "machine à états implémentée par un simple champ String status modifiable directement via un setter exposé (DTO avec @RequestBody incluant status) sans validation des transitions autorisées"
+
+message: >
+  Étape de workflow traitée sans vérifier que les étapes précédentes
+  obligatoires ont été complétées — permet de sauter des étapes (workflow
+  bypass) en appelant directement un endpoint avancé. Implémenter une
+  machine à états explicite côté serveur validant chaque transition
+  autorisée, et ne jamais accepter un champ de statut arbitraire depuis le
+  client.
+
+false_positive_notes:
+  - "Si chaque transition d'état est validée par une machine à états explicite (enum + méthode canTransitionTo) côté serveur, ce n'est pas un cas positif."
+  - "Les endpoints réservés aux administrateurs avec autorisation explicite de forcer une transition (cas de gestion d'exception documenté) présentent un risque réduit."
+
+remediation_ref: rules/remediation/workflow-bypass.md
+knowledge_ref: knowledge/business-logic/workflow-bypass.md

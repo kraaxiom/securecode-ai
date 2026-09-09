@@ -1,0 +1,3 @@
+# Stored XSS (CWE-79)
+
+Le corps d'un commentaire était stocké sans sanitisation puis affiché avec `{!! !!}`, désactivant l'échappement automatique de Blade et exposant tous les visiteurs de la page d'article à un contenu malveillant persisté une seule fois. La correction sanitise le commentaire via HTMLPurifier avant son enregistrement en base et rétablit `{{ }}` à l'affichage, combinant sanitisation à l'écriture et encodage contextuel à la lecture. Cette double protection répond au CWE-79 (Improper Neutralization of Input During Web Page Generation), particulièrement critique en XSS stocké puisqu'aucune interaction de la victime n'est requise.

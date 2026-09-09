@@ -1,0 +1,12 @@
+id: ssti
+category: injections
+cwe: CWE-1336
+type: rasp
+guard:
+  sink: compilation ou rendu d'un template dont le corps intègre directement une entrée utilisateur (Jinja2 Template(), Twig createTemplate(), FreeMarker Template())
+  block_condition: le corps du template compilé contient une donnée taintée provenant d'une requête HTTP incluant une syntaxe de délimiteur de template
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/ssti.md
+knowledge_ref: knowledge/injections/ssti.md

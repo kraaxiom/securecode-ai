@@ -1,0 +1,36 @@
+id: formula-injection
+language: python
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture d'une valeur utilisateur non neutralisée dans une
+    cellule de feuille de calcul générée programmatiquement (openpyxl
+    ws.cell(...).value = var, xlsxwriter worksheet.write) sans vérifier
+    qu'elle ne débute pas par un déclencheur de formule (=, +, -, @).
+  patterns:
+    - "ws.cell(row=r, column=c).value = var"
+    - "worksheet.write(row, col, var)"
+    - "sheet[\"A1\"] = var"
+  exclude_if:
+    - "var est préfixé/neutralisé (apostrophe, cast en type numérique explicite) avant écriture"
+    - "var provient exclusivement de constantes applicatives internes"
+
+message: >
+  Valeur utilisateur écrite directement dans une cellule de classeur
+  généré (Excel/ODS) sans neutralisation des caractères déclencheurs de
+  formule — un attaquant peut faire exécuter une formule arbitraire à
+  l'ouverture du fichier par la victime. Neutraliser (préfixe apostrophe)
+  toute valeur commençant par =, +, -, @, tab ou CR avant l'écriture.
+
+false_positive_notes:
+  - "Les cellules définies avec un type numérique explicite (int/float castés) ne sont pas concernées."
+  - "Si le classeur est régénéré uniquement à partir de données internes de confiance, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/formula-injection.md
+knowledge_ref: knowledge/injections/formula-injection.md

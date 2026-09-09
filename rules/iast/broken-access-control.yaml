@@ -1,0 +1,15 @@
+id: broken-access-control
+category: authorization
+cwe: CWE-284
+type: iast
+instrumentation:
+  hook_points:
+    - "php: point d'entrée de route/contrôleur exécutant une opération sensible sans passage par un middleware d'autorisation enregistré"
+    - "js: handler de route exécutant une opération sensible directement, sans middleware d'autorisation dans la chaîne du framework"
+    - "python: vue exécutant une opération sensible sans décorateur/dépendance de permission appliqué"
+    - "java: méthode de contrôleur exécutant une opération sensible sans filtre de sécurité (Spring Security) actif sur la route"
+  taint_check: "requête entrante (source: contexte de requête HTTP) atteignant l'exécution d'une opération sensible sur une ressource (sink) sans qu'aucun composant d'autorisation identifié n'ait été traversé dans la pile d'appel"
+  trigger_condition: "aucune fonction/middleware d'autorisation référencé dans le registre de l'agent n'apparaît dans la trace d'exécution entre l'entrée de la requête et le sink sensible"
+severity: high
+remediation_ref: rules/remediation/broken-access-control.md
+knowledge_ref: knowledge/authorization/broken-access-control.md

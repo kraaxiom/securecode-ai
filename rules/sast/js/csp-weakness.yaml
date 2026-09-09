@@ -1,0 +1,32 @@
+id: csp-weakness
+language: js
+category: frontend
+cwe: CWE-693
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration `helmet.contentSecurityPolicy` avec
+    `unsafe-inline`/`unsafe-eval`, `reportOnly: true` sans pendant bloquant,
+    ou une directive `defaultSrc`/`scriptSrc` contenant `*`.
+  patterns:
+    - "contentSecurityPolicy({ directives: { scriptSrc: [\"'unsafe-inline'\"] } })"
+    - "contentSecurityPolicy({ reportOnly: true, _ })" # sans configuration bloquante équivalente ailleurs
+    - "defaultSrc: ['*']"
+  exclude_if:
+    - "scriptSrc utilise une fonction de génération de nonce au lieu de unsafe-inline/unsafe-eval"
+    - "une configuration CSP bloquante (reportOnly absent ou false) est également active"
+
+message: >
+  Content Security Policy absente ou trop permissive côté serveur JS — voir
+  rules/remediation/csp-weakness.md.
+
+false_positive_notes:
+  - "Migration progressive documentée avec date de bascule vers mode bloquant planifiée : reclasser en `low`."
+  - "SPA statique servie sans backend Node (CSP définie côté CDN/hébergeur) : vérifier la configuration infra avant de confirmer."
+
+remediation_ref: rules/remediation/csp-weakness.md
+knowledge_ref: knowledge/frontend/csp-weakness.md

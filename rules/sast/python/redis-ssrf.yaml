@@ -1,0 +1,35 @@
+id: redis-ssrf
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la configuration d'une connexion Redis (redis-py) dont l'host
+    ou l'URL de connexion est dérivé d'une entrée utilisateur, exposant un
+    SSRF vers un service Redis interne — souvent exploitable pour exécuter
+    des commandes arbitraires (SSRF-to-RCE via Redis).
+  patterns:
+    - "redis.Redis(host=$user_host)"
+    - "redis.from_url($user_url)"
+    - "StrictRedis(host=$user_host, _)"
+
+  exclude_if:
+    - "$user_host/$user_url provient exclusivement de la configuration applicative (variable d'environnement, secret manager) et non d'une entrée HTTP"
+
+message: >
+  Connexion Redis configurée à partir d'une entrée utilisateur — un
+  attaquant peut rediriger le client vers un serveur Redis interne
+  arbitraire, potentiellement non authentifié, avec un risque
+  d'exécution de commandes (SSRF-to-RCE). Fixer la configuration Redis
+  côté serveur uniquement (voir rules/remediation/redis-ssrf.md).
+
+false_positive_notes:
+  - "Aucune exception raisonnable en environnement multi-tenant sans validation stricte du host — traiter par défaut en `critical` sauf configuration statique confirmée."
+
+remediation_ref: rules/remediation/redis-ssrf.md
+knowledge_ref: knowledge/ssrf/redis-ssrf.md

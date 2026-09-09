@@ -1,0 +1,34 @@
+id: backup-files
+language: php
+category: server
+cwe: CWE-530
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Vérification config/infra : détecte la présence probable de fichiers de
+    sauvegarde (extensions/suffixes .bak, .old, .orig, ~, .swp, .zip, .sql,
+    .dist) dans un répertoire servi publiquement, ou l'absence de règle
+    serveur (Nginx/Apache) bloquant explicitement ces extensions dans le
+    webroot du projet.
+  patterns:
+    - "fichier_webroot(nom matches /\\.(bak|old|orig|save|swp|swo|~|zip|tar\\.gz|tgz|sql|dist)$/)"
+    - "config_nginx_ou_apache(absence de bloc location/FilesMatch pour extensions de sauvegarde)"
+  exclude_if:
+    - "le fichier détecté se trouve hors du webroot servi par le serveur web"
+    - "une règle serveur (Nginx location ~* ou Apache FilesMatch) bloque déjà explicitement ces extensions"
+
+message: >
+  Fichier de sauvegarde potentiellement exposé publiquement ou absence de
+  règle serveur bloquant les extensions de sauvegarde — voir
+  rules/remediation/backup-files.md.
+
+false_positive_notes:
+  - "Si le fichier est situé dans un répertoire non servi par le serveur web (hors DocumentRoot/root), ce n'est pas exploitable."
+  - "Si une règle de blocage globale par extension existe déjà au niveau du reverse proxy en amont, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/backup-files.md
+knowledge_ref: knowledge/server/backup-files.md

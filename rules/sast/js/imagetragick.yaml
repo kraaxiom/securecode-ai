@@ -1,0 +1,34 @@
+id: imagetragick
+language: javascript
+category: upload
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation du module gm (wrapper GraphicsMagick/ImageMagick) sur
+    un fichier téléversé sans validation de format préalable, exposant
+    l'application à une classe de vulnérabilités type ImageTragick via les
+    delegates shell externes invoqués par la bibliothèque native.
+  patterns:
+    - "require('gm')(req.file.path).write(_)"
+    - "gm(req.file.path).convert(_)"
+    - "child_process.exec(string_concat('convert', _, req.file[_]))"
+  exclude_if:
+    - "une bibliothèque sans délégation shell (sharp/libvips) est utilisée à la place de gm/ImageMagick"
+    - "le format est validé via une lecture de métadonnées (ex: sharp().metadata()) avant tout traitement par un binaire externe"
+
+message: >
+  Traitement d'image via wrapper GraphicsMagick/ImageMagick (delegates shell)
+  sans validation préalable de format — risque de classe ImageTragick, voir
+  rules/remediation/imagetragick.md.
+
+false_positive_notes:
+  - "Si le binaire ImageMagick sous-jacent est patché et configuré avec une policy restrictive, l'impact est réduit — vérifier hors code applicatif."
+  - "Préférer signaler en confiance basse : la présence de gm() seule ne confirme pas la version ni la policy actives."
+
+remediation_ref: rules/remediation/imagetragick.md
+knowledge_ref: knowledge/upload/imagetragick.md

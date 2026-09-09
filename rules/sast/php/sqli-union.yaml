@@ -1,0 +1,32 @@
+id: sqli-union
+language: php
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une requête SQL par concaténation d'une variable
+    non liée, passée ensuite à une fonction d'exécution SQL (mysqli_query,
+    PDO::query, $pdo->query, DB::raw en Laravel).
+  patterns:
+    - "mysqli_query($_, string_concat(_, $var, _))"
+    - "->query(string_concat(_, $var, _))"
+    - "DB::raw(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant (pas une variable/paramètre)"
+    - "$var passe par une fonction de cast entier avant la requête (ex: (int)$var, intval($var))"
+
+message: >
+  Concaténation directe d'une valeur dans une requête SQL — remplacer par une
+  requête préparée avec paramètre lié (voir rules/remediation/sqli-union.md).
+
+false_positive_notes:
+  - "Si la variable provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur), ce n'est pas exploitable — reclasser en `info`."
+  - "Si un framework applique déjà un échappement systématique en amont (rare), vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md

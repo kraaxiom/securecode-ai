@@ -1,0 +1,35 @@
+id: dos-query
+language: go
+category: graphql
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur GraphQL gqlgen exposant des resolvers de liste avec
+    pagination (arguments `first`, `limit`, `offset`) sans borne maximale
+    imposée dans le code du resolver généré/personnalisé, ou sans extension
+    de complexity analysis (`complexity.Config`) configurée sur le serveur.
+  patterns:
+    - "func (r *queryResolver) Items(ctx context.Context, first *int) ([]*model.Item, error) { return r.DB.Find(...).Limit(*first) } sans plafond max(*first, MaxPageSize)"
+    - "handler.NewDefaultServer(generated.NewExecutableSchema(cfg)) sans srv.Use(extension.FixedComplexityLimit(N)) ni Config.Complexity personnalisé"
+    - "resolver de liste appelant repository.FindAll(offset, limit) directement à partir des arguments GraphQL sans validation de plafond"
+  exclude_if:
+    - "chaque resolver de liste applique un plafond explicite (ex: min(*first, 100)) avant la requête base de données"
+    - "extension.FixedComplexityLimit ou une Config.Complexity personnalisée rejette les requêtes dépassant un seuil configuré"
+
+message: >
+  Resolvers GraphQL paginés sans plafond de taille ni analyse de complexité
+  (complexity.Config) — une requête combinant listes larges et alias
+  multiples peut provoquer un déni de service par surcharge base de
+  données/mémoire (voir rules/remediation/dos-query.md).
+
+false_positive_notes:
+  - "Si la base de données applique elle-même une limite globale via une contrainte de connexion ou un ORM configuré avec un plafond par défaut, le risque est atténué."
+  - "Un endpoint accessible uniquement en interne avec authentification forte réduit la probabilité d'exploitation mais ne l'élimine pas."
+
+remediation_ref: rules/remediation/dos-query.md
+knowledge_ref: knowledge/graphql/dos-query.md

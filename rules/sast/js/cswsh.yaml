@@ -1,0 +1,32 @@
+id: cswsh
+language: js
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler `wss.on('connection', ...)` ou `server.on('upgrade', ...)`
+    (ws, Socket.IO) qui n'inspecte jamais `req.headers.origin` avant d'accepter
+    la connexion.
+  patterns:
+    - "wss.on('connection', (ws, req) => { ... }) sans référence à req.headers.origin"
+    - "server.on('upgrade', (req, socket, head) => { ... wss.handleUpgrade(...) }) sans vérification d'origin avant handleUpgrade"
+    - "new SocketIOServer(..., { cors: { origin: '*' } })"
+  exclude_if:
+    - "req.headers.origin est comparé par égalité stricte à une liste blanche avant d'accepter la connexion"
+    - "Un jeton d'authentification distinct (hors cookie) est vérifié avant wss.handleUpgrade ou dans le middleware Socket.IO"
+
+message: >
+  Handshake WebSocket sans vérification d'Origin ni jeton dédié — risque de
+  Cross-Site WebSocket Hijacking (voir rules/remediation/cswsh.md).
+
+false_positive_notes:
+  - "Si un reverse-proxy (nginx, API gateway) filtre déjà l'Origin de façon fiable et documentée en amont, vérifier manuellement avant de remonter en `high`."
+  - "cors: { origin: '*' } sur un endpoint public en lecture seule sans session peut être acceptable — vérifier le contexte d'authentification."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

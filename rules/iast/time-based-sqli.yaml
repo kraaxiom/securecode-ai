@@ -1,0 +1,15 @@
+id: time-based-sqli
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "php: PDOStatement::execute / mysqli_query recevant une chaîne SQL concaténée avec une entrée utilisateur"
+    - "python: cursor.execute construit par f-string/concaténation incluant une entrée de requête HTTP"
+    - "java: Statement.executeQuery avec une chaîne SQL bâtie par concaténation de paramètres non liés"
+    - "go: database/sql Query/Exec sur une requête formatée avec fmt.Sprintf à partir d'une entrée utilisateur"
+  taint_check: trace la donnée depuis une entrée HTTP jusqu'à sa concaténation dans une requête SQL exécutée sans requête préparée, en corrélant avec la présence potentielle de fonctions de délai (SLEEP, WAITFOR, pg_sleep)
+  trigger_condition: une donnée taintée non paramétrée atteint un sink d'exécution SQL et le temps d'exécution mesuré dépasse un seuil anormal corrélé à la valeur d'entrée
+severity: high
+remediation_ref: rules/remediation/time-based-sqli.md
+knowledge_ref: knowledge/injections/time-based-sqli.md

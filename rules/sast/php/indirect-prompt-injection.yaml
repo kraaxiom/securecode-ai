@@ -1,0 +1,32 @@
+id: indirect-prompt-injection
+language: php
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte du contenu récupéré depuis une source externe (fetch/crawl d'URL,
+    lecture de document tiers) inséré directement dans le contexte d'un appel
+    LLM, alors que des outils à fort impact restent actifs dans le même appel.
+  patterns:
+    - "$llm->chat(['messages' => [..., $pageContent], 'tools' => [...]]) où $pageContent provient de fetch($url) sans balise de provenance non fiable"
+    - "Concaténation directe de contenu externe dans le message utilisateur sans marquage <untrusted_external_content>"
+  exclude_if:
+    - "Le contenu externe est explicitement délimité par un marquage de provenance non fiable dans le prompt système"
+    - "Aucun outil actif (tools => []) n'est passé pendant le traitement du contenu externe"
+
+message: >
+  Contenu externe non délimité inséré dans le contexte du modèle avec des
+  outils actifs — risque d'injection de prompt indirecte (voir
+  rules/remediation/indirect-prompt-injection.md).
+
+false_positive_notes:
+  - "Si le contenu externe provient d'une source interne strictement contrôlée (pas de tiers), le risque est réduit."
+  - "Si la sortie du modèle est systématiquement revalidée côté application avant toute action, reclasser en `medium`."
+
+remediation_ref: rules/remediation/indirect-prompt-injection.md
+knowledge_ref: knowledge/llm/indirect-prompt-injection.md

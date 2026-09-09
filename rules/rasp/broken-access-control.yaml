@@ -1,0 +1,12 @@
+id: broken-access-control
+category: authorization
+cwe: CWE-284
+type: rasp
+guard:
+  sink: "exécution d'une opération sensible identifiée (lecture/écriture/suppression de ressource protégée)"
+  block_condition: "le contexte de requête ne porte aucune preuve de passage par un composant d'autorisation (absence de décision d'autorisation enregistrée) au moment de l'exécution du sink"
+  action: alert-only
+  fail_mode: fail-open
+severity: high
+remediation_ref: rules/remediation/broken-access-control.md
+knowledge_ref: knowledge/authorization/broken-access-control.md

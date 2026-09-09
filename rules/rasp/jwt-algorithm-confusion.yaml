@@ -1,0 +1,14 @@
+id: jwt-algorithm-confusion
+category: auth
+cwe: CWE-347
+type: rasp
+guard:
+  sink: fonction de vérification de signature JWT appelée par le middleware d'authentification
+  block_condition: >
+    L'algorithme annoncé dans l'en-tête du jeton présenté (`alg`) diffère de l'algorithme
+    unique attendu et configuré côté serveur pour ce contexte de vérification.
+  action: block
+  fail_mode: fail-closed   # une confusion d'algorithme réussie compromet directement l'authenticité du jeton ; le blocage strict est la posture par défaut recommandée, l'opérateur peut choisir fail-open s'il documente explicitement le risque
+severity: critical
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

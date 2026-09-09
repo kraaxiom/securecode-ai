@@ -1,0 +1,33 @@
+id: cors-misconfiguration
+language: js
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage du middleware `cors` avec `origin: true`/reflet dynamique
+    non validé combiné à `credentials: true`, ou la définition manuelle
+    d'en-têtes CORS reflétant `req.headers.origin` sans liste blanche.
+  patterns:
+    - "cors({ origin: true, credentials: true })"
+    - "res.setHeader('Access-Control-Allow-Origin', req.headers.origin)" # sans vérification préalable
+    - "cors({ origin: '*', credentials: true })"
+  exclude_if:
+    - "la fonction origin callback vérifie l'valeur contre un tableau statique (allowedOrigins.includes(origin)) avant d'appeler callback(null, true)"
+    - "credentials n'est jamais activé (true) dans la même configuration"
+
+message: >
+  Configuration CORS permissive (reflet d'origine non validé ou wildcard
+  combiné à des credentials) — voir
+  rules/remediation/cors-misconfiguration.md.
+
+false_positive_notes:
+  - "API publique sans cookies/credentials : le reflet d'origine seul n'expose pas de données authentifiées, reclasser en `low`."
+  - "Si allowedOrigins est chargé dynamiquement depuis une base/config de confiance, vérifier son contenu réel avant de confirmer."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

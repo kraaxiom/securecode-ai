@@ -1,0 +1,12 @@
+id: bfla
+category: authorization
+cwe: CWE-862
+type: rasp
+guard:
+  sink: "fonction d'exécution d'une action sensible (endpoint d'administration, changement d'état privilégié)"
+  block_condition: "le rôle/niveau de privilège porté par le contexte d'authentification de la requête est inférieur au rôle requis par l'action, alors qu'aucune vérification de rôle n'a intercepté l'appel en amont"
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

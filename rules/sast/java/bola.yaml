@@ -1,0 +1,33 @@
+id: bola
+language: java
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint REST Spring ou un resolver GraphQL manipulant un objet identifié par
+    ID transmis par le client (chemin ou corps de requête) sans vérification d'appartenance
+    à l'appelant, en particulier dans un contexte multi-tenant.
+  patterns:
+    - "@RestController ... @PutMapping(\"/api/orders/{id}\") ... repository.findById($id)  # sans filtre tenant/propriétaire"
+    - "@DgsQuery/@QueryMapping public Order order(@Argument String id) { return repository.findById(id); }  # resolver GraphQL sans vérification d'autorisation"
+  exclude_if:
+    - "la requête de données filtre explicitement sur le tenant/propriétaire courant"
+    - "une vérification d'autorisation explicite est appliquée dans le resolver/contrôleur avant de retourner/modifier l'objet"
+
+message: >
+  Endpoint API ou resolver manipulant un objet par ID transmis par le client sans
+  vérification d'appartenance/tenant — vérifier systématiquement, au niveau de chaque
+  endpoint/resolver, que l'appelant est autorisé sur cet objet précis (voir
+  rules/remediation/bola.md).
+
+false_positive_notes:
+  - "Si le filtrage d'appartenance est appliqué au niveau de la requête de données elle-même (pas en post-traitement), ce n'est pas un vrai positif."
+  - "Les API mono-tenant sans notion de propriétaire par objet ne sont pas concernées."
+
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

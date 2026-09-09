@@ -1,0 +1,3 @@
+# IDOR — Insecure Direct Object Reference
+
+`vulnerable.rs` récupère un document uniquement à partir de son ID transmis par le client, sans vérifier qu'il appartient à l'utilisateur authentifié, ce qui illustre CWE-639 (Authorization Bypass Through User-Controlled Key). `fixed.rs` ajoute la clause `owner_id = $2` directement dans la requête SQL, garantissant qu'un utilisateur ne peut jamais accéder au document d'un autre en modifiant l'identifiant dans l'URL. La correction applique `rules/remediation/idor.md` : toujours inclure une vérification d'appartenance dans la requête de récupération, pas seulement une vérification d'authentification.

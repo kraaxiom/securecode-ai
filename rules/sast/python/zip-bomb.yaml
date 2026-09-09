@@ -1,0 +1,34 @@
+id: zip-bomb
+language: python
+category: upload
+cwe: CWE-409
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte l'extraction d'une archive uploadee (zipfile, tarfile) sans
+    limite de taille decompressee ni de ratio de compression, exposant a un
+    deni de service par "zip bomb".
+  patterns:
+    - "zipfile.ZipFile($_).extractall($_) sans verification prealable de infolist()[i].file_size cumule"
+    - "tarfile.open($_).extractall($_) sans limite de taille ni filtre de membres (tarfile filter='data' absent, Python < 3.12 non patche)"
+    - "Decompression en boucle sans borne sur la taille totale decompressee ou le nombre de fichiers"
+  exclude_if:
+    - "La taille cumulee decompressee et le ratio de compression sont verifies avant extraction, avec une limite explicite (ex: max 100 Mo)"
+    - "tarfile.extractall() est appele avec filter='data' (Python 3.12+) et une limite de taille en amont"
+
+message: >
+  Extraction d'archive uploadee sans limite de taille decompressee ni de
+  ratio de compression - une archive specialement concue (zip bomb) peut
+  epuiser le disque ou la memoire du serveur (deni de service). Verifier la
+  taille cumulee annoncee avant extraction, imposer une limite stricte, et
+  utiliser tarfile.extractall(filter='data') sur Python 3.12+.
+
+false_positive_notes:
+  - "Si l'archive provient exclusivement d'une source interne de confiance (pas d'upload utilisateur), le risque est reduit - reclasser en `low`."
+
+remediation_ref: rules/remediation/zip-bomb.md
+knowledge_ref: knowledge/upload/zip-bomb.md

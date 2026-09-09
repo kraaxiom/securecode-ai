@@ -1,0 +1,15 @@
+id: dom-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: sinks DOM dangereux (innerHTML, outerHTML, document.write, insertAdjacentHTML, eval, Function())
+  block_condition: >
+    Valeur dérivée d'une source contrôlable côté client (location.hash, location.search,
+    document.referrer, données postMessage, stockage local) atteint un sink DOM dangereux sans
+    passage par une bibliothèque de sanitisation DOM enregistrée dans la chaîne d'exécution.
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/dom-xss.md
+knowledge_ref: knowledge/xss/dom-xss.md

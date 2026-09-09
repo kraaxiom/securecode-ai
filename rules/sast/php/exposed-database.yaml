@@ -1,0 +1,34 @@
+id: exposed-database
+language: php
+category: database
+cwe: CWE-284
+owasp: A05:2021-Security-Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une connexion à la base de données sans mot de passe, avec un
+    identifiant par défaut, ou une chaîne de connexion pointant vers un hôte
+    public sans restriction visible.
+  patterns:
+    - "new PDO(_, \"root\", \"\")"
+    - "new PDO(_, \"root\", \"root\")"
+    - "new PDO(_, \"postgres\", \"postgres\")"
+    - "mysqli_connect(_, \"root\", \"\")"
+  exclude_if:
+    - "Les identifiants sont chargés depuis une variable d'environnement (getenv/env()) plutôt qu'un littéral en dur"
+    - "Le code est explicitement marqué comme environnement de développement local isolé (fichier .env.local, non déployé)"
+
+message: >
+  Connexion à la base de données avec un compte par défaut ou sans mot de
+  passe — vérifier également l'exposition réseau de l'instance (voir
+  rules/remediation/exposed-database.md).
+
+false_positive_notes:
+  - "Un identifiant 'root'/'' utilisé uniquement dans un environnement Docker local de développement (non exposé) constitue un risque moindre mais reste une mauvaise pratique à corriger."
+  - "Ce rule SAST ne détecte pas l'exposition réseau elle-même (pare-feu/groupe de sécurité) — la corréler avec un scan d'infrastructure."
+
+remediation_ref: rules/remediation/exposed-database.md
+knowledge_ref: knowledge/database/exposed-database.md

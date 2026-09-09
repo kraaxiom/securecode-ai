@@ -1,0 +1,36 @@
+id: dependency-confusion
+language: java
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte dans pom.xml ou build.gradle une dépendance portant un nom
+    interne/privé (groupId d'entreprise, préfixe "internal", "corp", nom de
+    projet propriétaire) résolue depuis un dépôt public (Maven Central) sans
+    dépôt privé prioritaire déclaré, ou sans restriction de repository par
+    groupId — situation propice à la confusion de dépendances.
+  patterns:
+    - "pom.xml: <dependency><groupId>com.{interne|corp|acme}.*</groupId></dependency> sans <repositories> privé déclaré en priorité"
+    - "pom.xml: absence de bloc <repositories>/<mirrors> restreignant les groupId internes à un dépôt privé (Nexus/Artifactory)"
+    - "build.gradle: dependencies { implementation 'com.<interne>:*' } avec repositories { mavenCentral() } seul, sans repository privé déclaré avant"
+    - "settings.xml / build.gradle sans configuration exclusive de repository (`exclusiveContent` / `content { includeGroup }`) pour les groupId internes"
+
+message: >
+  Dépendance à nom interne résolvable depuis un dépôt public sans dépôt privé
+  prioritaire ni restriction de groupId — un attaquant peut publier un
+  package malveillant du même nom sur Maven Central (dependency confusion).
+  Déclarer un dépôt privé prioritaire et restreindre les groupId internes via
+  `exclusiveContent`/`content { includeGroup }` (Gradle) ou l'ordre des
+  <repositories> (Maven).
+
+false_positive_notes:
+  - "Si le groupId interne utilise un namespace unique impossible à publier publiquement (ex: reverse-DNS d'un domaine possédé et vérifié sur Maven Central), le risque est réduit — reclasser en `medium`."
+  - "Si un repository manager (Nexus/Artifactory) bloque déjà la résolution externe pour ces groupId au niveau infrastructure, documenter et déclasser en `info` après vérification manuelle."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

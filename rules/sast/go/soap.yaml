@@ -1,0 +1,36 @@
+id: soap
+language: go
+category: api
+cwe: CWE-611
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Le SOAP/XML-RPC est rare en Go natif mais apparaît via des bibliothèques
+    tierces (ex: hooklift/gowsdl clients, ou services legacy XML-RPC).
+    Détecte un décodeur XML (encoding/xml) traitant des messages entrants
+    sans restriction sur les entités externes, et un handler de service
+    legacy exposé sans vérification d'authentification.
+  patterns:
+    - "xml.NewDecoder($body).Decode(&$struct)"
+    - "func $Handler(w http.ResponseWriter, r *http.Request) { xml.Unmarshal($body, &$envelope) }"
+    - "http.HandleFunc(\"/soap\", $handler)"
+  exclude_if:
+    - "le décodeur XML n'accepte que des documents internes de confiance, jamais de source externe non fiable"
+    - "le handler vérifie explicitement un jeton/en-tête d'authentification avant tout traitement du message XML"
+
+message: >
+  Traitement d'un message XML/SOAP entrant sans restriction explicite sur
+  les entités externes, ou service SOAP/XML-RPC legacy sans vérification
+  d'authentification — valider le schéma XSD en amont et ajouter une
+  vérification d'authentification systématique (voir rules/remediation/soap.md).
+
+false_positive_notes:
+  - "encoding/xml en Go ne résout pas les entités externes par défaut (contrairement à libxml2/Java), ce qui réduit le risque XXE strict — vérifier la bibliothèque tierce réellement utilisée avant de remonter en `high`."
+  - "Si le service ne traite que des messages internes fiables, reclasser en `medium`."
+
+remediation_ref: rules/remediation/soap.md
+knowledge_ref: knowledge/api/soap.md

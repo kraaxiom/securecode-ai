@@ -1,0 +1,35 @@
+id: weak-session-id
+language: rust
+category: sessions
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou de jeton à l'aide
+    de rand::thread_rng() combiné à des types non cryptographiques, ou à
+    partir de données prévisibles, au lieu d'un générateur cryptographique
+    dédié (rand::rngs::OsRng, uuid v4 avec source sûre).
+  patterns:
+    - "let $id: u64 = rand::thread_rng().gen();" # utilisé comme identifiant de session/token
+    - "format!(\"{}-{}\", $userId, SystemTime::now().duration_since(UNIX_EPOCH)._unwrap()._as_secs())" # concaténation prévisible
+    - "format!(\"{}{}\", $userId, $counter)"
+  exclude_if:
+    - "l'identifiant provient de rand::rngs::OsRng, de la crate `ring`/`getrandom`, ou du générateur natif d'actix_session/tower-sessions (non réimplémenté)"
+    - "la valeur générée n'est pas utilisée comme identifiant de session, jeton d'authentification, ou jeton de réinitialisation"
+
+message: >
+  Identifiant de session ou jeton généré avec une source aléatoire non
+  cryptographiquement garantie ou à partir de données prévisibles — un
+  attaquant pourrait deviner ou reconstituer des identifiants valides (voir
+  rules/remediation/weak-session-id.md).
+
+false_positive_notes:
+  - "rand::thread_rng() repose sur ChaCha et est en pratique sûr pour la plupart des usages, mais son utilisation directe pour un identifiant de session doit être vérifiée par rapport aux garanties documentées de la crate et à l'entropie totale produite ; privilégier OsRng pour un usage explicitement cryptographique."
+  - "Si la génération s'appuie sur le mécanisme natif d'actix_session ou tower-sessions par défaut (non modifié), ce n'est pas un vrai positif."
+
+remediation_ref: rules/remediation/weak-session-id.md
+knowledge_ref: knowledge/sessions/weak-session-id.md

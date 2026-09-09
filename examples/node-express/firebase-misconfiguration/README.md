@@ -1,0 +1,3 @@
+## Mauvaise configuration Firebase (CWE-284)
+
+Le code vulnérable lit un document utilisateur Firestore sans vérifier côté serveur l'identité de l'appelant, en s'appuyant implicitement sur des règles de sécurité Firestore laissées en mode test (`allow read, write: if true`), ce qui permet à n'importe qui d'accéder aux profils d'autres utilisateurs. La correction ajoute une vérification explicite du token Firebase via `admin.auth().verifyIdToken()` et compare l'UID authentifié à celui de la ressource demandée avant tout accès, en cohérence avec des règles Firestore restreintes au propriétaire du document. Cette double défense (règles côté Firebase et contrôle côté serveur) évite qu'une règle mal configurée ne devienne une fuite de données exploitable.

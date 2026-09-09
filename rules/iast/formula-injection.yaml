@@ -1,0 +1,15 @@
+id: formula-injection
+category: injections
+cwe: CWE-1236
+type: iast
+instrumentation:
+  hook_points:
+    - "php: PhpSpreadsheet\\Cell\\Cell::setValue / setValueExplicit comme sink"
+    - "python: openpyxl.worksheet.worksheet.Worksheet.cell / csv.writer.writerow comme sink"
+    - "java: org.apache.poi.ss.usermodel.Cell.setCellValue comme sink"
+    - "js: exceljs Worksheet.addRow / fast-csv write comme sink"
+  taint_check: trace la propagation depuis une entrée utilisateur (formulaire, import tiers, API) jusqu'à l'écriture d'une cellule de tableur ou d'un champ CSV sans neutralisation du premier caractère
+  trigger_condition: une valeur écrite dans une cellule exportée commence par un caractère déclencheur de formule (=, +, -, @, tabulation, retour chariot) et provient d'une source non neutralisée
+severity: medium
+remediation_ref: rules/remediation/formula-injection.md
+knowledge_ref: knowledge/injections/formula-injection.md

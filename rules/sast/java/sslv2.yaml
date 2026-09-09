@@ -1,0 +1,33 @@
+id: sslv2
+language: java
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration SSLContext ou un tableau de protocoles activant
+    explicitement SSLv2/SSLv2Hello, interdit par la RFC 6176 et exposé à
+    l'attaque DROWN.
+  patterns:
+    - 'SSLContext.getInstance("SSLv2")'
+    - 'SSLContext.getInstance("SSL")'
+    - 'setEnabledProtocols(_) // tableau contenant "SSLv2" ou "SSLv2Hello"'
+    - 'new String[] { "SSLv2Hello", _ }'
+  exclude_if:
+    - "SSLv2Hello est présent uniquement pour permettre la détection de handshake avant rejet explicite immédiat côté serveur"
+
+message: >
+  Protocole SSLv2 activé — configurer SSLContext.getInstance("TLSv1.3") (ou
+  "TLSv1.2" minimum) et restreindre setEnabledProtocols() aux versions TLS
+  modernes (voir rules/remediation/sslv2.md).
+
+false_positive_notes:
+  - "Vérifier que 'SSLv2Hello' n'est pas immédiatement suivi d'un rejet explicite de la négociation SSLv2 réelle avant de confirmer la sévérité critique."
+  - "Une configuration héritée d'une librairie tierce non modifiable directement doit être remontée avec une recommandation d'upgrade de dépendance."
+
+remediation_ref: rules/remediation/sslv2.md
+knowledge_ref: knowledge/crypto/sslv2.md

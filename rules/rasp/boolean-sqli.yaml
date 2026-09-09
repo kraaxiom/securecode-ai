@@ -1,0 +1,12 @@
+id: boolean-sqli
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: exécution de requête SQL (PDOStatement::execute, cursor.execute, Statement.executeQuery, SqlCommand.ExecuteReader)
+  block_condition: Clause conditionnelle SQL (WHERE/HAVING) construite par concaténation contenant une valeur taintée non liée par un paramètre préparé.
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/boolean-sqli.md
+knowledge_ref: knowledge/injections/boolean-sqli.md

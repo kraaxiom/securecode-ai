@@ -1,0 +1,32 @@
+id: dos-query
+language: js
+category: graphql
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un resolver qui transmet directement un argument de pagination
+    fourni par le client (`first`, `limit`, `take`) à une requête base de
+    données (Prisma/TypeORM/Mongoose) sans plafond appliqué.
+  patterns:
+    - "findMany({ take: first })"
+    - "findMany({ take: limit })"
+    - ".limit(args.first)"
+  exclude_if:
+    - "Math.min(first, MAX_PAGE_SIZE) (ou équivalent) est appliqué avant l'appel à la base de données"
+    - "validationRules inclut createComplexityLimitRule(_) ou un plugin de query cost analysis"
+
+message: >
+  Argument de pagination GraphQL utilisé sans plafond — risque de déni de
+  service par requête coûteuse (voir rules/remediation/dos-query.md).
+
+false_positive_notes:
+  - "Si une analyse de complexité de requête est déjà appliquée globalement via `validationRules` dans un autre fichier, vérifier manuellement avant de remonter en `high`."
+  - "Si le champ n'est accessible qu'à des utilisateurs internes de confiance avec des quotas séparés, reclasser en `medium`."
+
+remediation_ref: rules/remediation/dos-query.md
+knowledge_ref: knowledge/graphql/dos-query.md

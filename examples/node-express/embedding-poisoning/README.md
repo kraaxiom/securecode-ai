@@ -1,0 +1,3 @@
+## Embedding Poisoning (CWE-349)
+
+Le code vulnérable génère et indexe l'embedding de tout contenu soumis par un utilisateur sans modération ni limite de fréquence, permettant à un attaquant de fabriquer du contenu dont le vecteur est délibérément proche de requêtes fréquentes afin de polluer systématiquement les résultats de recherche sémantique. La correction ajoute une étape de modération avant indexation, une limite de débit par source pour freiner les campagnes automatisées, et une détection de densité anormale qui met en quarantaine les vecteurs suspects au lieu de les indexer directement dans la base vectorielle.

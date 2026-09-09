@@ -1,0 +1,3 @@
+# MD5 — Fonction de hachage cassée
+
+`vulnerable.rs` hache le mot de passe utilisateur avec MD5 avant stockage, un algorithme cassé depuis 2004 pour lequel des collisions peuvent être générées en quelques secondes et dont le cassage par force brute moderne est trivial, ce qui correspond à CWE-328 (Use of Weak Hash). `fixed.rs` remplace ce hachage par Argon2id, avec sel automatique et facteur de coût adaptatif, la primitive standard de ce projet pour le stockage de mots de passe. Cette correction applique la recommandation de `rules/remediation/md5.md` : utiliser Argon2id (ou bcrypt à défaut) pour les mots de passe, et réserver SHA-256 aux seuls usages d'intégrité non sensibles.

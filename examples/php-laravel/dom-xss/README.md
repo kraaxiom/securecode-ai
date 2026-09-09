@@ -1,0 +1,3 @@
+# DOM-based XSS (CWE-79)
+
+Le paramètre de recherche `q` était concaténé directement dans un bloc `<script>` inline généré côté serveur, permettant à un attaquant de sortir du littéral JavaScript pour injecter du code arbitraire exécuté par le navigateur. La correction remplace la concaténation par `json_encode()` avec les flags `JSON_HEX_TAG`, `JSON_HEX_APOS`, `JSON_HEX_QUOT` et `JSON_HEX_AMP`, garantissant que la valeur reste un littéral JSON inerte quel que soit son contenu. Cela illustre la contribution serveur classique au risque de DOM XSS (CWE-79 — Improper Neutralization of Input During Web Page Generation).

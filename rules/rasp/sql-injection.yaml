@@ -1,0 +1,12 @@
+id: sql-injection
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: appel d'exécution de requête SQL (Statement.execute, mysqli_query, cursor.execute, pg.query) recevant une chaîne construite dynamiquement
+  block_condition: la requête évaluée à l'exécution contient un fragment SQL directement traçable à une entrée utilisateur de la requête courante, ET l'appel n'utilise pas de requête préparée/paramétrée
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/sql-injection.md
+knowledge_ref: knowledge/injections/sql-injection.md

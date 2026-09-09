@@ -1,0 +1,33 @@
+id: md5
+language: java
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de MessageDigest.getInstance("MD5") pour hacher un
+    mot de passe, un token ou toute valeur nécessitant une garantie
+    cryptographique d'intégrité.
+  patterns:
+    - 'MessageDigest.getInstance("MD5")'
+    - 'DigestUtils.md5Hex(_)'
+    - 'DigestUtils.md5(_)'
+    - 'Hashing.md5()'
+  exclude_if:
+    - "L'usage sert uniquement à un checksum non adversarial (ex: vérification d'intégrité de cache local, ETag) sans enjeu de sécurité"
+
+message: >
+  MD5 est une fonction de hachage cassée — pour un mot de passe utiliser
+  Argon2id (ou BCrypt/PBKDF2 à défaut), pour une intégrité cryptographique
+  utiliser SHA-256/SHA-3 (voir rules/remediation/md5.md).
+
+false_positive_notes:
+  - "Si MD5 est utilisé uniquement pour un identifiant de cache ou une clé de déduplication sans exposition à un attaquant, reclasser en `low`/`info`."
+  - "Vérifier le contexte d'appel : un hachage de mot de passe avec MD5 doit systématiquement rester en `medium` ou plus, jamais déclassé."
+
+remediation_ref: rules/remediation/md5.md
+knowledge_ref: knowledge/crypto/md5.md

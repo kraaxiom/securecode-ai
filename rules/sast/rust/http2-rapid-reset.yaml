@@ -1,0 +1,36 @@
+id: http2-rapid-reset
+language: rust
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Rust exposant HTTP/2 via la crate `h2` (directement
+    ou via hyper/actix-web/tonic) sans limite explicite sur le nombre de
+    flux concurrents ou sur le taux de réinitialisation de flux
+    (RST_STREAM) par connexion, laissant le serveur vulnérable à une rafale
+    de requêtes ouvertes puis annulées immédiatement (HTTP/2 Rapid Reset).
+  patterns:
+    - "h2::server::Builder::new(...) sans .max_concurrent_streams(_) configuré explicitement à une valeur basse"
+    - "hyper::server::conn::http2::Builder::new(_) sans max_concurrent_streams ni limite de taux de RST_STREAM"
+    - "tonic::transport::Server::builder() exposé directement sans reverse proxy limitant le taux de nouvelles connexions/flux HTTP/2"
+  exclude_if:
+    - "un reverse proxy en amont (nginx, Envoy) limite explicitement le taux de RST_STREAM ou de nouvelles requêtes par connexion HTTP/2"
+    - "max_concurrent_streams est explicitement plafonné à une valeur basse et surveillée dans la configuration du serveur (h2/hyper/tonic)"
+
+message: >
+  Serveur HTTP/2 Rust (h2/hyper/tonic) sans limite de flux concurrents ni de
+  taux de réinitialisation par connexion — vulnérable à une attaque de déni
+  de service par HTTP/2 Rapid Reset (rafale de RST_STREAM) (voir
+  rules/remediation/http2-rapid-reset.md).
+
+false_positive_notes:
+  - "Cette faiblesse dépend fortement de la configuration d'infrastructure (reverse proxy, CDN) qui échappe souvent au code source seul — confirmer via revue de configuration serveur."
+  - "Si le service n'est jamais exposé directement en HTTP/2 côté client (uniquement HTTP/1.1 en interne, HTTP/2 terminé en amont), le risque ne s'applique pas au code Rust lui-même."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

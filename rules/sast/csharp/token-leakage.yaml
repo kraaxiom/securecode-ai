@@ -1,0 +1,39 @@
+id: token-leakage
+language: csharp
+category: llm
+cwe: CWE-522
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé d'API de fournisseur LLM (OpenAI, Azure OpenAI, Semantic
+    Kernel) codée en dur dans le code source ou exposée sans masquage dans les
+    journaux applicatifs, au lieu d'être lue depuis un gestionnaire de secrets
+    (Azure Key Vault, variables d'environnement protégées).
+  patterns:
+    - "new OpenAIClient(string_literal, _)"
+    - "new AzureOpenAIClient(_, new AzureKeyCredential(string_literal))"
+    - "Kernel.CreateBuilder().AddAzureOpenAIChatCompletion(_, _, string_literal)"
+    - "kernelBuilder.AddOpenAIChatCompletion(_, apiKey: string_literal)"
+    - "_logger.LogInformation(string_concat(_, request.Headers[\"Authorization\"], _))"
+    - "Console.WriteLine(string_concat(_, apiKey, _))"
+  exclude_if:
+    - "la valeur provient de IConfiguration, Environment.GetEnvironmentVariable ou d'un SecretClient (Azure Key Vault)"
+    - "le littéral est un placeholder évident (ex: \"YOUR_API_KEY\", \"changeme\", chaîne vide)"
+
+message: >
+  Clé d'API de service LLM codée en dur ou journalisée en clair — charger la
+  clé depuis un gestionnaire de secrets (Azure Key Vault, IConfiguration liée
+  à des variables d'environnement) et masquer systématiquement les en-têtes
+  d'autorisation dans les journaux (voir rules/remediation/token-leakage.md).
+
+false_positive_notes:
+  - "Si la chaîne littérale est un exemple de documentation (fichier README, commentaire XML) plutôt qu'un appel réel au SDK, reclasser en `info`."
+  - "Si la clé provient déjà d'un SecretClient (Azure.Security.KeyVault.Secrets) passé en variable avant l'appel, ce n'est pas une fuite directe — vérifier manuellement le flux."
+  - "Si le logger utilise un middleware de masquage connu (ex: Serilog avec Destructure.ByTransforming sur Authorization), reclasser en `low`."
+
+remediation_ref: rules/remediation/token-leakage.md
+knowledge_ref: knowledge/llm/token-leakage.md

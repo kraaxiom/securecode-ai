@@ -1,0 +1,12 @@
+id: http-response-splitting
+category: injections
+cwe: CWE-113
+type: rasp
+guard:
+  sink: fonction de construction de redirection ou d'en-tête de réponse (sendRedirect, res.redirect, header())
+  block_condition: la valeur utilisée pour construire la redirection ou l'en-tête contient une séquence CR/LF issue d'une entrée non neutralisée
+  action: block
+  fail_mode: fail-closed
+severity: medium
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

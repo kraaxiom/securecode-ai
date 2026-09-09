@@ -1,0 +1,12 @@
+id: ldap-injection
+category: injections
+cwe: CWE-90
+type: rasp
+guard:
+  sink: appel d'API de recherche ou de bind LDAP (DirContext.search, ldap_search, ldap3 Connection.search) recevant un filtre ou un DN construit dynamiquement
+  block_condition: le filtre LDAP ou le DN évalué à l'exécution contient des métacaractères non échappés (`(`, `)`, `*`, `\`, `NUL`) directement traçables à une entrée utilisateur de la requête courante
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/ldap-injection.md
+knowledge_ref: knowledge/injections/ldap-injection.md

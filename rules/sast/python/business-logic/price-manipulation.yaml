@@ -1,0 +1,36 @@
+id: price-manipulation
+language: python
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un prix, une quantité ou un montant total accepté depuis les
+    données transmises par le client (JSON de requête, formulaire) et utilisé
+    directement pour créer une commande/transaction, sans recalcul côté
+    serveur à partir du catalogue/prix de référence.
+  patterns:
+    - "price = request.json['price']; Order.objects.create(product=product, price=price) — prix pris directement depuis la requête client au lieu du catalogue serveur (product.price)"
+    - "def add_to_cart(request): item = {'id': request.POST['id'], 'price': request.POST['price']} — prix stocké en session/panier depuis une valeur client sans revalidation lors du checkout"
+    - "total = sum(item['price'] * item['qty'] for item in request.json['items']) utilisé directement pour le paiement, sans recalculer chaque item['price'] depuis la base de données"
+  exclude_if:
+    - "le prix/montant utilisé pour la transaction est systématiquement recalculé côté serveur à partir de l'identifiant produit et du catalogue de référence, en ignorant toute valeur de prix soumise par le client"
+
+message: >
+  Prix ou montant transmis par le client utilisé directement pour une
+  transaction sans recalcul côté serveur — un attaquant peut modifier la
+  requête pour payer un prix arbitraire. Ne jamais faire confiance à un prix
+  fourni par le client : recalculer systématiquement à partir de
+  l'identifiant produit et du catalogue serveur — voir
+  rules/remediation/price-manipulation.md.
+
+false_positive_notes:
+  - "Si le prix client n'est utilisé qu'à des fins d'affichage (jamais transmis à la logique de paiement réelle), non applicable."
+  - "Un contrôle de cohérence a posteriori (comparaison prix soumis vs catalogue, rejet en cas d'écart) équivaut à un recalcul serveur si strictement appliqué avant validation du paiement."
+
+remediation_ref: rules/remediation/price-manipulation.md
+knowledge_ref: knowledge/business-logic/price-manipulation.md

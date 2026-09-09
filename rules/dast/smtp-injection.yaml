@@ -1,0 +1,19 @@
+id: smtp-injection
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: POST
+  target: champ de formulaire utilisé pour construire un en-tête email (nom, sujet, adresse "répondre à") transmis à une fonctionnalité d'envoi de mail
+  technique: differential-response
+  indicators:
+    - "En-tête email supplémentaire non prévu visible dans une réponse de test (ex. via une boîte de réception de collecte contrôlée) après injection d'une séquence de saut de ligne neutre dans le champ ciblé"
+    - "Différentiel de comportement de l'application (accusé de réception, nombre de destinataires apparents) entre une entrée contenant des caractères de retour chariot/saut de ligne et la ligne de base"
+    - "Message d'erreur applicatif exposant la structure des en-têtes email construits côté serveur"
+false_positive_notes:
+  - "Certaines librairies d'envoi de mail filtrent ou rejettent automatiquement les CR/LF avant l'envoi — un test négatif ne garantit pas l'absence de vulnérabilité sur tous les chemins de code."
+  - "Un proxy SMTP intermédiaire peut normaliser les en-têtes avant remise finale, masquant le signal en boîte de réception de test."
+remediation_ref: rules/remediation/smtp-injection.md
+knowledge_ref: knowledge/injections/smtp-injection.md

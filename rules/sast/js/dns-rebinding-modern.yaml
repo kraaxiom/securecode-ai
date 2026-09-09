@@ -1,0 +1,34 @@
+id: dns-rebinding-modern
+language: js
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Node.js écoutant sur localhost/127.0.0.1 (API locale,
+    outil de développement) sans validation stricte de l'en-tête Host et sans
+    authentification par jeton.
+  patterns:
+    - "http.createServer(...).listen(_, '127.0.0.1') without req.headers.host validated against an allowlist"
+    - "handler grants access based solely on req.headers.origin without a token check"
+    - "express app bound to localhost without any auth middleware on internal routes"
+  exclude_if:
+    - "un middleware vérifie un jeton (x-local-token, session) indépendant du Host/Origin"
+    - "req.headers.host est validé contre un Set/liste blanche avant traitement"
+
+message: >
+  Service local sans validation stricte du Host ni authentification —
+  vulnérable au DNS rebinding, un site distant pourrait atteindre ce service
+  via une résolution DNS manipulée (voir
+  rules/remediation/dns-rebinding-modern.md).
+
+false_positive_notes:
+  - "Si le service tourne uniquement dans un environnement conteneurisé isolé sans navigateur pouvant l'atteindre, risque réduit."
+  - "Vérifier l'absence de middleware d'authentification centralisé avant de remonter en `high`."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

@@ -1,0 +1,32 @@
+id: model-inversion
+language: javascript
+category: llm
+cwe: CWE-200
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pipeline de fine-tuning entraîné sur des données sensibles
+    sans anonymisation ni confidentialité différentielle, ou un endpoint
+    d'inférence associé sans limitation de volume de requêtes.
+  patterns:
+    - "await model.fit(sensitiveDataset) sans appel préalable à anonymizePii() ou à un optimiseur DP"
+    - "app.post('/v1/infer', ...) exposé sans rateLimit() alors que le modèle a été fine-tuné sur des données sensibles"
+  exclude_if:
+    - "Les données sont anonymisées et/ou l'entraînement utilise une technique de confidentialité différentielle documentée"
+    - "Un test de mémorisation est exécuté après entraînement et le volume de requêtes d'inférence est limité"
+
+message: >
+  Fine-tuning sur données sensibles sans confidentialité différentielle, ou
+  endpoint associé sans limite de requêtes — risque de reconstruction de
+  données d'entraînement (voir rules/remediation/model-inversion.md).
+
+false_positive_notes:
+  - "Si les données d'entraînement sont déjà synthétiques ou publiques, le risque de fuite de données sensibles ne s'applique pas."
+  - "Vérifier si un test de mémorisation a été effectué avant de considérer la remédiation totalement absente."
+
+remediation_ref: rules/remediation/model-inversion.md
+knowledge_ref: knowledge/llm/model-inversion.md

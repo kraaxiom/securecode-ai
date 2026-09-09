@@ -1,0 +1,35 @@
+id: malicious-packages
+language: rust
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: dependency-scan
+  description: >
+    Détecte dans Cargo.toml / Cargo.lock des références à des crates
+    identifiées comme malveillantes (retirées/quarantainées de crates.io) ou
+    des comportements caractéristiques (build.rs exécutant du code réseau ou
+    système) dans une crate vendorisée.
+  patterns:
+    - "Cargo.toml / Cargo.lock: nom de crate figurant dans une liste connue de crates malveillantes retirées (RustSec/crates.io Security Advisories - malicious)"
+    - "crate vendorisée: fichier build.rs exécutant std::process::Command, reqwest, ureq ou std::net::TcpStream vers une destination codée en dur à la compilation"
+    - "Cargo.toml: dependency avec git = \"https://...\" pointant vers un dépôt non officiel pour une crate ayant normalement un équivalent officiel sur crates.io"
+  exclude_if:
+    - "le build.rs vendorisé exécute uniquement des vérifications de compatibilité (target_os, présence d'une lib système via pkg-config) sans appel réseau ni exécution de commande arbitraire"
+
+message: >
+  Dépendance Rust correspondant à une crate malveillante connue ou présentant
+  un comportement de build suspect (exécution de code/réseau dans build.rs au
+  moment de cargo build). Retirer immédiatement la dépendance, auditer les
+  environnements où elle a été compilée, et faire tourner tout secret
+  potentiellement exposé — voir rules/remediation/malicious-packages.md.
+
+false_positive_notes:
+  - "Un faux positif fréquent est une crate interne légitime au nom proche d'une crate malveillante connue — vérifier la source (registre privé vs crates.io public)."
+  - "Les build.rs légitimes de compilation de dépendances C/FFI ne sont pas malveillants en soi — évaluer la présence d'exfiltration réseau, pas la simple présence d'un build.rs."
+
+remediation_ref: rules/remediation/malicious-packages.md
+knowledge_ref: knowledge/supply-chain/malicious-packages.md

@@ -1,0 +1,32 @@
+id: grpc
+language: php
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un client/serveur gRPC PHP instancié avec des credentials
+    non sécurisés (canal en clair) pour un usage traversant un réseau non
+    totalement isolé.
+  patterns:
+    - "new Grpc\\ChannelCredentials()" # createInsecure() utilisé sans condition d'environnement
+    - "Grpc\\ChannelCredentials::createInsecure()"
+  exclude_if:
+    - "l'appel est explicitement conditionné à un environnement local/interne isolé (variable d'environnement de dev)"
+    - "un credentials TLS (createSsl) est utilisé pour tout trafic sortant du réseau de confiance"
+
+message: >
+  Canal gRPC créé sans TLS (createInsecure) — chiffrer systématiquement les
+  communications gRPC, y compris interservices (voir
+  rules/remediation/grpc.md).
+
+false_positive_notes:
+  - "Communication strictement localhost-to-localhost dans un environnement de test isolé : non exploitable, reclasser en `info`."
+  - "Vérifier manuellement si un intercepteur d'authentification applicatif compense l'absence de TLS transport (rare, à documenter)."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

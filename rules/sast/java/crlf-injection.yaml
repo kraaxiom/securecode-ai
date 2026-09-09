@@ -1,0 +1,35 @@
+id: crlf-injection
+language: java
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'injection d'une entrée utilisateur non filtrée contenant des
+    caractères CR/LF dans un flux texte structuré (en-tête HTTP, log,
+    fichier de configuration), permettant l'injection de lignes
+    additionnelles.
+  patterns:
+    - "HttpServletResponse.setHeader($name, $var)"
+    - "HttpServletResponse.addHeader($name, $var)"
+    - "logger.info(string_concat(_, $var, _)) sans neutralisation de \\r\\n"
+  exclude_if:
+    - "$var passe par une validation/suppression des caractères \\r et \\n avant utilisation"
+    - "le framework HTTP sous-jacent (ex: Servlet API récente) rejette nativement les CR/LF dans les valeurs d'en-tête"
+
+message: >
+  Valeur non filtrée injectée dans un en-tête HTTP ou un flux de log —
+  un attaquant peut insérer des séquences CRLF pour injecter des en-têtes
+  additionnels ou falsifier des entrées de log ; filtrer/rejeter les
+  caractères \\r et \\n avant toute écriture (voir rules/remediation/crlf-injection.md).
+
+false_positive_notes:
+  - "Les conteneurs Servlet récents (Tomcat 8.5+/Jetty) rejettent déjà les CR/LF bruts dans setHeader() — vérifier la version avant de confirmer l'exploitabilité HTTP, le risque de log injection reste néanmoins valable."
+  - "Un appel à un logger structuré (JSON) qui échappe automatiquement les valeurs n'est pas concerné."
+
+remediation_ref: rules/remediation/crlf-injection.md
+knowledge_ref: knowledge/injections/crlf-injection.md

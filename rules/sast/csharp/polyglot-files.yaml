@@ -1,0 +1,36 @@
+id: polyglot-files
+language: csharp
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'acceptation d'un fichier téléversé sur la seule base d'une
+    validation de signature/format réussie, sans re-encodage, combinée à
+    un point d'inclusion ou d'exécution dynamique ailleurs dans
+    l'application, ou l'acceptation de SVG sans neutralisation de script.
+  patterns:
+    - "File.WriteAllBytes($path, $file.OpenReadStream())"
+    - "XmlDocument.Load($uploadedSvgPath)"
+    - "Assembly.LoadFile($uploadedPath)"
+  exclude_if:
+    - "le fichier image est systématiquement re-encodé (redimensionnement/recompression) après validation de signature, détruisant tout contenu polyglot superflu"
+    - "aucune fonction d'inclusion ou de chargement dynamique n'est appliquée sur un fichier provenant d'un répertoire d'upload utilisateur"
+    - "les fichiers SVG sont traités par un parseur strict neutralisant scripts et entités externes, ou convertis en format raster"
+
+message: >
+  Fichier téléversé accepté sur la seule base d'une validation de
+  signature, sans re-encodage, dans un contexte où il pourrait être
+  chargé/inclus dynamiquement — risque de fichier polyglot exploitable
+  selon le contexte de traitement (voir rules/remediation/polyglot-files.md).
+
+false_positive_notes:
+  - "Si l'image est toujours re-encodée après réception (recompression/redimensionnement effectif), tout contenu polyglot superflu est détruit — reclasser en `info`."
+  - "Si le fichier téléversé n'est jamais rechargé par une fonction d'inclusion, de désérialisation ou de chargement dynamique ailleurs dans l'application, le risque est fortement réduit."
+
+remediation_ref: rules/remediation/polyglot-files.md
+knowledge_ref: knowledge/upload/polyglot-files.md

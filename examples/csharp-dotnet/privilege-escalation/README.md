@@ -1,0 +1,3 @@
+# Privilege Escalation (CWE-269)
+
+La version vulnérable affecte directement `request.Role`, une valeur entièrement contrôlée par le client, au champ de rôle de l'utilisateur ciblé, sans jamais vérifier que l'appelant a lui-même le droit d'accorder ce niveau de privilège précis : un utilisateur standard peut ainsi s'attribuer ou attribuer à un tiers le rôle `Admin`. La correction ajoute un contrôle explicite `User.CanGrantRole(request.Role)` avant toute écriture, qui refuse la requête si l'appelant n'a pas l'autorité suffisante pour accorder ce rôle, puis invalide les sessions actives de l'utilisateur modifié via `RevokeAllForUser`, empêchant qu'un jeton émis avant le changement continue de porter un niveau de privilège obsolète.

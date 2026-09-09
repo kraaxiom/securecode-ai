@@ -1,0 +1,37 @@
+id: prompt-injection
+language: java
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code LangChain4j/Spring AI, la construction du prompt
+    par concaténation directe de chaînes entre instruction système et entrée
+    utilisateur, sans utiliser les objets de rôle typés de l'API ni
+    délimitation structurée — terrain propice à l'injection de prompt.
+    Cette règle porte uniquement sur la détection du pattern de construction
+    non sécurisée, sans reproduire de charge utile d'injection.
+  patterns:
+    - "String prompt = systemInstruction + userInput; suivi d'un appel ChatClient/ChatLanguageModel.generate(prompt) — concaténation brute au lieu de SystemMessage/UserMessage distincts"
+    - "PromptTemplate.from(template).apply(Map.of(\"input\", userInput)) où le template autorise l'utilisateur à injecter des directives de rôle (ex: absence d'échappement des séquences de rôle type \"### System\")"
+    - "@Tool ou AiServices exposant un paramètre libre transmis tel quel comme instruction système plutôt que comme donnée utilisateur"
+    - "absence de validation de longueur/contenu (allow-list, filtrage de motifs de commande) sur l'entrée utilisateur avant intégration au prompt"
+
+message: >
+  Construction du prompt par concaténation de chaînes entre instruction
+  système et entrée utilisateur, sans séparation de rôles typée ni
+  validation — expose à l'injection de prompt (l'entrée utilisateur peut
+  reformuler ou neutraliser les instructions système). Utiliser les objets
+  SystemMessage/UserMessage de l'API, valider/filtrer l'entrée utilisateur
+  et appliquer une couche de modération de sortie.
+
+false_positive_notes:
+  - "Si l'entrée utilisateur est strictement contrainte par un schéma de validation (allow-list de valeurs, pas de texte libre), reclasser en `low`."
+  - "L'usage des objets de rôle typés de l'API (SystemMessage/UserMessage) sans concaténation manuelle réduit fortement le risque — vérifier avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/prompt-injection.md
+knowledge_ref: knowledge/llm/prompt-injection.md

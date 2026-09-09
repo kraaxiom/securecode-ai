@@ -1,0 +1,3 @@
+# Jailbreak de modèle (CWE-1427)
+
+Le code vulnérable illustre uniquement la faiblesse structurelle : le chatbot s'appuie uniquement sur le system prompt comme garde-fou, sans couche de modération indépendante ni limite de tours de conversation, ce qui favorise une érosion progressive des restrictions sur de longs échanges. Aucun payload ou technique de contournement n'est démontré. La correction ajoute une modération indépendante du modèle principal en entrée et en sortie (fail-safe par défaut), et limite le nombre de tours de conversation exploitables. Élimine la classe de vulnérabilité CWE-1427 (Improper Neutralization of Input Used for LLM Prompting).

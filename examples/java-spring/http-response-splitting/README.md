@@ -1,0 +1,3 @@
+# HTTP Response Splitting (CWE-113)
+
+Le code vulnérable écrit directement le paramètre `next` fourni par l'utilisateur dans l'en-tête `Location` via `response.setHeader`, permettant à un attaquant d'injecter des séquences CR/LF décodées pour scinder la réponse HTTP et ajouter des en-têtes ou un corps de réponse arbitraires. La version corrigée restreint la destination à une liste blanche de chemins internes connus et utilise `response.sendRedirect()`, l'API haut niveau du conteneur Servlet, qui encode correctement la valeur et élimine tout risque d'injection CR/LF ou de redirection ouverte, tout en conservant le comportement de redirection légitime.

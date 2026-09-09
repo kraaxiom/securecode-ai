@@ -1,0 +1,32 @@
+id: known-cves
+language: php
+category: supply-chain
+cwe: CWE-1104
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: high
+confidence_default: high
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans composer.json/composer.lock, une contrainte de version
+    figée sur une plage connue comme vulnérable dans les bases publiques
+    (NVD, GitHub Advisory Database, OSV) pour un package donné.
+  patterns:
+    - "require.<vendor>/<package>: '<version>' où <version> appartient à une plage CVE publiée pour ce package"
+    - "composer.lock contenant une version exacte listée dans une advisory GHSA/OSV active"
+  exclude_if:
+    - "La version installée est postérieure ou égale à la version corrigeant la CVE (fix version)"
+    - "Le package est marqué en conflict[] ou replace[] explicite empêchant son installation effective"
+
+message: >
+  Dépendance figée sur une version affectée par une CVE publique connue —
+  mettre à jour vers la version corrigée et intégrer un scan SCA en CI/CD
+  (voir rules/remediation/known-cves.md).
+
+false_positive_notes:
+  - "Vérifier que le composant vulnérable est réellement chargé en production (pas uniquement en dépendance de dev)."
+  - "Si un correctif compensatoire (WAF, sandboxing) documenté couvre la CVE, conserver la sévérité mais noter la mitigation en commentaire."
+
+remediation_ref: rules/remediation/known-cves.md
+knowledge_ref: knowledge/supply-chain/known-cves.md

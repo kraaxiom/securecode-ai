@@ -1,0 +1,35 @@
+id: dos-query
+language: rust
+category: graphql
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma async-graphql exposant des champs de liste avec
+    pagination (arguments `first`/`limit`/`offset`) sans borne maximale
+    imposée côté resolver, ou un `Schema::build` sans `.limit_complexity(N)`
+    combiné à `.limit_depth(N)` pour analyser le coût global de la requête.
+  patterns:
+    - "async fn items(&self, ctx: &Context<'_>, first: Option<i32>) -> Vec<Item> { self.repo.find_all(first).await } sans plafond explicite (ex: min(first.unwrap_or(20), 100))"
+    - "Schema::build(Query, Mutation, Subscription).finish() sans .limit_complexity(N) ni .limit_depth(N)"
+    - "#[Object] impl Query { async fn items(&self, limit: i32) -> Vec<Item> { sqlx::query_as(\"SELECT * FROM items LIMIT $1\").bind(limit).fetch_all(&pool).await } } où limit n'est jamais plafonné avant le bind"
+  exclude_if:
+    - "chaque resolver de liste applique un plafond explicite (ex: let n = first.unwrap_or(20).min(100);) avant la requête base de données"
+    - ".limit_complexity(N) est configuré sur le Schema et rejette les requêtes dépassant un seuil raisonnable"
+
+message: >
+  Champs GraphQL paginés sans plafond de taille ni analyse de coût de
+  requête (.limit_complexity) — une requête combinant listes larges et alias
+  multiples peut provoquer un déni de service par surcharge base de
+  données/mémoire (voir rules/remediation/dos-query.md).
+
+false_positive_notes:
+  - "Si la base de données applique elle-même un LIMIT global via une contrainte du pool sqlx ou une configuration ORM par défaut, le risque est atténué."
+  - "Un endpoint accessible uniquement en interne avec authentification forte réduit la probabilité d'exploitation mais ne l'élimine pas."
+
+remediation_ref: rules/remediation/dos-query.md
+knowledge_ref: knowledge/graphql/dos-query.md

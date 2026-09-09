@@ -1,0 +1,37 @@
+id: php-upload
+language: javascript
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration multer (ou équivalent) écrivant les fichiers
+    téléversés dans un répertoire public/servi statiquement sans fileFilter
+    restrictif ni renommage côté serveur — pertinent notamment quand le
+    backend Node.js sert de proxy/reverse vers une exécution PHP côté serveur
+    d'origine (nginx + php-fpm partagé), généralisant le même risque de dépôt
+    de script exécutable.
+  patterns:
+    - "multer({ dest: string_literal_containing('public') })"
+    - "multer.diskStorage({ destination: string_literal_containing('public') })"
+    - "multer({ storage: _ }) // sans option fileFilter définie"
+  exclude_if:
+    - "l'option fileFilter valide le mimetype détecté et une liste blanche d'extensions"
+    - "la fonction filename génère un nom aléatoire indépendant du nom original"
+    - "le répertoire de destination est en dehors de tout dossier servi statiquement par express.static"
+
+message: >
+  Middleware d'upload sans filtrage strict ni renommage, écrivant dans un
+  répertoire potentiellement exécutable/servi — voir
+  rules/remediation/php-upload.md pour la correction.
+
+false_positive_notes:
+  - "Si express.static ne sert pas le dossier de destination, l'exécution directe n'est pas possible, mais la validation de contenu reste recommandée pour éviter la réutilisation ailleurs (ex: inclusion dynamique)."
+  - "Un fileFilter défini ailleurs dans le même module (import partagé) peut être manqué par une analyse locale au fichier."
+
+remediation_ref: rules/remediation/php-upload.md
+knowledge_ref: knowledge/upload/php-upload.md

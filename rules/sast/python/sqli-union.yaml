@@ -1,0 +1,33 @@
+id: sqli-union
+language: python
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: regex
+  description: >
+    Détecte une requête SQL construite par interpolation de variable ET
+    contenant le mot-clé UNION SELECT, révélant une tentative ou une surface
+    d'attaque de type UNION-based SQLi via cursor.execute.
+  patterns:
+    - "cursor\\.execute\\(\\s*f?[\"'].*\\bUNION\\b.*\\{.*\\}.*[\"']"
+    - "cursor\\.execute\\(\\s*[\"'].*\\bUNION\\b.*[\"']\\s*%\\s*\\w+"
+    - "cursor\\.execute\\(\\s*[\"'].*\\bUNION\\b.*[\"']\\.format\\("
+  exclude_if:
+    - "la chaîne UNION est un littéral figé sans variable interpolée"
+    - "la requête utilise des paramètres liés (%s avec tuple/liste en second argument)"
+
+message: >
+  Requête SQL avec UNION construite par interpolation d'une variable —
+  remplacer par une requête préparée avec paramètre lié pour empêcher
+  l'injection d'un UNION SELECT arbitraire.
+
+false_positive_notes:
+  - "Si UNION apparaît dans un commentaire ou une donnée statique jamais concaténée à une entrée utilisateur, ce n'est pas exploitable — reclasser en `info`."
+  - "Vérifier que la variable interpolée provient bien d'une entrée externe (requête HTTP, fichier, etc.) avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md

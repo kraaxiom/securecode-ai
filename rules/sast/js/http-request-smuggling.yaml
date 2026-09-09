@@ -1,0 +1,35 @@
+id: http-request-smuggling
+language: js
+category: injections
+cwe: CWE-444
+owasp: A03:2021-Injection
+severity: high
+confidence_default: low
+
+match:
+  type: regex
+  description: >
+    Détecte un serveur HTTP Node.js brut (http.createServer) traitant les
+    requêtes entrantes sans vérifier la présence conjointe des en-têtes
+    content-length et transfer-encoding. Regex utilisée car cette
+    vulnérabilité relève surtout de la configuration de la chaîne
+    proxy/backend ; l'analyse statique ne peut repérer que l'absence d'un
+    contrôle défensif applicatif.
+  patterns:
+    - "http\\.createServer\\s*\\(\\s*\\(\\s*req\\s*,\\s*res\\s*\\)\\s*=>"
+  exclude_if:
+    - "Le handler vérifie explicitement 'content-length' in req.headers && 'transfer-encoding' in req.headers et rejette la requête (res.writeHead(400)) avant tout traitement du corps"
+    - "Le serveur n'est jamais placé derrière un proxy/reverse-proxy tiers (déploiement en frontal direct documenté), réduisant fortement la surface de smuggling"
+
+message: >
+  Serveur HTTP traitant les requêtes sans rejet explicite des en-têtes
+  Content-Length et Transfer-Encoding conjoints — ajouter ce contrôle en
+  défense en profondeur, en complément de la configuration du proxy amont
+  (voir rules/remediation/http-request-smuggling.md).
+
+false_positive_notes:
+  - "Ce pattern est un indicateur applicatif faible : la vulnérabilité réelle dépend surtout de la configuration du proxy/load balancer en amont, non détectable par analyse statique du code applicatif seul."
+  - "Les frameworks de haut niveau (Express récent) rejettent déjà certains cas ambigus au niveau du parseur HTTP intégré à Node.js — vérifier la version de Node.js/Express avant de remonter en `high`."
+
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

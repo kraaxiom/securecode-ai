@@ -1,0 +1,34 @@
+id: weak-session-id
+language: java
+category: sessions
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou de jeton avec une
+    source d'aléa non cryptographique (java.util.Random, Math.random(),
+    concaténation d'horodatage/UUID prévisible) au lieu de SecureRandom.
+  patterns:
+    - "new Random() ou Math.random() utilisé pour générer un ID de session/jeton"
+    - "UUID.randomUUID() seul utilisé comme jeton d'authentification longue durée sans SecureRandom en complément (acceptable en soi mais souvent mal jugé — signaler pour revue)"
+    - "identifiant de session construit par concaténation de System.currentTimeMillis() et d'un compteur"
+  exclude_if:
+    - "l'identifiant provient du conteneur Servlet (JSESSIONID standard, généré par Tomcat/Jetty avec SecureRandom)"
+    - "java.security.SecureRandom est utilisé comme source d'aléa"
+
+message: >
+  Génération d'identifiant de session avec une source d'aléa prévisible
+  (Random/Math.random()) — un attaquant peut deviner ou brute-forcer les
+  sessions valides. Utiliser java.security.SecureRandom avec au moins 128 bits
+  d'entropie, ou s'appuyer sur le générateur du conteneur Servlet.
+
+false_positive_notes:
+  - "Le JSESSIONID généré nativement par Tomcat/Jetty utilise déjà SecureRandom — ne pas remonter sauf surcharge personnalisée du générateur."
+  - "UUID.randomUUID() (v4) utilise SecureRandom en interne sur les JVM modernes — vérifier la version avant de remonter en `high`."
+
+remediation_ref: rules/remediation/weak-session-id.md
+knowledge_ref: knowledge/sessions/weak-session-id.md

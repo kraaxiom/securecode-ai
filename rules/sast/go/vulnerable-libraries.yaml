@@ -1,0 +1,34 @@
+id: vulnerable-libraries
+language: go
+category: supply-chain
+cwe: CWE-1035
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: medium
+confidence_default: high
+
+match:
+  type: dependency-scan
+  description: >
+    Détecte des dépendances Go obsolètes (retard de versions majeures, fin de
+    maintenance officielle) dans go.mod / go.sum, indépendamment d'une CVE
+    précise déjà publiée.
+  patterns:
+    - "go.mod: require paquet vX.Y.Z avec un retard de plusieurs versions majeures par rapport à la dernière version stable publiée du module"
+    - "go.mod: dépendance sur un module archivé/non maintenu (dépôt GitHub marqué 'archived', dernière release > 3 ans)"
+    - "go.mod: directive 'go X.Y' ciblant une version du langage Go en fin de support officiel (release policy: N-2)"
+  exclude_if:
+    - "un correctif de sécurité amont est appliqué localement via patch/vendoring documenté malgré l'ancienneté de la version de base"
+
+message: >
+  Dépendance ou version de langage Go obsolète, sans CVE identifiée mais en
+  dehors de la fenêtre de maintenance — risque accru de vulnérabilités non
+  corrigées et non détectées. Planifier une mise à jour régulière
+  (go list -u -m all, Dependabot) — voir
+  rules/remediation/vulnerable-libraries.md.
+
+false_positive_notes:
+  - "Un module stable et volontairement figé (API interne gelée, pas de faille connue) reste `low` tant qu'aucune CVE n'est publiée."
+  - "Les dépendances de build/tooling uniquement (non embarquées dans le binaire de production) doivent être évaluées séparément avec une sévérité réduite."
+
+remediation_ref: rules/remediation/vulnerable-libraries.md
+knowledge_ref: knowledge/supply-chain/vulnerable-libraries.md

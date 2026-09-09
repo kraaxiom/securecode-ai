@@ -1,0 +1,34 @@
+id: jwt-algorithm-confusion
+language: java
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'une bibliothèque JWT Java (io.jsonwebtoken/jjwt, java-jwt Auth0,
+    Nimbus JOSE+JWT) qui vérifie un token sans imposer explicitement l'algorithme attendu,
+    ou qui déduit dynamiquement la méthode de vérification depuis le header `alg` du token.
+  patterns:
+    - "Jwts.parserBuilder().setSigningKey($key).build()  # sans .require(...) ni restriction d'algorithme explicite"
+    - "JWT.require(Algorithm.HMAC256($publicKeyBytes))  # clé publique RSA réutilisée comme secret HMAC"
+    - "SignedJWT.parse($token).verify(new MACVerifier($key))  # sans vérifier au préalable header.getAlgorithm()"
+  exclude_if:
+    - "l'algorithme attendu est explicitement figé et vérifié (ex. Jwts.parserBuilder().setSigningKey(...).build() combiné à un contrôle explicite de header.getAlgorithm() == RS256)"
+    - "la bibliothèque utilisée impose nativement l'algorithme lors de la construction du vérificateur, sans lecture dynamique du header"
+
+message: >
+  Vérification JWT sans restriction explicite de l'algorithme attendu — figer et imposer
+  l'algorithme (ex. `RS256`) côté serveur sans jamais le déduire du token, et ne pas réutiliser
+  une clé publique comme secret HMAC potentiel (voir
+  rules/remediation/jwt-algorithm-confusion.md).
+
+false_positive_notes:
+  - "Si la bibliothèque JWT utilisée impose par défaut une liste fermée d'algorithmes et interdit toute confusion HMAC/RSA (à vérifier par version), le risque peut être requalifié."
+  - "Un seul algorithme symétrique utilisé de bout en bout, avec clé jamais exposée publiquement, réduit le risque de confusion mais mérite vérification manuelle."
+
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

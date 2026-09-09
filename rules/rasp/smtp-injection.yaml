@@ -1,0 +1,12 @@
+id: smtp-injection
+category: injections
+cwe: CWE-93
+type: rasp
+guard:
+  sink: appel de construction ou d'envoi d'email (mail(), MimeMessage, smtplib.sendmail, nodemailer sendMail) recevant des en-têtes construits dynamiquement
+  block_condition: une valeur d'en-tête (From, Subject, To, Cc, Bcc, Reply-To) évaluée à l'exécution contient un caractère CR ou LF directement traçable à une entrée utilisateur de la requête courante
+  action: sanitize
+  fail_mode: fail-closed
+severity: medium
+remediation_ref: rules/remediation/smtp-injection.md
+knowledge_ref: knowledge/injections/smtp-injection.md

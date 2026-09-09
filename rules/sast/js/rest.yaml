@@ -1,0 +1,33 @@
+id: rest
+language: js
+category: api
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte `app.all(...)`/`router.all(...)` sur une route de ressource sans
+    distinction de contrôle d'accès par méthode, ou une configuration CORS
+    combinant reflet d'origine et `credentials: true`.
+  patterns:
+    - "app.all(_, _)"
+    - "router.all(_, _)"
+    - "cors({ origin: '*', credentials: true })"
+    - "cors({ origin: (_, cb) => cb(null, true), credentials: true })"
+  exclude_if:
+    - "le handler unique vérifie explicitement req.method et applique une autorisation différenciée par verbe"
+    - "la configuration CORS utilise une liste blanche statique comparée par égalité stricte"
+
+message: >
+  Route sans distinction de méthode HTTP pour l'autorisation, ou CORS
+  permissif combiné à des credentials — voir rules/remediation/rest.md.
+
+false_positive_notes:
+  - "API strictement publique sans notion de credentials/session : la combinaison CORS large n'est pas un risque si aucune donnée authentifiée n'est exposée."
+  - "Si le handler générique redirige immédiatement vers des sous-handlers par méthode avec autorisation propre, revérifier manuellement."
+
+remediation_ref: rules/remediation/rest.md
+knowledge_ref: knowledge/api/rest.md

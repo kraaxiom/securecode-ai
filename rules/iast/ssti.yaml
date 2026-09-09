@@ -1,0 +1,15 @@
+id: ssti
+category: injections
+cwe: CWE-1336
+type: iast
+instrumentation:
+  hook_points:
+    - "python: jinja2.Template(user_input).render / Environment.from_string(user_input)"
+    - "php: Twig\\Environment::createTemplate(user_input)"
+    - "java: freemarker.template.Configuration avec un Template construit depuis une chaîne utilisateur"
+    - "js: consolidate/handlebars.compile(user_input) appelé sur une chaîne provenant d'une requête HTTP"
+  taint_check: trace la donnée depuis une entrée HTTP jusqu'à sa concaténation dans la chaîne de template elle-même (et non passée comme variable de contexte) avant compilation/rendu par le moteur de templates
+  trigger_condition: une donnée taintée atteint un appel de construction/compilation de template comme partie du corps du template plutôt que comme variable de contexte fournie séparément
+severity: critical
+remediation_ref: rules/remediation/ssti.md
+knowledge_ref: knowledge/injections/ssti.md

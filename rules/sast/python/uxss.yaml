@@ -1,0 +1,40 @@
+id: uxss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, côté backend Python générant des pages consommées par un
+    WebView applicatif ou un composant embarqué (génération de contenu pour
+    une app hybride via un framework comme Kivy WebView, ou service qui
+    fournit du HTML à un navigateur embarqué tiers), l'insertion d'une
+    entrée utilisateur non échappée dans du HTML servi à un contexte
+    disposant de privilèges élevés (accès à des API natives, bridge
+    JS-natif) — un XSS y devient un UXSS avec évasion du sandbox navigateur
+    standard.
+  patterns:
+    - "webview_html = f\"<html>{request.args.get('content')}</html>\""
+    - "bridge_response = f\"<script>nativeBridge.call('{var}')</script>\""
+  exclude_if:
+    - "la variable est échappée (html.escape/json.dumps) avant insertion dans le contenu servi au WebView"
+    - "le contenu n'est jamais consommé par un WebView/bridge natif disposant de privilèges élevés (uniquement un navigateur standard sandboxé)"
+
+message: >
+  Entrée utilisateur non échappée insérée dans du contenu HTML destiné à un
+  WebView ou bridge natif privilégié — un XSS classique y devient une
+  évasion du sandbox du navigateur (UXSS), avec accès potentiel à des API
+  natives de l'application. Échapper systématiquement toute donnée injectée
+  dans ce contexte et limiter strictement les capacités exposées au bridge
+  natif.
+
+false_positive_notes:
+  - "confidence_default bas : la présence effective d'un WebView/bridge privilégié côté client ne peut être confirmée par l'analyse statique du seul code backend Python — nécessite une revue manuelle du client."
+  - "Si la variable est échappée avant insertion, le risque est neutralisé."
+
+remediation_ref: rules/remediation/uxss.md
+knowledge_ref: knowledge/xss/uxss.md

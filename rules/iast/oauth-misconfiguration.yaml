@@ -1,0 +1,25 @@
+id: oauth-misconfiguration
+category: auth
+cwe: CWE-287
+type: iast
+instrumentation:
+  hook_points:
+    - "php: fonction de validation du redirect_uri et de construction de l'URL d'autorisation OAuth (league/oauth2-client ou équivalent)"
+    - "js: fonction de validation du redirect_uri et de génération/vérification du state (passport-oauth2 ou équivalent)"
+    - "python: fonction de validation OAuth (authlib, requests-oauthlib)"
+    - "java: composant Spring Security OAuth2 de validation redirect_uri/state"
+    - "csharp: middleware OAuth/OpenIdConnect de ASP.NET Core (OnRedirectToIdentityProvider, ValidateIssuer)"
+    - "go: bibliothèque golang.org/x/oauth2, points de validation redirect_uri/state"
+  taint_check: >
+    Trace si la valeur du paramètre redirect_uri fourni par le client (source: paramètre
+    de requête non fiable) atteint la construction de l'URL de redirection finale (sink)
+    sans passer par une comparaison stricte à une liste blanche exacte, et si le paramètre
+    state/nonce généré par le serveur est effectivement revérifié au retour du callback.
+  trigger_condition: >
+    Le redirect_uri atteint le sink de redirection après une validation par préfixe/motif
+    plutôt que par égalité stricte avec une valeur enregistrée, ou le callback OAuth est
+    traité sans comparaison du paramètre state/nonce reçu à la valeur émise par le serveur
+    pour cette même requête d'autorisation.
+severity: high
+remediation_ref: rules/remediation/oauth-misconfiguration.md
+knowledge_ref: knowledge/auth/oauth-misconfiguration.md

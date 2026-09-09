@@ -1,0 +1,3 @@
+## Conteneur Azure Blob Storage public (CWE-284)
+
+Le code vulnérable crée le conteneur avec `access: 'container'`, ce qui autorise la lecture anonyme de tous les blobs qu'il contient, puis renvoie l'URL brute du blob sans aucun jeton d'accès temporaire. Un attaquant connaissant ou énumérant cette URL peut donc lire le contenu sans authentification. La correction crée le conteneur sans niveau d'accès public (privé par défaut) et génère à la place une signature SAS en lecture seule avec `generateBlobSASQueryParameters`, expirant après une heure. L'accès aux documents devient ainsi temporaire, scoped en lecture seule et non énumérable publiquement.

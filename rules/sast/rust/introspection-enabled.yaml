@@ -1,0 +1,36 @@
+id: introspection-enabled
+language: rust
+category: graphql
+cwe: CWE-200
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma async-graphql déployé sans appel à
+    `.disable_introspection()` en environnement de production, ou un
+    endpoint GraphQL Playground/GraphiQL (`async_graphql::http::playground_source`,
+    `GraphiQLSource::build()`) monté sans condition d'environnement.
+  patterns:
+    - "Schema::build(Query, Mutation, Subscription).finish() sans .disable_introspection() ni condition sur std::env::var(\"ENV\")"
+    - "async fn graphiql() -> impl IntoResponse { Html(GraphiQLSource::build().endpoint(\"/graphql\").finish()) } monté sur une route accessible sans vérification d'environnement"
+    - "async_graphql::http::playground_source(GraphQLPlaygroundConfig::new(\"/graphql\")) exposé via une route toujours active, sans if cfg!(debug_assertions) ni variable d'environnement"
+  exclude_if:
+    - "le schéma appelle explicitement .disable_introspection() conditionné à l'environnement de production, ou systématiquement en prod"
+    - "la route Playground/GraphiQL est montée uniquement sous condition cfg!(debug_assertions) ou une vérification explicite de std::env::var(\"ENV\") != \"production\""
+
+message: >
+  Introspection GraphQL et/ou explorateur interactif (Playground/GraphiQL)
+  potentiellement actifs en production sans condition d'environnement — un
+  attaquant peut cartographier l'intégralité du schéma de l'API, y compris
+  des champs non documentés (voir
+  rules/remediation/introspection-enabled.md).
+
+false_positive_notes:
+  - "Si le déploiement de production utilise un binaire compilé avec des feature flags distincts qui excluent la route Playground/GraphiQL, la présence du code source seule ne suffit pas à conclure — vérifier la configuration de build/déploiement."
+  - "Une API strictement interne sans données sensibles exposées via le schéma réduit l'impact réel — reclasser en `info` si confirmé."
+
+remediation_ref: rules/remediation/introspection-enabled.md
+knowledge_ref: knowledge/graphql/introspection-enabled.md

@@ -1,0 +1,36 @@
+id: weak-privileges
+language: java
+category: database
+cwe: CWE-269
+owasp: A01:2021-Broken-Access-Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans la configuration DataSource Java ou les scripts de
+    migration (Flyway/Liquibase) associés au projet, l'utilisation d'un
+    compte de base de données disposant de privilèges excessifs (superuser/
+    DBA) pour les opérations applicatives courantes, au lieu d'un compte à
+    privilèges restreints.
+  patterns:
+    - "spring.datasource.username=root ou postgres (compte superuser) utilisé comme compte applicatif de connexion courant, au lieu d'un rôle dédié restreint (SELECT/INSERT/UPDATE/DELETE sur le schéma applicatif uniquement)"
+    - "script Liquibase/Flyway (GRANT ALL PRIVILEGES ON *.* TO 'app_user'@'%') accordant tous les privilèges à un compte applicatif au lieu de privilèges granulaires par table/schéma"
+    - "connexion applicative disposant du privilège DROP/CREATE/ALTER sur des tables métier alors que le service ne réalise que des opérations CRUD standard"
+    - "compte de connexion applicatif partagé entre plusieurs microservices avec des besoins d'accès différents, au lieu d'un compte dédié par service avec privilèges minimaux"
+
+message: >
+  Compte de connexion à la base de données disposant de privilèges
+  excessifs pour l'usage applicatif réel (weak privileges) — augmente
+  l'impact d'une compromission applicative (injection SQL, RCE). Créer un
+  rôle dédié par service avec uniquement les privilèges CRUD nécessaires
+  sur les tables concernées, sans DROP/CREATE/ALTER, en appliquant le
+  principe du moindre privilège.
+
+false_positive_notes:
+  - "Les comptes superuser utilisés exclusivement pour l'exécution des migrations de schéma (Flyway/Liquibase), distincts du compte applicatif runtime, ne sont pas concernés."
+  - "Si le compte applicatif est déjà restreint via GRANT granulaire (SELECT, INSERT, UPDATE, DELETE uniquement) sur le schéma dédié, ce n'est pas un cas positif."
+
+remediation_ref: rules/remediation/weak-privileges.md
+knowledge_ref: knowledge/database/weak-privileges.md

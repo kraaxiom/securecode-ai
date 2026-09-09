@@ -1,0 +1,3 @@
+# Mauvaise configuration Firebase
+
+La version vulnérable écrit directement dans une collection Firestore de premier niveau sans jamais vérifier l'identité de l'utilisateur ni la propriété du document, en s'appuyant implicitement sur des règles de sécurité en mode test (`allow read, write: if true;`) qui permettent à n'importe quel client de lire ou modifier l'intégralité de la base (CWE-284, Improper Access Control). La version corrigée vérifie le jeton d'identité Firebase côté serveur avant toute écriture et range chaque document sous `users/{userId}/documents/{docId}`, un chemin conçu pour être protégé par des règles Firestore vérifiant `request.auth.uid == userId`, garantissant qu'un utilisateur ne peut agir que sur ses propres données.

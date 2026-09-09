@@ -1,0 +1,38 @@
+id: prototype-pollution
+language: csharp
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent C# le plus proche de la pollution de prototype JS : une
+    désérialisation non contrôlée qui permet à l'attaquant de reconstruire un
+    type arbitraire (TypeNameHandling.All/Auto) ou une fusion d'un objet JSON
+    utilisateur directement sur une instance de configuration partagée/statique.
+  patterns:
+    - "JsonConvert.DeserializeObject($userJson, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All })"
+    - "JsonConvert.DeserializeObject($userJson, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto })"
+    - "JsonConvert.PopulateObject($userJson, SharedConfig.Instance)"
+    - "JsonSerializer.Deserialize<Dictionary<string, object>>($userJson)  # puis fusion récursive sur un objet statique/partagé"
+  exclude_if:
+    - "TypeNameHandling est fixé à None ou absent de JsonSerializerSettings"
+    - "PopulateObject ou la fusion cible une instance locale nouvellement créée, pas un objet statique/partagé"
+    - "$userJson est validé contre un schéma strict (liste blanche de propriétés) avant désérialisation"
+
+message: >
+  Désérialisation JSON non contrôlée (TypeNameHandling permissif ou fusion sur
+  un objet de configuration partagé/statique) — l'équivalent C# le plus proche
+  de la pollution de prototype JS, pouvant permettre l'injection de types ou
+  de propriétés inattendues (voir rules/remediation/prototype-pollution.md).
+
+false_positive_notes:
+  - "Si TypeNameHandling.None (comportement par défaut) est utilisé, ce risque spécifique ne s'applique pas."
+  - "Si la désérialisation/fusion cible toujours une nouvelle instance locale et jamais un singleton/objet statique partagé, l'impact global est nul."
+  - "Vérifier qu'un schéma de validation strict n'est pas déjà appliqué en amont sur le JSON utilisateur."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

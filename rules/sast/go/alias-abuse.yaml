@@ -1,0 +1,35 @@
+id: alias-abuse
+language: go
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur GraphQL gqlgen (`handler.NewDefaultServer(schema)`)
+    exposé sans limite sur le nombre d'alias par requête, permettant de
+    multiplier un même resolver des centaines de fois dans un seul appel
+    HTTP.
+  patterns:
+    - "srv := handler.NewDefaultServer(generated.NewExecutableSchema(cfg)) sans extension personnalisée de comptage d'alias"
+    - "handler.New(schema) suivi de srv.AddTransport / srv.Use(...) sans middleware limitant le nombre d'alias par opération"
+    - "http.Handle(\"/query\", srv) exposé publiquement sans validation de la taille du document de requête (ast.OperationDefinition.SelectionSet) avant exécution"
+  exclude_if:
+    - "une extension gqlgen personnalisée (implémentant graphql.OperationInterceptor ou graphql.ResponseInterceptor) compte explicitement les alias et rejette au-delà d'un seuil"
+    - "l'API est strictement interne, authentifiée, et soumise à un rate-limiting au niveau de la complexité de requête (query cost, ex: extension complexity.Config)"
+
+message: >
+  Serveur GraphQL gqlgen sans limite sur le nombre d'alias par requête — un
+  attaquant peut multiplier les appels à un resolver sensible (ex: bruteforce
+  de mot de passe) en une seule requête HTTP, contournant le rate-limiting
+  classique (voir rules/remediation/alias-abuse.md).
+
+false_positive_notes:
+  - "Si une extension de query cost analysis (ex: complexity.Config avec FixedComplexityLimit, ou une extension maison de comptage d'alias) est en place, reclasser en `low`."
+  - "Un schéma exposant uniquement des données publiques non sensibles au bruteforce réduit fortement l'impact réel."
+
+remediation_ref: rules/remediation/alias-abuse.md
+knowledge_ref: knowledge/graphql/alias-abuse.md

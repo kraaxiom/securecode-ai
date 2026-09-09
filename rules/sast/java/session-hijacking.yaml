@@ -1,0 +1,34 @@
+id: session-hijacking
+language: java
+category: sessions
+cwe: CWE-613
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence de contrôles de contexte de session (liaison à l'adresse
+    IP/user-agent, expiration, invalidation au logout) qui facilitent le
+    détournement d'une session Spring/Servlet volée.
+  patterns:
+    - "SecurityFilterChain sans sessionManagement().maximumSessions(...) ni expiration configurée"
+    - "logout sans request.getSession().invalidate() ni SecurityContextLogoutHandler"
+    - "server.servlet.session.timeout absent ou fixé à une valeur excessive (>= 24h) pour une application sensible"
+  exclude_if:
+    - "logout() Spring Security est configuré avec invalidateHttpSession(true) (comportement par défaut)"
+    - "une expiration de session raisonnable (<= 30 min pour une app sensible) est configurée"
+
+message: >
+  Absence de contrôle du cycle de vie de session (timeout, invalidation au
+  logout, limitation des sessions concurrentes) — facilite le détournement
+  d'une session volée. Configurer invalidateHttpSession(true), un timeout
+  raisonnable, et sessionManagement().maximumSessions() si pertinent.
+
+false_positive_notes:
+  - "Spring Security invalide la session au logout par défaut — seule une surcharge explicite désactivant ce comportement est vulnérable."
+  - "Pour une API stateless JWT, ce pattern ne s'applique pas : vérifier la présence de révocation de token à la place."
+
+remediation_ref: rules/remediation/session-hijacking.md
+knowledge_ref: knowledge/sessions/session-hijacking.md

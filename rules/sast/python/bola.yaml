@@ -1,0 +1,37 @@
+id: bola
+language: python
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint d'API REST/GraphQL qui récupère un objet par un
+    identifiant fourni par le client sans vérifier que l'utilisateur
+    courant est bien propriétaire (ou autorisé) de cet objet précis —
+    typiquement Model.objects.get(pk=$id) ou get_object_or_404(Model, pk=
+    $id) sans filtre sur request.user.
+  patterns:
+    - "Model.objects.get(pk=$id)  # sans filtre user=request.user"
+    - "get_object_or_404($Model, pk=$id)  # sans filtre owner=request.user"
+    - "$queryset.get(id=$request_param)"
+  exclude_if:
+    - "la requête inclut un filtre explicite sur le propriétaire (user=request.user, owner=request.user) ou une vérification post-récupération (if obj.owner != request.user: raise PermissionDenied)"
+    - "l'objet n'a pas de notion de propriétaire (donnée publique par conception, ex: référentiel partagé en lecture)"
+
+message: >
+  Récupération d'un objet par identifiant client sans vérification de
+  propriété/autorisation — un utilisateur authentifié peut accéder aux
+  objets d'un autre utilisateur en modifiant l'identifiant dans la requête
+  (BOLA/IDOR sur API). Filtrer systématiquement par propriétaire ou
+  vérifier l'autorisation après récupération (voir
+  rules/remediation/bola.md).
+
+false_positive_notes:
+  - "Sur un modèle sans notion de propriétaire individuel (ex: catalogue produit public), ce n'est pas exploitable — confirmer la nature de la ressource avant d'alerter."
+
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

@@ -1,0 +1,33 @@
+id: jailbreak
+language: javascript
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une intégration conversationnelle exposant l'entrée utilisateur
+    directement au modèle sans couche de modération indépendante (classifieur
+    de sécurité) en entrée ni en sortie, et sans limite sur le nombre de
+    tours de conversation suspects.
+  patterns:
+    - "await llm.chat({ messages: [...] }) sans appel préalable à await safetyClassifier.flags(...)"
+    - "Absence de contrôle sur session.suspiciousTurnCount() avant l'appel au modèle"
+  exclude_if:
+    - "Un classifieur de modération indépendant est appliqué en entrée ET en sortie de l'appel LLM"
+    - "Le endpoint n'est pas exposé publiquement (accès interne authentifié et restreint uniquement)"
+
+message: >
+  Absence de couche de modération indépendante et de limite conversationnelle
+  — surface d'exposition aux tentatives de contournement des garde-fous du
+  modèle (voir rules/remediation/jailbreak.md).
+
+false_positive_notes:
+  - "Un usage interne strictement contrôlé (pas d'exposition publique) réduit fortement le risque réel."
+  - "Si le fournisseur applique déjà une modération native robuste côté API, la sévérité peut être ramenée à `low` en documentant le choix."
+
+remediation_ref: rules/remediation/jailbreak.md
+knowledge_ref: knowledge/llm/jailbreak.md

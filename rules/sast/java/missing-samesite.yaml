@@ -1,0 +1,35 @@
+id: missing-samesite
+language: java
+category: sessions
+cwe: CWE-1275
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence de configuration de l'attribut SameSite sur le cookie de
+    session Spring. L'API javax.servlet.http.Cookie ne supportant pas SameSite
+    nativement (avant Servlet 6 / Jakarta EE 10), on cherche l'absence de
+    configuration explicite via server.servlet.session.cookie.same-site ou un
+    CookieSameSiteSupplier Spring Boot.
+  patterns:
+    - "cookie de session émis sans server.servlet.session.cookie.same-site configuré (Spring Boot)"
+    - "ResponseCookie.from($_, $_).build() sans .sameSite(\"Strict\"|\"Lax\")"
+    - "new Cookie($_, $_) construit manuellement puis addHeader(\"Set-Cookie\", ...) sans attribut SameSite dans la chaîne"
+  exclude_if:
+    - "server.servlet.session.cookie.same-site est défini à Strict ou Lax"
+    - "un CookieSameSiteSupplier Bean est déclaré dans la configuration Spring"
+
+message: >
+  Cookie de session émis sans attribut SameSite — expose l'application aux
+  attaques CSRF cross-site. Définir server.servlet.session.cookie.same-site=Lax
+  (ou Strict) dans application.properties, ou fournir un CookieSameSiteSupplier.
+
+false_positive_notes:
+  - "Une API strictement consommée en machine-à-machine sans navigateur n'est pas concernée — reclasser en `info`."
+  - "Vérifier la version de Servlet/Jakarta EE : à partir de Servlet 6.0, l'attribut est nativement supporté par Cookie.setAttribute(\"SameSite\", ...)."
+
+remediation_ref: rules/remediation/missing-samesite.md
+knowledge_ref: knowledge/sessions/missing-samesite.md

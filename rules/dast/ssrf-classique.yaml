@@ -1,0 +1,61 @@
+id: ssrf-classique
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: medium
+
+description: >
+  Signature de scan dynamique : envoie une variation bénigne et non destructive
+  d'un paramètre suspecté de déclencher une requête sortante, en substituant la
+  destination par une URL de callback/canari appartenant au testeur (jamais une
+  adresse de métadonnées cloud réelle ni une infrastructure tierce), puis observe
+  si le serveur applicatif effectue effectivement une requête sortante vers cette
+  URL de canari — révélant une SSRF classique potentielle sans jamais atteindre de
+  ressource interne réelle ni extraire de données tierces.
+
+target:
+  method: [GET, POST]
+  parameter_location: [query, body, header, cookie]
+
+probes:
+  - name: canary-callback-resolution
+    description: >
+      Remplace un paramètre d'URL/hôte contrôlé par l'utilisateur et utilisé pour une requête sortante (aperçu, webhook, proxy générique) par une URL pointant vers un service de callback
+      contrôlé par le testeur (domaine et jeton unique générés pour le test),
+      puis interroge ce service de callback après un court délai pour vérifier
+      si une requête HTTP ou une résolution DNS provenant du serveur cible a été
+      reçue.
+    input_class: canary-callback-url
+    detection_signal:
+      - "Réception d'une requête HTTP sur le service de callback portant le jeton unique du test"
+      - "Résolution DNS du sous-domaine canari unique observée côté callback, même sans requête HTTP complète (signal de SSRF aveugle)"
+  - name: canary-redirect-chain
+    description: >
+      Fournit une URL initiale légitime (même domaine canari) qui répond par une
+      redirection HTTP vers une deuxième URL canari distincte, afin de détecter
+      si le client HTTP interne suit les redirections sans revalider la
+      destination — sans jamais rediriger vers une adresse interne réelle.
+    input_class: canary-redirect-neutral
+    detection_signal:
+      - "Réception de la requête sur l'URL canari finale après redirection, confirmant que le client HTTP suit les redirections sans contrôle de destination"
+  - name: timing-differential-unreachable
+    description: >
+      Compare le temps de réponse entre une URL canari joignable et une URL
+      canari pointant vers un port fermé/inexistant sur le même domaine canari,
+      afin de détecter un comportement de tentative de connexion sortante côté
+      serveur (SSRF aveugle par timing) sans jamais cibler d'infrastructure tierce.
+    input_class: conditional-delay-neutral
+    detection_signal:
+      - "Écart de latence significatif et reproductible (>3 écarts-types de la ligne de base) entre la variante joignable et la variante non joignable, cohérent avec une tentative de connexion sortante réelle"
+
+exclude_if:
+  - "Le paramètre est validé côté serveur par une liste blanche de domaines/hôtes déjà vérifiée (faible probabilité, à confirmer manuellement avant d'écarter)"
+  - "Le différentiel de latence n'est pas reproductible sur 3 essais consécutifs (bruit réseau)"
+
+false_positive_notes:
+  - "Un proxy sortant ou un pare-feu applicatif intermédiaire peut intercepter la requête vers le service de callback sans que l'application soit elle-même vulnérable — corréler avec les logs applicatifs et réseau avant de conclure."
+
+remediation_ref: rules/remediation/ssrf-classique.md
+knowledge_ref: knowledge/ssrf/ssrf-classique.md
+sast_ref: rules/sast/php/ssrf-classique.yaml

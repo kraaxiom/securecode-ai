@@ -1,0 +1,35 @@
+id: missing-httponly
+language: go
+category: sessions
+cwe: CWE-1004
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un littéral http.Cookie{} ou une configuration de session
+    gorilla/sessions n'activant pas explicitement HttpOnly, sur un cookie de
+    session ou d'authentification.
+  patterns:
+    - "http.Cookie{ Name: $name, Value: $value, _ }" # HttpOnly absent du littéral
+    - "http.Cookie{ _, HttpOnly: false, _ }"
+    - "http.SetCookie(w, &http.Cookie{ _ })" # sans champ HttpOnly: true
+    - "store.Options = &sessions.Options{ _ }" # HttpOnly absent
+    - "store.Options = &sessions.Options{ HttpOnly: false, _ }"
+  exclude_if:
+    - "HttpOnly: true est explicitement présent dans le même littéral http.Cookie ou sessions.Options"
+    - "le cookie est délibérément destiné à être lu en JavaScript et ne porte aucune donnée de session/authentification"
+
+message: >
+  Cookie créé sans le champ HttpOnly (ou avec HttpOnly: false) — un script
+  malveillant injecté via une faille XSS pourrait lire ce cookie de session
+  (voir rules/remediation/missing-httponly.md).
+
+false_positive_notes:
+  - "Si le cookie ne transporte aucune donnée de session ou d'authentification, le risque est réduit — reclasser en `low`."
+  - "Vérifier si une valeur par défaut HttpOnly est appliquée globalement via un middleware avant de remonter le signal."
+
+remediation_ref: rules/remediation/missing-httponly.md
+knowledge_ref: knowledge/sessions/missing-httponly.md

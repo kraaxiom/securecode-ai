@@ -1,0 +1,15 @@
+id: stacked-query-sqli
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "php: PDO::exec / PDOStatement avec attribut PDO::MYSQL_ATTR_MULTI_STATEMENTS activé"
+    - "python: cursor.execute avec un driver autorisant multi-statements (ex. mysql.connector, multi=True)"
+    - "java: Statement.execute sur une connexion JDBC avec l'option allowMultiQueries=true"
+    - "csharp: SqlCommand.ExecuteNonQuery sur une chaîne de connexion autorisant plusieurs instructions séparées par point-virgule"
+  taint_check: trace la donnée depuis une entrée HTTP jusqu'à sa concaténation dans une chaîne SQL exécutée sur une connexion/driver configuré pour accepter plusieurs instructions séparées par un point-virgule
+  trigger_condition: une donnée taintée contenant un point-virgule atteint un sink d'exécution SQL multi-instructions sans passer par une requête paramétrée
+severity: critical
+remediation_ref: rules/remediation/stacked-query-sqli.md
+knowledge_ref: knowledge/injections/stacked-query-sqli.md

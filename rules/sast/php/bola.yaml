@@ -1,0 +1,29 @@
+id: bola
+language: php
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une récupération d'objet API par ID (findOrFail) sans clause de
+    filtrage sur le propriétaire/tenant dans la même requête.
+  patterns:
+    - "Model::findOrFail($id) dans un contrôleur d'API, sans ->where('user_id', auth()->id()) ni équivalent avant l'appel"
+  exclude_if:
+    - "Une clause where sur user_id/owner_id/tenant_id est chaînée dans la même requête Eloquent"
+    - "Une vérification d'autorisation explicite (Gate::authorize, policy) suit immédiatement le findOrFail"
+
+message: >
+  Objet API récupéré par ID sans vérification d'appartenance — un
+  utilisateur authentifié peut accéder aux ressources d'un autre (voir
+  rules/remediation/bola.md).
+
+false_positive_notes:
+  - "Si une policy Laravel est appliquée juste après le findOrFail (Gate::authorize('view', $model)), la vérification existe mais dans un second temps — non un faux négatif mais à valider dans l'ordre du code."
+
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

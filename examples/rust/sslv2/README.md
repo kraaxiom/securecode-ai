@@ -1,0 +1,3 @@
+# SSLv2 — Protocole activé
+
+`vulnerable.rs` construit un connecteur TLS sans imposer de version minimale, laissant SSLv2 négociable, un protocole interdit par la RFC 6176 et exploité par l'attaque DROWN, ce qui correspond à CWE-326 (Inadequate Encryption Strength) ; la vérification de certificat y est en plus désactivée. `fixed.rs` force explicitement une version minimale TLS 1.2 (maximum TLS 1.3) via `set_min_proto_version`/`set_max_proto_version` et réactive la vérification stricte du certificat serveur. Cette correction applique la recommandation de `rules/remediation/sslv2.md` : désactiver explicitement SSLv2 (et SSLv3) et n'autoriser que TLS 1.2/1.3.

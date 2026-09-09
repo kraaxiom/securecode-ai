@@ -1,0 +1,19 @@
+id: os-command-injection
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête ou champ de formulaire transmis à une fonctionnalité s'appuyant probablement sur un appel shell (conversion de fichier, ping, traitement d'image, outil externe)
+  technique: out-of-band
+  indicators:
+    - "Callback DNS ou HTTP sortant reçu sur une infrastructure de collecte contrôlée par le testeur suite à l'injection d'un marqueur non destructif dans le paramètre ciblé"
+    - "Délai de réponse anormal et reproductible corrélé à l'injection d'une construction shell de temporisation conditionnelle neutre, comparé à la ligne de base"
+    - "Message d'erreur applicatif exposant une sortie ou un message d'erreur d'interpréteur shell (sh, bash, cmd.exe)"
+false_positive_notes:
+  - "Un pare-feu sortant bloquant les connexions DNS/HTTP non autorisées peut masquer le signal out-of-band même si la vulnérabilité existe — combiner avec le signal de timing."
+  - "Une latence réseau ambiante variable peut produire un faux positif sur le signal de timing si le seuil n'est pas suffisamment strict."
+remediation_ref: rules/remediation/os-command-injection.md
+knowledge_ref: knowledge/injections/os-command-injection.md

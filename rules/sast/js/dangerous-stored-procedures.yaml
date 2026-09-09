@@ -1,0 +1,32 @@
+id: dangerous-stored-procedures
+language: js
+category: database
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel de procédure stockée construit par interpolation de
+    template string dans le code Node.js appelant.
+  patterns:
+    - "db.query(`CALL ${$procName}('${$var}')`)"
+    - "db.query(string_concat(\"CALL \", $procName, \"('\", $var, \"')\"))"
+    - "db.query(\"EXEC sp_configure 'xp_cmdshell', 1\")"
+  exclude_if:
+    - "L'appel utilise un paramètre lié (db.query('CALL proc(?)', [var]))"
+    - "La configuration désactive explicitement la fonctionnalité (valeur 0)"
+
+message: >
+  Appel de procédure stockée construit par interpolation de chaîne, ou
+  activation de fonctionnalité d'exécution système du SGBD — voir
+  rules/remediation/dangerous-stored-procedures.md.
+
+false_positive_notes:
+  - "Si la valeur interpolée est un nom de procédure fixe issu d'une liste blanche interne (pas une entrée utilisateur), le risque est réduit."
+  - "Vérifier si le driver applique un échappement automatique pour les appels CALL (rare, à confirmer manuellement)."
+
+remediation_ref: rules/remediation/dangerous-stored-procedures.md
+knowledge_ref: knowledge/database/dangerous-stored-procedures.md

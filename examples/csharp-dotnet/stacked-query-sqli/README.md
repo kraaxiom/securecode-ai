@@ -1,0 +1,3 @@
+# Stacked Query SQL Injection (CWE-89)
+
+La version vulnérable concatène `newName` dans `UPDATE users SET name = '{newName}' WHERE id = 1` ; le driver SQL Server acceptant nativement le multi-statement, une valeur comme `x'; DROP TABLE users; --` ajoute une instruction SQL totalement distincte à la suite de la requête légitime. La correction utilise un paramètre lié (`@name`), ce qui empêche toute valeur de terminer l'instruction en cours ou d'en injecter une nouvelle ; le compte de connexion à la base de données doit en complément appliquer le principe du moindre privilège (pas de droits DDL non nécessaires).

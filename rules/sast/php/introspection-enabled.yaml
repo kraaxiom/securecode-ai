@@ -1,0 +1,28 @@
+id: introspection-enabled
+language: php
+category: graphql
+cwe: CWE-200
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à GraphQL::executeQuery sans règle DisableIntrospection
+    conditionnée à l'environnement de production.
+  patterns:
+    - "GraphQL::executeQuery($schema, $query, ...) sans DocumentValidator::addRule(new DisableIntrospection()) conditionné par getenv('APP_ENV')"
+  exclude_if:
+    - "DocumentValidator::addRule(new DisableIntrospection()) est appliqué quand APP_ENV/environnement vaut production"
+
+message: >
+  Introspection GraphQL potentiellement active en production — fuite du
+  schéma complet de l'API (voir rules/remediation/introspection-enabled.md).
+
+false_positive_notes:
+  - "Si le fichier analysé est explicitement un fichier de configuration de développement (ex: config/dev.php), ce n'est pas applicable."
+  - "Si l'API est interne et non exposée à Internet, le risque est réduit — reclasser en `info`."
+
+remediation_ref: rules/remediation/introspection-enabled.md
+knowledge_ref: knowledge/graphql/introspection-enabled.md

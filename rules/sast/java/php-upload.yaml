@@ -1,0 +1,35 @@
+id: php-upload
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Note de pertinence — ce pattern cible historiquement l'exécution de scripts
+    .php. En Java, l'équivalent réaliste est une application Spring servant de
+    passerelle d'upload vers un backend PHP mutualisé (architecture hybride,
+    hébergement partagé, migration progressive) qui écrit le fichier reçu sur
+    un répertoire exécutable par le serveur PHP en aval.
+  patterns:
+    - "contrôleur Spring transférant un MultipartFile vers un stockage partagé (NFS, volume monté) également servi par un backend PHP/Apache avec mod_php actif, sans liste blanche d'extensions"
+    - "nom de fichier client transmis sans neutralisation à un endpoint d'upload proxy vers un CMS PHP legacy"
+  exclude_if:
+    - "aucun composant PHP n'existe dans l'architecture (application 100% Java) — ce risque ne s'applique pas"
+    - "une liste blanche stricte d'extensions non exécutables est appliquée avant tout transfert vers le stockage partagé"
+
+message: >
+  Un service Java transmet un fichier uploadé vers un stockage partagé avec un
+  backend PHP en aval, sans validation stricte d'extension — un attaquant peut
+  déposer un script .php exécutable. Appliquer une liste blanche d'extensions
+  et renommer le fichier côté serveur avant tout transfert.
+
+false_positive_notes:
+  - "Pertinence limitée en Java pur : à reclasser en `info` si l'architecture ne comporte aucun composant PHP en aval du stockage."
+  - "Si le stockage n'est jamais exécutable côté PHP (permissions, désactivation de mod_php sur le répertoire), le risque est réduit."
+
+remediation_ref: rules/remediation/php-upload.md
+knowledge_ref: knowledge/upload/php-upload.md

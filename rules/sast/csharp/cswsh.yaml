@@ -1,0 +1,36 @@
+id: cswsh
+language: csharp
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un Hub SignalR (`Hub`, `OnConnectedAsync`) ou un handler WebSocket
+    brut (`HttpContext.WebSockets.AcceptWebSocketAsync`) qui accepte la
+    connexion en s'appuyant uniquement sur le cookie de session ASP.NET Core
+    (authentification par cookie), sans vérifier l'en-tête `Origin` ni exiger
+    de jeton anti-CSRF dédié transmis explicitement par le client.
+  patterns:
+    - "class *Hub : Hub { public override Task OnConnectedAsync() { ... } } sans vérification de Context.GetHttpContext().Request.Headers[\"Origin\"]"
+    - "app.Use(async (context, next) => { if (context.WebSockets.IsWebSocketRequest) { await context.WebSockets.AcceptWebSocketAsync(); ... } }) sans validation de l'en-tête Origin"
+    - "services.AddSignalR() combiné à un cookie d'authentification (AddAuthentication().AddCookie()) sans configuration de HubOptions ou de middleware vérifiant Origin"
+  exclude_if:
+    - "le Hub ou le middleware valide explicitement Context.GetHttpContext().Request.Headers[\"Origin\"] contre une allowlist stricte avant d'accepter la connexion"
+    - "le handshake exige un jeton anti-CSWSH distinct du cookie de session (ex: token transmis en query string ou en en-tête et vérifié côté serveur avant OnConnectedAsync)"
+
+message: >
+  Connexion SignalR/WebSocket acceptée sur la seule base du cookie de session
+  ASP.NET Core, sans vérification de l'en-tête Origin ni jeton anti-CSRF
+  dédié — vulnérable au Cross-Site WebSocket Hijacking (voir
+  rules/remediation/cswsh.md).
+
+false_positive_notes:
+  - "Si un reverse proxy en amont (IIS, YARP, nginx) filtre déjà l'Origin avant transmission au Kestrel, vérifier sa configuration avant de confirmer en `high`."
+  - "Un Hub configuré avec `options.Cors` restrictif ET une politique CORS ASP.NET Core (`AddCors`) strictement alignée sur les domaines de confiance neutralise ce risque — vérifier `Program.cs`/`Startup.cs`."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

@@ -1,0 +1,38 @@
+id: broken-object-level-authorization
+language: java
+category: api
+cwe: CWE-639
+owasp: API1:2023-Broken Object Level Authorization
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint Spring REST recevant un identifiant d'objet en
+    @PathVariable/@RequestParam et effectuant une opération (lecture, mise à
+    jour, suppression) via repository.findById(id) sans vérifier que
+    l'utilisateur authentifié est bien propriétaire ou autorisé sur cette
+    ressource précise.
+  patterns:
+    - "@GetMapping(\"/orders/{id}\") repository.findById(id) retourné directement sans comparaison avec l'utilisateur courant (SecurityContextHolder / principal.getId())"
+    - "@DeleteMapping/@PutMapping(\"/{id}\") opérant sur l'entité chargée par id sans clause WHERE owner_id = :currentUserId ni vérification applicative équivalente"
+    - "requête JPA/Repository paramétrée uniquement par l'id fourni par le client, sans jointure ni filtre sur l'utilisateur courant"
+  exclude_if:
+    - "une vérification explicite compare l'utilisateur authentifié (principal) au propriétaire de la ressource avant de retourner/modifier les données"
+    - "@PreAuthorize(\"#id == authentication.principal.id\") ou une expression SpEL équivalente est présente sur la méthode"
+
+message: >
+  L'endpoint charge une ressource par identifiant fourni par le client sans
+  vérifier que l'utilisateur authentifié est autorisé sur cet objet précis
+  (Broken Object Level Authorization) — un utilisateur légitime peut accéder
+  aux données d'un autre en changeant l'identifiant. Ajouter une vérification
+  de propriété/autorisation par ressource (@PreAuthorize ou clause de requête
+  filtrée sur l'utilisateur courant).
+
+false_positive_notes:
+  - "Si la ressource est publique par conception (catalogue produit sans donnée personnelle), ce risque ne s'applique pas."
+  - "Une vérification d'autorisation effectuée dans un filtre/aspect global (AOP) en amont peut ne pas apparaître dans la méthode elle-même — vérifier la présence d'un tel mécanisme avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/broken-object-level-authorization.md
+knowledge_ref: knowledge/api/broken-object-level-authorization.md

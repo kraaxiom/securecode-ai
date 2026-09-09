@@ -1,0 +1,36 @@
+id: missing-x-content-type-options
+language: php
+category: headers
+cwe: CWE-436
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détection au niveau applicatif PHP de l'absence d'envoi de l'en-tête
+    X-Content-Type-Options via header(), en particulier sur les routes
+    servant des fichiers uploadés par les utilisateurs. La vérification
+    exhaustive reste souvent de niveau config/infra (nginx add_header,
+    Apache Header always set) et doit être complétée par un contrôle sur
+    la configuration du serveur web.
+  patterns:
+    - "absence d'appel header('X-Content-Type-Options: nosniff') dans le point d'entrée ou le middleware global"
+    - "absence de directive add_header X-Content-Type-Options dans la configuration nginx associée"
+    - "absence de directive Header always set X-Content-Type-Options dans la configuration Apache associée"
+  exclude_if:
+    - "l'en-tête X-Content-Type-Options est défini globalement au niveau du reverse proxy/CDN en amont de l'application"
+    - "un middleware de sécurité ajoute déjà systématiquement cet en-tête"
+
+message: >
+  En-tête X-Content-Type-Options absent des réponses HTTP — le navigateur
+  peut réinterpréter un contenu utilisateur uploadé comme exécutable via
+  MIME sniffing (voir rules/remediation/missing-x-content-type-options.md).
+
+false_positive_notes:
+  - "Si l'en-tête est injecté par un reverse proxy, un CDN ou un middleware framework en amont du code PHP scanné, ce n'est pas un vrai positif au niveau applicatif — vérifier la configuration infra avant de remonter le finding."
+  - "Application ne servant aucun contenu uploadé par l'utilisateur (uniquement des assets statiques contrôlés) : impact réel réduit, la sévérité basse par défaut reste appropriée."
+
+remediation_ref: rules/remediation/missing-x-content-type-options.md
+knowledge_ref: knowledge/headers/missing-x-content-type-options.md

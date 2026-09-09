@@ -1,0 +1,38 @@
+id: browser-cache-poisoning
+language: java
+category: modern
+cwe: CWE-525
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse Spring MVC/WebFlux contenant des données sensibles
+    (informations de session, jetons, données personnelles) sans en-têtes
+    `Cache-Control: no-store` explicites, permettant au navigateur de mettre
+    en cache localement une page sensible accessible ensuite depuis un poste
+    partagé.
+  patterns:
+    - "@GetMapping($_) ResponseEntity<$T> $method(...) { ... return ResponseEntity.ok($sensitiveData); } // aucun en-tête Cache-Control défini"
+    - "response.setHeader(\"Cache-Control\", $val) // absent sur un endpoint retournant des données de compte/session"
+    - "@Controller class $C { ... } // aucune configuration globale WebSecurity.headers().cacheControl() ni CacheControl.noStore()"
+  exclude_if:
+    - "La réponse inclut explicitement CacheControl.noStore() ou l'en-tête \"Cache-Control: no-store, no-cache, must-revalidate\""
+    - "Spring Security headers().cacheControl() est activé globalement (comportement par défaut de Spring Security depuis les versions récentes)"
+
+message: >
+  La réponse contenant des données sensibles ne définit pas d'en-tête
+  `Cache-Control: no-store` — le navigateur ou un cache intermédiaire local
+  peut conserver la page en cache, exposant les données à un utilisateur
+  ultérieur du même poste (ex: poste partagé, bouton précédent). Ajouter
+  explicitement `Cache-Control: no-store, no-cache, must-revalidate` sur
+  toute réponse contenant des informations sensibles.
+
+false_positive_notes:
+  - "Si Spring Security est configuré avec ses en-têtes par défaut (qui ajoutent no-cache/no-store automatiquement), la plupart des endpoints authentifiés sont déjà protégés — vérifier headers().cacheControl().disable() avant de remonter."
+  - "Si l'endpoint ne retourne que des données publiques non sensibles, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/browser-cache-poisoning.md
+knowledge_ref: knowledge/modern/browser-cache-poisoning.md

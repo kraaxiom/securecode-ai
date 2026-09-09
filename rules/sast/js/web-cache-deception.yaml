@@ -1,0 +1,34 @@
+id: web-cache-deception
+language: js
+category: modern
+cwe: CWE-524
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Express authentifiée déclarée avec un motif permissif
+    (ex: app.get('/account*', ...) ou un paramètre catch-all) rendant du
+    contenu utilisateur sans Cache-Control: private, no-store, et sans
+    fallback 404 strict.
+  patterns:
+    - "app.get('/account*', handler) or app.get('/account/:rest(*)', handler) rendering user data without res.set('Cache-Control', 'private, no-store')"
+    - "authenticated handler responding to arbitrary trailing path segments without an explicit 404 for unmatched routes"
+  exclude_if:
+    - "res.set('Cache-Control', 'private, no-store') est présent sur la réponse authentifiée"
+    - "la route utilise une correspondance exacte (pas de wildcard) et un middleware 404 catch-all est en place"
+
+message: >
+  Route authentifiée avec correspondance de chemin permissive et sans
+  Cache-Control: private, no-store — un cache partagé peut être trompé par un
+  suffixe d'URL et stocker une réponse personnalisée (voir
+  rules/remediation/web-cache-deception.md).
+
+false_positive_notes:
+  - "Si un middleware catch-all renvoie 404 pour tout chemin non explicitement défini, le risque est réduit."
+  - "Applications sans CDN/cache partagé en frontal : reclasser en `medium`."
+
+remediation_ref: rules/remediation/web-cache-deception.md
+knowledge_ref: knowledge/modern/web-cache-deception.md

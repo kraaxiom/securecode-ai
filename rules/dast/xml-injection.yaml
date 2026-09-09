@@ -1,0 +1,19 @@
+id: xml-injection
+category: injections
+cwe: CWE-91
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: POST
+  target: champ de formulaire ou corps de requête XML dont une valeur textuelle est insérée sans échappement dans un nœud ou attribut XML
+  technique: differential-response
+  indicators:
+    - ajout d'un nœud ou attribut XML supplémentaire non prévu observé dans la réponse ou le comportement applicatif après injection de métacaractères XML neutres
+    - altération de la structure du document XML traité (changement du nombre de nœuds enfants) suite à une entrée contenant des caractères spéciaux non échappés
+    - erreur de parsing XML renvoyée par le serveur suite à une entrée contenant des métacaractères XML non neutralisés
+false_positive_notes:
+  - vérifier que l'application traite bien la donnée comme du XML et non comme du texte brut échappé en aval
+  - confirmer que l'altération observée provient de l'injection et non d'un comportement applicatif normal
+remediation_ref: rules/remediation/xml-injection.md
+knowledge_ref: knowledge/injections/xml-injection.md

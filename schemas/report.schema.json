@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Report",
+  "type": "object",
+  "required": ["id", "generated_at", "project", "score", "findings", "format"],
+  "properties": {
+    "id": { "type": "string", "description": "Identifiant unique du rapport (ex: uuid)" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "project": { "type": "string", "description": "Nom ou chemin du projet audité" },
+    "score": { "$ref": "score.schema.json" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "finding.schema.json" }
+    },
+    "format": { "type": "string", "enum": ["owasp-top10", "asvs", "checklist"] },
+    "summary": { "type": "string", "description": "Résumé exécutif du rapport" }
+  }
+}

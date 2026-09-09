@@ -1,0 +1,34 @@
+id: error-sqli
+language: java
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête SQL concaténée dont l'exception SQLException est
+    capturée puis son message renvoyé tel quel au client (réponse HTTP, log
+    exposé), ouvrant la voie à l'injection basée sur les erreurs.
+  patterns:
+    - "catch (SQLException $e) { response.getWriter().write($e.getMessage()) }"
+    - "catch (SQLException $e) { throw new RuntimeException($e.getMessage()) } combiné à Statement.executeQuery(string_concat(_, $var, _))"
+  exclude_if:
+    - "le message d'exception est loggué en interne uniquement (logger.error) sans être renvoyé au client"
+    - "$var est un littéral constant"
+
+message: >
+  Le message d'erreur SQL brut est renvoyé au client alors que la requête
+  est construite par concaténation — un attaquant peut exploiter les
+  messages d'erreur pour extraire le schéma/les données (error-based SQLi) ;
+  utiliser un PreparedStatement et ne jamais exposer SQLException.getMessage()
+  au client (voir rules/remediation/error-sqli.md).
+
+false_positive_notes:
+  - "Une gestion d'erreur générique (message d'erreur normalisé, sans détail SQL) neutralise ce vecteur — vérifier le contenu réel renvoyé au client."
+  - "Les environnements de développement avec stack trace visible ne doivent jamais être déployés en production ; signaler séparément si détecté en configuration."
+
+remediation_ref: rules/remediation/error-sqli.md
+knowledge_ref: knowledge/injections/error-sqli.md

@@ -1,0 +1,3 @@
+# SSLv3 — Protocole activé
+
+`vulnerable.rs` configure explicitement SSLv3 comme version minimale du connecteur TLS, un protocole interdit par la RFC 7568 et vulnérable à l'attaque POODLE (déchiffrement via padding oracle en mode CBC), ce qui correspond à CWE-326 (Inadequate Encryption Strength). `fixed.rs` force la version minimale à TLS 1.2 (maximum TLS 1.3) via `set_min_proto_version`/`set_max_proto_version` et maintient la vérification stricte du certificat. Cette correction applique la recommandation de `rules/remediation/sslv3.md` : désactiver SSLv3 sur tous les points d'entrée TLS et n'autoriser que TLS 1.2/1.3 avec des suites authentifiées.

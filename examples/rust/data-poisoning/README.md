@@ -1,0 +1,3 @@
+# Data Poisoning (CWE-349)
+
+Le code vulnérable réintègre directement tout feedback utilisateur dans le jeu de données de fine-tuning, sans validation de provenance, sans détection d'anomalies statistiques et sans comparaison à un jeu de référence, permettant à un attaquant d'introduire des biais ou des portes dérobées comportementales de façon persistante. La correction isole le feedback dans une file de révision séparée avec traçabilité de la source, applique une détection d'anomalies basique avant intégration, n'entraîne que sur des exemples validés par un humain, et compare chaque cycle à un jeu de référence figé (golden set) pour détecter toute dérive. Élimine la classe de vulnérabilité CWE-349 (Acceptance of Extraneous Untrusted Data With Trust).

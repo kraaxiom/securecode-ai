@@ -1,0 +1,3 @@
+# Session Prediction (CWE-330)
+
+La version vulnérable génère l'identifiant de session en hachant (MD5) la concaténation de l'ID utilisateur et de l'horodatage courant, deux valeurs prévisibles ou faciles à approcher. Un attaquant connaissant approximativement l'heure de connexion d'une victime et son identifiant peut reconstruire l'espace de valeurs possibles et deviner un identifiant de session valide, usurpant ainsi son identité sans connaître son mot de passe. La correction génère l'identifiant exclusivement via `RandomNumberGenerator`, un générateur cryptographiquement sûr offrant 256 bits d'entropie, sans aucune dérivation de valeur connue, et régénère systématiquement l'identifiant lors d'un changement de niveau de privilège comme la connexion.

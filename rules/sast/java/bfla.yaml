@@ -1,0 +1,33 @@
+id: bfla
+language: java
+category: authorization
+cwe: CWE-862
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint Spring effectuant une action privilégiée (`/admin/*`,
+    `DELETE /users/{id}`) sans annotation `@PreAuthorize`/`@Secured` ni vérification de rôle
+    explicite, ou une incohérence de contrôle de rôle entre plusieurs routes exposant une
+    même fonctionnalité.
+  patterns:
+    - "@DeleteMapping(\"/users/{id}\") ... userService.delete($id)  # sans @PreAuthorize(\"hasRole('ADMIN')\") ni équivalent"
+    - "@RequestMapping(\"/admin/**\")  # configuration SecurityFilterChain sans règle de rôle explicite pour ce chemin"
+  exclude_if:
+    - "une vérification de rôle/permission explicite et centralisée (@PreAuthorize, SecurityFilterChain avec hasRole) protège l'endpoint"
+    - "l'action n'est pas privilégiée (accessible à tout utilisateur authentifié par conception)"
+
+message: >
+  Endpoint exposant une action privilégiée sans vérification de rôle explicite côté serveur —
+  appliquer une vérification de rôle/permission centralisée sur chaque fonctionnalité
+  sensible, y compris celles non visibles dans l'interface (voir rules/remediation/bfla.md).
+
+false_positive_notes:
+  - "Si la règle de rôle est définie globalement dans SecurityFilterChain pour le préfixe de route concerné, ce n'est pas un vrai positif au niveau du contrôleur individuel — vérifier la couverture de la config globale."
+  - "Les actions non privilégiées, même exposées sous un chemin `/admin`, ne sont pas concernées si elles ne manipulent aucune donnée sensible."
+
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

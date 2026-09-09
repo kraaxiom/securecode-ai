@@ -1,0 +1,33 @@
+id: metadata-gcp
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête sortante dont la destination et/ou les en-têtes HTTP sont contrôlés
+    par l'utilisateur, dans un chemin de code exécuté sur GCP (GCE/Cloud Run/GKE avec compte
+    de service), sans filtrage de `169.254.169.254` ni de `metadata.google.internal`.
+  patterns:
+    - "webClient.get().uri($url).header($userHeaderName, $userHeaderValue) ..."
+    - "restTemplate.exchange($url, ...)  # $url non filtré contre 169.254.169.254 / metadata.google.internal"
+  exclude_if:
+    - "une validation explicite rejette l'adresse 169.254.169.254 et le nom metadata.google.internal avant l'émission de la requête"
+    - "les en-têtes de la requête sortante sont fixés côté serveur (l'utilisateur ne peut pas en injecter Metadata-Flavor)"
+
+message: >
+  Requête sortante vers une destination et/ou avec des en-têtes contrôlés par l'utilisateur,
+  sans filtrage de l'adresse/nom de métadonnées GCP — filtrer explicitement
+  `169.254.169.254` et `metadata.google.internal`, et ne jamais laisser l'utilisateur définir
+  les en-têtes HTTP transmis (voir rules/remediation/metadata-gcp.md).
+
+false_positive_notes:
+  - "Si l'application ne s'exécute jamais sur une ressource GCP avec compte de service attaché, l'impact critique ne s'applique pas."
+  - "Si les en-têtes sortants sont entièrement fixés côté serveur, l'en-tête requis `Metadata-Flavor: Google` ne peut pas être injecté par l'utilisateur."
+
+remediation_ref: rules/remediation/metadata-gcp.md
+knowledge_ref: knowledge/ssrf/metadata-gcp.md

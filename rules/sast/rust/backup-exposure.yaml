@@ -1,0 +1,36 @@
+id: backup-exposure
+language: rust
+category: database
+cwe: CWE-538
+owasp: A05:2021-Security-Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des sauvegardes de base de données Rust (Command::new pour
+    pg_dump/mysqldump, dump via sqlx/diesel) écrites dans un répertoire servi
+    statiquement (tower-http ServeDir, dossier static/) ou transférées vers
+    un stockage cloud sans chiffrement ni contrôle d'accès.
+  patterns:
+    - "Command::new(\"pg_dump\").arg(\"-f\").arg(\"./static/backup.sql\") — chemin de sortie situé sous un répertoire exposé par ServeDir/actix Files"
+    - "Command::new(\"mysqldump\").output() suivi d'un std::fs::write vers un dossier public sans restriction de permissions"
+    - "aws_sdk_s3::Client::put_object(...) sans server_side_encryption(...) et sans vérification que le bucket est privé (ACL public non exclue)"
+  exclude_if:
+    - "le fichier de sauvegarde est écrit hors de tout répertoire servi publiquement ET chiffré (au repos ou via export chiffré), avec accès restreint (permissions fichier std::fs::Permissions, bucket privé, IAM dédié)"
+
+message: >
+  Sauvegarde de base de données écrite dans un emplacement accessible
+  publiquement ou transférée sans chiffrement/contrôle d'accès explicite —
+  un attaquant capable d'atteindre ce chemin peut exfiltrer l'intégralité des
+  données. Écrire les sauvegardes hors de toute racine servie par
+  ServeDir/Files, chiffrer au repos, et restreindre l'accès (IAM, permissions
+  fichier restrictives) — voir rules/remediation/backup-exposure.md.
+
+false_positive_notes:
+  - "Un backup temporaire supprimé immédiatement après transfert vers un stockage sécurisé, jamais exposé entre-temps, réduit le risque — vérifier la fenêtre d'exposition réelle."
+  - "Un bucket avec chiffrement par défaut activé au niveau du service cloud peut ne pas nécessiter de paramètre explicite dans le SDK — vérifier la configuration du bucket avant de confirmer."
+
+remediation_ref: rules/remediation/backup-exposure.md
+knowledge_ref: knowledge/database/backup-exposure.md

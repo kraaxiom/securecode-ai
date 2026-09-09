@@ -1,0 +1,28 @@
+id: symlink-attack
+language: js
+category: file-inclusion
+cwe: CWE-61
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un motif de vérification de fichier (stat/exists) suivi d'une opération séparée sur le même chemin dans un répertoire potentiellement partagé, sans ouverture atomique exclusive ni contrôle de lien symbolique.
+  patterns:
+    - "fs.existsSync($path) ... fs.writeFileSync($path, _)"
+    - "fs.statSync($path) ... fs.writeFile($path, _)"
+  exclude_if:
+    - "L'ouverture utilise un flag d'exclusivité (O_EXCL/O_NOFOLLOW ou équivalent fopen('x'))"
+    - "Le répertoire cible n'est pas partagé/accessible en écriture par des tiers non fiables"
+
+message: >
+  Vérification (stat/exists) suivie d'une opération fichier séparée dans un répertoire potentiellement partagé — fenêtre TOCTOU exploitable via lien symbolique, voir rules/remediation/symlink-attack.md.
+
+false_positive_notes:
+  - "Si le fichier est créé avec un flag d'exclusivité atomique (O_EXCL/O_NOFOLLOW), ce n'est pas exploitable — reclasser en `info`."
+  - "Si le répertoire est privé au processus (permissions restrictives, pas de partage entre utilisateurs), le risque réel est faible."
+
+remediation_ref: rules/remediation/symlink-attack.md
+knowledge_ref: knowledge/file-inclusion/symlink-attack.md

@@ -1,0 +1,32 @@
+id: price-manipulation
+language: php
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation directe d'un paramètre price/amount/discount issu
+    de la requête client pour une opération de paiement, sans recalcul à
+    partir du catalogue serveur.
+  patterns:
+    - "PaymentGateway::charge(_, $request->input(\"price\"))"
+    - "PaymentGateway::charge(_, $request->input(\"amount\"))"
+    - "->charge(_, $_POST[\"amount\"])"
+  exclude_if:
+    - "La valeur passe par un recalcul explicite à partir d'un modèle Product/Catalog avant l'appel de paiement"
+    - "Le paramètre est immédiatement comparé et rejeté si différent du prix serveur calculé"
+
+message: >
+  Montant de paiement accepté directement depuis le client sans recalcul
+  serveur — voir rules/remediation/price-manipulation.md.
+
+false_positive_notes:
+  - "Si le paramètre est un identifiant de plan/produit (pas un montant brut) résolu ensuite côté serveur, ce n'est pas concerné."
+  - "Vérifier la présence d'une revalidation au moment de la capture effective du paiement (passerelle tierce) qui limiterait l'impact."
+
+remediation_ref: rules/remediation/price-manipulation.md
+knowledge_ref: knowledge/business-logic/price-manipulation.md

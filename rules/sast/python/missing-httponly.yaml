@@ -1,0 +1,32 @@
+id: missing-httponly
+language: python
+category: sessions
+cwe: CWE-1004
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'émission d'un cookie sans l'attribut HttpOnly en Flask/Django/FastAPI,
+    ou une configuration de session qui désactive explicitement HttpOnly.
+  patterns:
+    - "response.set_cookie($_, $_, ...) sans httponly=True (Flask)"
+    - "SESSION_COOKIE_HTTPONLY = False (settings.py Django)"
+    - "response.set_cookie($_, $_, httponly=False) (Django/FastAPI)"
+  exclude_if:
+    - "httponly=True est explicitement présent dans l'appel"
+    - "Le cookie sert uniquement à un usage JS légitime documenté (ex: CSRF token double-submit) et ne contient pas de secret de session"
+
+message: >
+  Cookie émis sans l'attribut HttpOnly — un script injecté via une faille XSS
+  pourrait lire ce cookie via document.cookie et détourner la session.
+  Ajouter httponly=True (Flask/FastAPI) ou SESSION_COOKIE_HTTPONLY = True (Django).
+
+false_positive_notes:
+  - "Flask a HttpOnly=True par défaut sur session cookie signé, mais un set_cookie() manuel personnalisé n'hérite pas de ce défaut — vérifier l'appel exact."
+  - "Un cookie non sensible sans lien avec l'authentification peut être reclassé en `low`."
+
+remediation_ref: rules/remediation/missing-httponly.md
+knowledge_ref: knowledge/sessions/missing-httponly.md

@@ -1,0 +1,34 @@
+id: http-response-splitting
+language: js
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte l'affectation directe d'une entrée requête (req.query/req.params/
+    req.body) à l'en-tête Location ou à un en-tête arbitraire via
+    res.setHeader()/res.set() (Express), sans validation de l'absence de
+    caractères CR/LF, au lieu d'utiliser res.redirect().
+  patterns:
+    - "res\\.(setHeader|set)\\s*\\(\\s*['\"]Location['\"]\\s*,\\s*req\\.(query|params|body)\\."
+    - "res\\.(setHeader|set)\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,\\s*req\\.(query|params|body)\\."
+  exclude_if:
+    - "La valeur est validée en amont par une liste blanche ou une regex ancrée rejetant explicitement \\r et \\n"
+    - "L'appel utilise res.redirect() ou une API de framework qui encode déjà la valeur"
+
+message: >
+  Valeur issue d'une entrée requête affectée directement à un en-tête de
+  réponse HTTP (Location ou autre) sans validation par liste blanche —
+  utiliser res.redirect() avec une valeur validée ou neutraliser les
+  caractères CR/LF (voir rules/remediation/http-response-splitting.md).
+
+false_positive_notes:
+  - "Node.js rejette nativement les en-têtes contenant des caractères CR/LF bruts depuis les versions récentes (ERR_INVALID_CHAR) — le risque direct est réduit mais le pattern reste un signal de mauvaise pratique, notamment pour les redirections ouvertes."
+  - "Si la valeur provient exclusivement d'une constante applicative interne, ce n'est pas exploitable — reclasser en `info`."
+
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

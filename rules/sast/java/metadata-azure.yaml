@@ -1,0 +1,34 @@
+id: metadata-azure
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête sortante dont la destination et/ou les en-têtes HTTP sont contrôlés
+    par l'utilisateur, dans un chemin de code exécuté sur Azure (VM/App Service/Function
+    avec Managed Identity), sans filtrage de la plage link-local `169.254.169.254` ni
+    restriction sur l'injection d'en-têtes.
+  patterns:
+    - "webClient.get().uri($url).header($userHeaderName, $userHeaderValue) ..."
+    - "restTemplate.exchange($url, ..., new HttpEntity<>($userHeaders))  # sans filtrage IMDS ni en-têtes"
+  exclude_if:
+    - "une validation explicite rejette l'adresse 169.254.169.254 avant l'émission de la requête"
+    - "les en-têtes de la requête sortante sont fixés côté serveur (l'utilisateur ne peut pas en injecter)"
+
+message: >
+  Requête sortante vers une destination et/ou avec des en-têtes contrôlés par l'utilisateur,
+  sans filtrage de l'adresse IMDS Azure `169.254.169.254` — filtrer cette plage et ne jamais
+  laisser l'utilisateur définir librement les en-têtes HTTP transmis (voir
+  rules/remediation/metadata-azure.md).
+
+false_positive_notes:
+  - "Si l'application ne s'exécute jamais sur une ressource Azure avec identité managée, l'impact critique ne s'applique pas."
+  - "Si les en-têtes sortants sont entièrement fixés par le code serveur (aucune valeur utilisateur), le vecteur d'en-tête `Metadata: true` n'est pas exploitable même sans filtrage IP."
+
+remediation_ref: rules/remediation/metadata-azure.md
+knowledge_ref: knowledge/ssrf/metadata-azure.md

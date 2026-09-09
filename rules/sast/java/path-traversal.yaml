@@ -1,0 +1,34 @@
+id: path-traversal
+language: java
+category: file-inclusion
+cwe: CWE-22
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des opérations d'écriture, de suppression ou de renommage de fichier (upload,
+    export, gestion de documents) construites via `File`/`Files`/`FileOutputStream` à partir
+    d'un nom de fichier fourni par le client (ex. `MultipartFile.getOriginalFilename()`).
+  patterns:
+    - "new FileOutputStream(string_concat(_, $param, _))"
+    - "Files.write(Paths.get(_, $param), ...)"
+    - "Files.delete(Paths.get(_, $param))"
+    - "multipartFile.getOriginalFilename() ... new File(_, $filename)"
+  exclude_if:
+    - "$param est remplacé par un identifiant généré côté serveur (UUID) avant toute opération fichier"
+    - "le chemin résolu est vérifié via normalize() + startsWith(baseDir) avant l'opération"
+
+message: >
+  Opération fichier basée sur un nom fourni par le client sans normalisation ni contrôle
+  d'appartenance au répertoire de destination — générer le nom côté serveur ou valider le
+  chemin canonique avant écriture (voir rules/remediation/path-traversal.md).
+
+false_positive_notes:
+  - "Si le nom de fichier original du client n'est utilisé que pour l'affichage (jamais pour construire un chemin), ce n'est pas exploitable."
+  - "Les frameworks d'upload qui génèrent systématiquement un identifiant serveur (UUID) neutralisent ce risque."
+
+remediation_ref: rules/remediation/path-traversal.md
+knowledge_ref: knowledge/file-inclusion/path-traversal.md

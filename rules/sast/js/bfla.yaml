@@ -1,0 +1,30 @@
+id: bfla
+language: js
+category: authorization
+cwe: CWE-862
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Express effectuant une action sensible (delete, admin/*)
+    avec uniquement un middleware d'authentification, sans middleware de
+    vérification de rôle.
+  patterns:
+    - "router.delete(_, requireAuth, handler) sans requireRole(_) ni vérification de req.user.role dans le handler"
+    - "router.post('/admin/*', requireAuth, handler) sans middleware de rôle"
+  exclude_if:
+    - "Un middleware requireRole/requirePermission est chaîné avant le handler"
+    - "Le handler vérifie explicitement req.user.role en première instruction"
+
+message: >
+  Endpoint sensible protégé uniquement par l'authentification, sans
+  vérification de rôle/permission — voir rules/remediation/bfla.md.
+
+false_positive_notes:
+  - "Un contrôle de rôle effectué via un décorateur/wrapper personnalisé peut ne pas correspondre au pattern exact — vérifier la logique métier avant de confirmer."
+
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

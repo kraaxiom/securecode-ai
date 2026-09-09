@@ -1,0 +1,50 @@
+id: metadata-azure
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+description: >
+  Règle d'instrumentation runtime (IAST) : suit la propagation d'une donnée
+  marquée "non fiable" (taint tracking) depuis une source d'entrée utilisateur
+  jusqu'à un puits d'émission de requête réseau sortante, en conditions réelles
+  d'exécution de test (pas de payload d'attaque nécessaire — la détection se fait
+  par observation du flux de données réel pendant les tests fonctionnels/E2E déjà
+  existants du projet), spécifique au scénario SSRF metadata Azure.
+
+instrumentation:
+  sources:
+    - "Paramètres de requête HTTP (query string, body, headers, cookies)"
+    - "Champs de formulaire ou de configuration utilisateur avant validation (ex: URL d'avatar, webhook, hôte de backend)"
+  sinks:
+    - "Appel à une fonction/bibliothèque cliente HTTP ou socket bas niveau (ex: curl_exec, requests.get, HttpClient.Send, net/http.Get, fetch) avec une URL ou un hôte construit dynamiquement"
+  propagation_rule: >
+    Une donnée reste "non fiable" tant qu'elle n'a pas traversé une fonction de
+    validation reconnue de résolution/allow-list d'hôte (comparaison stricte à une
+    liste de domaines autorisés, résolution suivie d'une vérification de plage
+    d'adresse IP privée/link-local/metadata effectuée juste avant l'émission de la
+    requête). Une simple validation de format d'URL (regex, parsing syntaxique)
+    ne retire jamais le marquage.
+
+trigger_condition: >
+  Une donnée marquée "non fiable" atteint un sink d'émission de requête réseau
+  sortante sans être passée par un point de validation d'hôte/IP reconnu,
+  observé pendant l'exécution réelle de la suite de tests du projet (pas de
+  génération de trafic supplémentaire).
+
+detection_signal:
+  - "Trace de propagation source→sink complète et continue, sans point de neutralisation intermédiaire (allow-list d'hôte ou filtrage d'IP privée)"
+  - "Le sink reçoit une URL/hôte dont un segment contigu correspond exactement à la valeur source (pas de transformation destructrice entre les deux)"
+  - "La résolution DNS effective au moment de l'appel n'est jamais recomparée à une plage d'adresses interdites (privée, link-local, metadata) juste avant l'émission de la requête"
+
+exclude_if:
+  - "Un point de validation d'hôte/allow-list reconnu apparaît entre la source et le sink dans la trace"
+  - "La donnée source provient exclusivement d'une constante applicative interne, jamais d'une requête entrante (faux positif de configuration du taint tracking)"
+
+false_positive_notes:
+  - "Un wrapper HTTP maison non reconnu par l'instrumentation peut apparaître comme un sink direct — vérifier s'il applique en interne une validation d'hôte/IP avant de confirmer le finding."
+
+remediation_ref: rules/remediation/metadata-azure.md
+knowledge_ref: knowledge/ssrf/metadata-azure.md
+sast_ref: rules/sast/php/metadata-azure.yaml

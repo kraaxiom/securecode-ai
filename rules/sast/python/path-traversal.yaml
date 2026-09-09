@@ -1,0 +1,36 @@
+id: path-traversal
+language: python
+category: file-inclusion
+cwe: CWE-22
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'une entrée utilisateur non validée dans des
+    opérations fichier (lecture, écriture, suppression) via des fonctions
+    telles que open(), os.remove(), shutil.copy(), send_from_directory de
+    Flask sans confinement de répertoire.
+  patterns:
+    - "open($user_input, _)"
+    - "os.remove($user_input)"
+    - "shutil.copy($user_input, _)"
+    - "send_from_directory($directory, $user_input)"
+  exclude_if:
+    - "$user_input est validé par werkzeug.utils.secure_filename() avant l'appel"
+    - "le répertoire cible est confiné via un chroot ou un conteneur dédié en lecture seule et documenté comme tel"
+
+message: >
+  Accès fichier basé sur une entrée utilisateur sans confinement de
+  répertoire — risque de lecture/écriture/suppression en dehors du
+  périmètre attendu. Utiliser secure_filename() et vérifier le chemin
+  résolu (voir rules/remediation/path-traversal.md).
+
+false_positive_notes:
+  - "send_from_directory de Flask neutralise nativement les '../' dans le nom de fichier — vérifier la version de Flask/Werkzeug avant d'alerter en `high`."
+  - "Si le nom de fichier est un UUID généré côté serveur (pas fourni par le client), ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/path-traversal.md
+knowledge_ref: knowledge/file-inclusion/path-traversal.md

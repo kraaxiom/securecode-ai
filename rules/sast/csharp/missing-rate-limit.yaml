@@ -1,0 +1,34 @@
+id: missing-rate-limit
+language: csharp
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint ASP.NET Core sensible (authentification, réinitialisation
+    de mot de passe, opération coûteuse) défini sans attribut
+    [EnableRateLimiting] ni politique de limitation de débit associée.
+  patterns:
+    - "[HttpPost(\"login\")] public IActionResult $Action($Model model) { ... }"
+    - "[HttpPost(\"reset-password\")] public IActionResult $Action($Model model) { ... }"
+    - "app.MapPost(\"/api/login\", $handler)"
+  exclude_if:
+    - "l'action est décorée de [EnableRateLimiting(\"$policy\")] ou le endpoint minimal API chaîne .RequireRateLimiting(\"$policy\")"
+    - "une politique globale de rate limiting est enregistrée via services.AddRateLimiter et appliquée à l'ensemble du pipeline (app.UseRateLimiter())"
+
+message: >
+  Endpoint sensible sans attribut [EnableRateLimiting] ni politique de
+  limitation de débit — ajouter services.AddRateLimiter() et une policy
+  adaptée pour prévenir le bourrage d'identifiants et l'épuisement de
+  ressources (voir rules/remediation/missing-rate-limit.md).
+
+false_positive_notes:
+  - "Vérifier qu'une limitation de débit n'est pas déjà appliquée en amont au niveau de la passerelle API ou du reverse proxy avant de remonter en `medium`."
+  - "Un endpoint interne accessible uniquement depuis un réseau de confiance restreint peut justifier une exception documentée."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

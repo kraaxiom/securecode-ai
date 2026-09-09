@@ -1,0 +1,36 @@
+id: xml-injection
+language: python
+category: injections
+cwe: CWE-91
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un document XML par interpolation directe
+    d'une variable non échappée dans une chaîne de gabarit XML (au lieu
+    d'utiliser un constructeur d'arbre comme lxml.etree.Element ou
+    ElementTree.SubElement), ce qui permet l'injection de balises/attributs
+    supplémentaires.
+  patterns:
+    - "xml_string = f\"<user><name>{var}</name></user>\""
+    - "xml_string = \"<user>\" + var + \"</user>\""
+    - "xml_string = \"<tag>%s</tag>\" % var"
+  exclude_if:
+    - "var passe par xml.sax.saxutils.escape() avant insertion"
+    - "le document est construit via un constructeur d'arbre (etree.SubElement, ElementTree.Element) et non par concaténation de chaînes"
+
+message: >
+  Document XML construit par interpolation de chaîne sans échappement —
+  un attaquant peut injecter des balises ou attributs XML supplémentaires.
+  Construire le document via un arbre DOM (lxml.etree, ElementTree) ou
+  échapper la valeur avec xml.sax.saxutils.escape().
+
+false_positive_notes:
+  - "Si la variable est strictement numérique/booléenne validée en amont, le risque est réduit."
+  - "L'usage d'un moteur de templating XML avec échappement automatique par défaut (ex: Jinja2 en mode autoescape XML) réduit le risque."
+
+remediation_ref: rules/remediation/xml-injection.md
+knowledge_ref: knowledge/injections/xml-injection.md

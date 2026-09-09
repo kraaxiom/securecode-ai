@@ -1,0 +1,38 @@
+id: request-desynchronization
+language: rust
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Rust (hyper en mode bas niveau, parsing manuel de
+    socket via `tokio::net::TcpStream`) placé derrière un reverse proxy et
+    exposant un traitement personnalisé des en-têtes `Content-Length` et
+    `Transfer-Encoding`, ou un parsing HTTP maison au lieu d'utiliser la
+    validation stricte fournie par hyper/actix-web, susceptible
+    d'interpréter différemment les limites de requête que le frontal.
+  patterns:
+    - "parsing manuel d'une requête HTTP à partir d'un TcpStream::read (buffer brut découpé à la main) sans passer par hyper::server::conn ou httparse avec validation stricte"
+    - "code qui lit à la fois le header Content-Length et Transfer-Encoding sans rejeter la requête (400) si les deux sont présents simultanément"
+    - "middleware actix-web/hyper custom qui réécrit ou ignore Transfer-Encoding: chunked transmis par un proxy amont sans re-normalisation stricte"
+  exclude_if:
+    - "le serveur utilise exclusivement hyper ou actix-web en mode standard (pas de parsing HTTP manuel bas niveau) sans désactiver leurs validations internes"
+    - "la requête est explicitement rejetée (400) lorsque Content-Length et Transfer-Encoding sont tous deux présents"
+
+message: >
+  Traitement HTTP potentiellement divergent entre le reverse proxy et le
+  service Rust (parsing manuel, gestion ambiguë de Content-Length/
+  Transfer-Encoding) — risque de Request Smuggling permettant d'injecter
+  une requête cachée traitée dans le contexte d'un autre utilisateur (voir
+  rules/remediation/request-desynchronization.md).
+
+false_positive_notes:
+  - "Cette classe de vulnérabilité dépend fortement de la combinaison proxy+serveur applicatif ; une confirmation nécessite souvent un test d'intégration, pas seulement une revue de code source."
+  - "hyper et actix-web appliquent par défaut une validation stricte HTTP/1.1 conforme à la RFC ; le risque concerne surtout le parsing manuel ou la désactivation de ces garde-fous — vérifier les versions et la configuration avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

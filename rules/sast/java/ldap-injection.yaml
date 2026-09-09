@@ -1,0 +1,36 @@
+id: ldap-injection
+language: java
+category: injections
+cwe: CWE-90
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un filtre LDAP par concaténation de chaînes
+    passé à DirContext.search/InitialDirContext ou à
+    LdapTemplate.search/authenticate (Spring LDAP) sans échappement des
+    métacaractères LDAP (`*`, `(`, `)`, `\`, NUL).
+  patterns:
+    - "DirContext.search(_, string_concat(_, $var, _), _)"
+    - "LdapTemplate.search(string_concat(_, $var, _), _)"
+    - "LdapTemplate.authenticate(_, string_concat(_, $var, _), _)"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var passe par LdapEncoder.filterEncode() (Spring LDAP) ou une fonction d'échappement LDAP équivalente avant concaténation"
+
+message: >
+  Filtre LDAP construit par concaténation d'une entrée non échappée — un
+  attaquant peut injecter des métacaractères LDAP pour altérer la requête
+  (contournement d'authentification, extraction d'attributs) ; échapper
+  systématiquement via LdapEncoder.filterEncode() ou utiliser des filtres
+  paramétrés (voir rules/remediation/ldap-injection.md).
+
+false_positive_notes:
+  - "Si $var passe par LdapEncoder.filterEncode() (ou nameEncode() pour les DN) avant concaténation, ce n'est pas vulnérable."
+  - "Un filtre statique sans variable utilisateur ne déclenche pas cette règle."
+
+remediation_ref: rules/remediation/ldap-injection.md
+knowledge_ref: knowledge/injections/ldap-injection.md

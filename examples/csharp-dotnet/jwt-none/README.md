@@ -1,0 +1,3 @@
+# JWT `alg: none` (CWE-347)
+
+La version vulnérable utilise `ReadJwtToken`, qui décode le contenu du token sans jamais vérifier sa signature, avant d'utiliser directement le claim `role` pour une décision d'autorisation. Un attaquant peut donc fabriquer un token avec `alg: none` et une signature vide, en y insérant n'importe quel claim, y compris `role: admin`, sans posséder aucun secret. La correction remplace ce décodage par un appel à `ValidateToken` avec une liste fermée d'algorithmes forts (`HmacSha256`), qui exclut structurellement l'algorithme `none` et rejette tout token non signé ou signé de façon invalide. Aucune décision d'autorisation ne repose plus sur des claims non vérifiés cryptographiquement.

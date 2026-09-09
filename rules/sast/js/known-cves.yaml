@@ -1,0 +1,32 @@
+id: known-cves
+language: javascript
+category: supply-chain
+cwe: CWE-1104
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: high
+confidence_default: high
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans package.json/package-lock.json, une contrainte de version
+    figée sur une plage connue comme vulnérable dans les bases publiques
+    (NVD, GitHub Advisory Database, OSV) pour un package npm donné.
+  patterns:
+    - "dependencies.<package>: '<version>' où <version> appartient à une plage CVE/GHSA publiée pour ce package"
+    - "package-lock.json contenant une version résolue listée dans une advisory active"
+  exclude_if:
+    - "La version installée est postérieure ou égale à la version corrigeant la CVE (fix version)"
+    - "Le package n'est présent qu'en devDependencies et n'est jamais inclus dans le bundle de production"
+
+message: >
+  Dépendance figée sur une version affectée par une CVE publique connue —
+  mettre à jour vers la version corrigée (`npm audit fix`) et intégrer un
+  scan SCA en CI/CD (voir rules/remediation/known-cves.md).
+
+false_positive_notes:
+  - "Vérifier que le package vulnérable est bien inclus dans le bundle final (pas tree-shaké / dead code eliminated)."
+  - "Si la CVE ne concerne qu'un environnement Node spécifique non utilisé en production, documenter avant de déclasser."
+
+remediation_ref: rules/remediation/known-cves.md
+knowledge_ref: knowledge/supply-chain/known-cves.md

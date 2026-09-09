@@ -1,0 +1,33 @@
+id: mime-bypass
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une decision d'acceptation d'upload fondee sur l'en-tete
+    Content-Type HTTP envoye par le client, sans revalidation cote serveur du
+    type reel du fichier.
+  patterns:
+    - "if request.files[$_].mimetype in ['image/jpeg', 'image/png']: (Flask) sans re-verification du contenu"
+    - "if request.FILES[$_].content_type == $_: (Django) utilise comme seul filtre d'upload"
+    - "UploadFile.content_type (FastAPI) compare directement sans inspection du contenu binaire"
+  exclude_if:
+    - "Le Content-Type declare est recroise avec une detection de type basee sur le contenu (python-magic, Pillow.Image.verify())"
+
+message: >
+  Filtrage d'upload base uniquement sur le Content-Type declare par le client
+  - cet en-tete est entierement falsifiable via une requete forgee. Un
+  attaquant peut envoyer un executable en declarant image/png. Revalider le
+  type reel du fichier cote serveur (python-magic, Pillow) avant tout
+  traitement ou stockage.
+
+false_positive_notes:
+  - "Le Content-Type peut rester un premier filtre rapide (UX) tant qu'il n'est pas l'unique controle de securite - verifier la presence d'une seconde validation."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

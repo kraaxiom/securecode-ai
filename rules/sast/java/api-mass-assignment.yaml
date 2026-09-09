@@ -1,0 +1,36 @@
+id: api-mass-assignment
+language: java
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un contrôleur Spring MVC/REST liant directement le corps JSON d'une
+    requête à une entité JPA complète via @RequestBody, sans DTO restreint ni
+    annotations de contrôle de champ, permettant à un client de définir des
+    champs sensibles (role, isAdmin, balance, id).
+  patterns:
+    - "@PostMapping/@PutMapping avec @RequestBody UserEntity (entité JPA annotée @Entity) directement persistée via repository.save(entity)"
+    - "BeanUtils.copyProperties($requestBody, $entity) copiant tous les champs sans liste d'exclusion explicite"
+    - "ObjectMapper.readValue($json, EntityClass.class) suivi d'une persistance directe sans filtrage de champs"
+  exclude_if:
+    - "un DTO dédié à la requête n'expose que les champs modifiables autorisés, mappé explicitement vers l'entité champ par champ"
+    - "les champs sensibles de l'entité sont annotés @JsonIgnore ou exclus explicitement lors du mapping"
+
+message: >
+  Le corps JSON de la requête est lié directement à l'entité JPA complète
+  (mass assignment) — un client peut définir des champs sensibles non prévus
+  (rôle, solde, identifiant) qui ne devraient pas être modifiables via cet
+  endpoint. Utiliser un DTO dédié n'exposant que les champs autorisés en
+  écriture, avec un mapping explicite vers l'entité.
+
+false_positive_notes:
+  - "Si l'entité ne contient aucun champ sensible au-delà de ceux légitimement modifiables par l'utilisateur, reclasser en `low`."
+  - "@JsonIgnore sur les champs sensibles de l'entité neutralise le risque à la désérialisation — vérifier sa présence avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

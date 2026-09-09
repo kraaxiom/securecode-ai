@@ -1,0 +1,15 @@
+id: stored-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: fonction de rendu HTML affichant une donnée relue depuis un stockage persistant (base de données, fichier, cache)
+  block_condition: >
+    Donnée provenant d'un stockage persistant, marquée non fiable au moment de son écriture
+    initiale par un utilisateur, atteint le sink de rendu HTML sans passer par une fonction
+    d'encodage contextuel ou de sanitisation HTML enregistrée dans la chaîne d'exécution.
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/stored-xss.md
+knowledge_ref: knowledge/xss/stored-xss.md

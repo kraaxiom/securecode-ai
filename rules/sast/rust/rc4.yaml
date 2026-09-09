@@ -1,0 +1,29 @@
+id: rc4
+language: rust
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la dépendance et l'usage d'un crate RC4 (`rc4`, `stream-cipher`
+    avec Rc4) pour chiffrer un flux ou un fichier applicatif.
+  patterns:
+    - "rc4 = \"_\" (Cargo.toml)"
+    - "use rc4::Rc4"
+    - "Rc4::new(_)"
+  exclude_if:
+    - "usage exclusif dans un test de compatibilité avec un protocole legacy externe, documenté comme tel"
+
+message: >
+  RC4 présente des biais statistiques exploitables et est interdit dans TLS
+  depuis la RFC 7465 — migrer vers le crate `aes-gcm` ou `chacha20poly1305`.
+
+false_positive_notes:
+  - "Si le crate est présent en dépendance transitive mais jamais réellement invoqué par le code applicatif, vérifier l'usage effectif avant de conclure."
+
+remediation_ref: rules/remediation/rc4.md
+knowledge_ref: knowledge/crypto/rc4.md

@@ -1,0 +1,35 @@
+id: asp-upload
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Pattern Python generique pour la meme faille (le pattern original vise
+    ASP/ASP.NET) - une application Python (Flask/Django) exposant un
+    reverse-proxy ou un backend mixte devant un serveur IIS/ASP legacy
+    accepte un upload dont l'extension n'est pas restreinte, permettant le
+    depot d'un fichier .asp/.aspx executable cote serveur IIS.
+  patterns:
+    - "file.save(os.path.join(UPLOAD_DIR, file.filename)) sans whitelist d'extension quand UPLOAD_DIR est servi par IIS/ASP en aval"
+    - "Absence de verification d'extension avant ecriture d'un fichier uploade dans un repertoire accessible en execution par un serveur ASP"
+  exclude_if:
+    - "Une whitelist stricte d'extensions (ex: .jpg, .png, .pdf) est appliquee avant l'ecriture"
+    - "Le repertoire de destination n'est jamais interprete/execute par un serveur applicatif (ex: stockage objet S3 sans execution)"
+
+message: >
+  Upload de fichier sans restriction d'extension, ecrit dans un repertoire
+  potentiellement executable par un serveur ASP/IIS en aval - un attaquant
+  peut deposer un webshell .asp/.aspx executable. Appliquer une whitelist
+  stricte d'extensions et stocker les fichiers hors de tout repertoire
+  executable par un serveur web.
+
+false_positive_notes:
+  - "Non applicable si aucun composant ASP/IIS n'existe dans l'architecture - reclasser en `info` et documenter l'absence de risque."
+
+remediation_ref: rules/remediation/asp-upload.md
+knowledge_ref: knowledge/upload/asp-upload.md

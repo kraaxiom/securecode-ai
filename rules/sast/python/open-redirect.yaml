@@ -1,0 +1,34 @@
+id: open-redirect
+language: python
+category: frontend
+cwe: CWE-601
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une redirection HTTP construite a partir d'un parametre fourni
+    par le client (next, redirect_uri, return_url) sans validation qu'il
+    pointe vers un domaine de confiance.
+  patterns:
+    - "redirect(request.args.get('next')) (Flask) sans validation de domaine"
+    - "HttpResponseRedirect(request.GET.get('next')) (Django) sans url_has_allowed_host_and_scheme()"
+    - "RedirectResponse(url=request.query_params.get('redirect_uri')) (FastAPI/Starlette) sans whitelist de domaine"
+  exclude_if:
+    - "django.utils.http.url_has_allowed_host_and_scheme() (ou equivalent) valide l'URL avant redirection"
+    - "L'URL de redirection est comparee a une whitelist explicite de chemins/domaines internes"
+
+message: >
+  Redirection HTTP construite depuis un parametre client sans validation de
+  domaine — un attaquant peut forger un lien vers l'application legitime qui
+  redirige la victime vers un site de phishing (open redirect). Valider
+  l'URL cible contre une whitelist de domaines internes (Django:
+  url_has_allowed_host_and_scheme) avant toute redirection.
+
+false_positive_notes:
+  - "Si le parametre de redirection n'accepte que des chemins relatifs (pas de schema://host), le risque est fortement reduit — verifier le pattern exact accepte."
+
+remediation_ref: rules/remediation/open-redirect.md
+knowledge_ref: knowledge/frontend/open-redirect.md

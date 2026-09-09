@@ -1,0 +1,31 @@
+id: session-prediction
+language: php
+category: auth
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session/token maison à partir
+    de fonctions non cryptographiques (md5, uniqid, mt_rand) au lieu de
+    random_bytes/Str::random.
+  patterns:
+    - "md5($userId . time())"
+    - "uniqid()"
+    - "md5(mt_rand())"
+  exclude_if:
+    - "La valeur générée n'est pas utilisée comme identifiant de session ou de token de réinitialisation (usage purement cosmétique)"
+    - "random_bytes ou Str::random encadre la génération finale utilisée comme session ID"
+
+message: >
+  Génération d'identifiant de session à partir d'une source non
+  cryptographique/prévisible — voir rules/remediation/session-prediction.md.
+
+false_positive_notes:
+  - "uniqid() peut être utilisé légitimement pour des identifiants non sensibles (ex: nom de fichier temporaire) — vérifier l'usage réel avant de confirmer."
+
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

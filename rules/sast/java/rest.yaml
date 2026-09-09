@@ -1,0 +1,36 @@
+id: rest
+language: java
+category: api
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une mauvaise configuration de sécurité générale sur une API REST
+    Spring: méthodes HTTP dangereuses non restreintes, endpoints d'actuator
+    exposés sans authentification, ou absence de configuration
+    d'autorisation par défaut dans la SecurityFilterChain.
+  patterns:
+    - "SecurityFilterChain autorisant anyRequest().permitAll() sur des endpoints /api/** au lieu d'une politique explicite par ressource"
+    - "endpoints Spring Boot Actuator (/actuator/env, /actuator/heapdump, /actuator/beans) exposés sans authentification (management.endpoints.web.exposure.include=* sans sécurisation)"
+    - "@RequestMapping acceptant toutes les méthodes HTTP (GET/POST/PUT/DELETE) sans restriction explicite au verbe nécessaire"
+  exclude_if:
+    - "chaque endpoint sensible est explicitement configuré avec une autorisation par rôle (hasRole/hasAuthority) dans la SecurityFilterChain"
+    - "les endpoints Actuator sensibles sont protégés par authentification ou désactivés en production (management.endpoints.web.exposure.include restreint à health,info)"
+
+message: >
+  Configuration de sécurité REST trop permissive — endpoints sans autorisation
+  explicite ou endpoints d'administration (Actuator) exposés sans
+  authentification. Définir une politique d'autorisation explicite par
+  ressource dans la SecurityFilterChain et restreindre l'exposition des
+  endpoints Actuator sensibles.
+
+false_positive_notes:
+  - "Les endpoints /actuator/health et /actuator/info sont conçus pour être publics — ne pas remonter s'ils sont les seuls exposés."
+  - "permitAll() sur des ressources réellement publiques (page de login, assets statiques) est un usage légitime — vérifier la nature de la ressource avant de remonter."
+
+remediation_ref: rules/remediation/rest.md
+knowledge_ref: knowledge/api/rest.md

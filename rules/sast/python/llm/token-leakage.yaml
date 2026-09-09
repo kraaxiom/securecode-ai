@@ -1,0 +1,36 @@
+id: token-leakage
+language: python
+category: llm
+cwe: CWE-522
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le stockage ou la transmission non protégée de clés d'API LLM
+    (OpenAI, Anthropic, Cohere) : clé en dur dans le code, dans les logs, ou
+    exposée côté client (frontend appelant directement l'API du fournisseur
+    LLM avec la clé secrète).
+  patterns:
+    - "openai.api_key = \"sk-...\" / OpenAI(api_key=\"sk-...\") — clé API en dur dans le code source"
+    - "logging.info(f\"Appel API avec clé {api_key}\") / print(api_key) — clé API journalisée en clair"
+    - "clé API OpenAI/Anthropic transmise dans du code exécuté côté navigateur (template Jinja2 rendant la clé dans le HTML/JS servi au client)"
+  exclude_if:
+    - "la clé API est chargée exclusivement depuis une variable d'environnement/vault ET n'apparaît jamais dans un log, un template rendu côté client, ou une réponse HTTP"
+
+message: >
+  Clé d'API LLM stockée en dur, journalisée en clair, ou exposée côté client
+  — un attaquant obtenant cette clé peut consommer le quota/facturation du
+  compte ou accéder à des données via l'API du fournisseur. Charger la clé
+  depuis un gestionnaire de secrets/variable d'environnement, ne jamais la
+  journaliser, et ne jamais l'exposer côté client (proxifier les appels côté
+  serveur) — voir rules/remediation/token-leakage.md.
+
+false_positive_notes:
+  - "Une clé de test/sandbox à portée limitée et révoquée régulièrement représente un risque réduit — vérifier le scope avant de confirmer `high`."
+  - "Le masquage partiel dans les logs (ex: 'sk-***') n'est pas une fuite si aucun caractère exploitable n'est visible."
+
+remediation_ref: rules/remediation/token-leakage.md
+knowledge_ref: knowledge/llm/token-leakage.md

@@ -1,0 +1,28 @@
+id: regex-dos
+language: go
+category: injections
+cwe: CWE-1333
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un usage non sécurisé d'une entrée utilisateur pouvant conduire à déni de service par expression régulière (redos).
+  patterns:
+    - "regexp.MustCompile($var) avec motif construit dynamiquement depuis une entrée utilisateur, sans limite de taille/timeout"
+  exclude_if:
+    - "la valeur est validée par liste blanche ou échappée via la fonction dédiée de la stdlib/du framework avant usage"
+    - "$var provient d'une constante interne (pas d'entrée utilisateur), non exploitable"
+
+message: >
+  Déni de service par expression régulière (ReDoS) détectée — valider/échapper strictement toute entrée utilisateur avant usage dans ce contexte (voir rules/remediation/regex-dos.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une liste blanche stricte ou échappée via l'API dédiée du framework avant usage, ce n'est pas exploitable."
+  - "Si $var provient d'une constante interne (pas d'entrée utilisateur), reclasser en `info`."
+  - "Un motif regex statique (non dérivé d'une entrée utilisateur) même complexe est hors périmètre de cette règle — se référer plutôt à une analyse de complexité du moteur regex."
+
+remediation_ref: rules/remediation/regex-dos.md
+knowledge_ref: knowledge/injections/regex-dos.md

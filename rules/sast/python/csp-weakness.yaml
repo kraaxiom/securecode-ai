@@ -1,0 +1,34 @@
+id: csp-weakness
+language: python
+category: frontend
+cwe: CWE-693
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une Content-Security-Policy definie cote serveur Python
+    (django-csp, Flask-Talisman, en-tete manuel) contenant des directives
+    faibles (unsafe-inline, unsafe-eval, joker *) qui neutralisent la
+    protection anti-XSS de la CSP.
+  patterns:
+    - "CSP_DEFAULT_SRC = (\"'unsafe-inline'\", \"'unsafe-eval'\") (django-csp)"
+    - "Talisman(app, content_security_policy={'script-src': \"'unsafe-inline' *\"}) (Flask-Talisman)"
+    - "response.headers['Content-Security-Policy'] = \"default-src *; script-src 'unsafe-inline'\" defini manuellement"
+  exclude_if:
+    - "unsafe-inline/unsafe-eval sont absents, ou remplaces par des nonces/hashes (nonce-<random>) generes par requete"
+
+message: >
+  Content-Security-Policy affaiblie par des directives permissives
+  (unsafe-inline, unsafe-eval, joker *) — neutralise l'essentiel de la
+  protection contre l'injection de script (XSS). Utiliser des nonces ou
+  hashes par requete plutot que unsafe-inline, et lister explicitement les
+  sources de confiance plutot qu'un joker.
+
+false_positive_notes:
+  - "unsafe-inline peut etre une etape de migration transitoire documentee — verifier la roadmap avant de remonter en `high`."
+
+remediation_ref: rules/remediation/csp-weakness.md
+knowledge_ref: knowledge/frontend/csp-weakness.md

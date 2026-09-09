@@ -1,0 +1,12 @@
+id: forced-browsing
+category: authorization
+cwe: CWE-425
+type: rasp
+guard:
+  sink: "remise de contenu (fichier statique ou étape de flux) au client"
+  block_condition: "la ressource demandée est classée sensible (répertoire de sauvegarde/config, étape non initiale d'un flux) et aucun contrôle d'authentification/autorisation ou de vérification d'état de progression n'a été enregistré pour cette requête"
+  action: alert-only
+  fail_mode: fail-open
+severity: medium
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

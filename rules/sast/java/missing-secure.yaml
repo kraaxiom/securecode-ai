@@ -1,0 +1,32 @@
+id: missing-secure
+language: java
+category: sessions
+cwe: CWE-614
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un cookie de session sans attribut Secure, permettant sa
+    transmission en clair sur HTTP.
+  patterns:
+    - "new Cookie($_, $_) sans appel à setSecure(true)"
+    - "server.servlet.session.cookie.secure=false dans application.properties/yml"
+    - "ResponseCookie.from($_, $_).secure(false)"
+  exclude_if:
+    - "setSecure(true) est appelé explicitement, ou server.servlet.session.cookie.secure=true"
+    - "l'application tourne exclusivement en environnement de développement local documenté (profil dev)"
+
+message: >
+  Cookie créé sans attribut Secure — il peut être transmis en clair sur une
+  connexion HTTP non chiffrée et intercepté. Appeler setSecure(true) ou définir
+  server.servlet.session.cookie.secure=true en production.
+
+false_positive_notes:
+  - "En profil Spring 'dev' derrière un reverse proxy TLS-terminating local, le risque est réduit — vérifier le contexte de déploiement avant de remonter en `high`."
+  - "Si un proxy TLS externe force déjà HTTPS et que le cookie n'est jamais routable en clair, reclasser en `low`."
+
+remediation_ref: rules/remediation/missing-secure.md
+knowledge_ref: knowledge/sessions/missing-secure.md

@@ -1,0 +1,15 @@
+id: xxe
+category: injections
+cwe: CWE-611
+type: iast
+instrumentation:
+  hook_points:
+    - "java: DocumentBuilderFactory.newInstance() sans FEATURE_SECURE_PROCESSING ni désactivation de DOCTYPE_DECL"
+    - "python: lxml.etree.parse/fromstring appelé sans resolve_entities=False ni no_network=True"
+    - "php: appel XML (simplexml_load_string/DOMDocument::loadXML) sans libxml_disable_entity_loader(true) ou sans flag LIBXML_NONET"
+    - "csharp: XmlReaderSettings avec DtdProcessing.Parse et XmlResolver non nul"
+  taint_check: trace la construction/configuration du parseur XML jusqu'au traitement d'un document XML provenant d'une entrée utilisateur, en vérifiant l'absence de désactivation explicite du traitement des entités externes et du DTD
+  trigger_condition: un document XML issu d'une source externe (requête HTTP, fichier uploadé) est parsé par une instance de parseur dont le traitement des entités externes/DTD n'a pas été explicitement désactivé
+severity: critical
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

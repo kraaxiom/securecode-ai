@@ -1,0 +1,39 @@
+id: prototype-pollution-advanced
+language: go
+category: modern
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Adaptation Go du concept de prototype pollution JavaScript : détecte
+    une fusion récursive (deep merge) d'un `map[string]interface{}` décodé
+    depuis `encoding/json` (entrée utilisateur) dans une structure de
+    configuration interne, ou une réflexion (`reflect`) assignant
+    dynamiquement des champs à partir de clés non filtrées, sans allowlist
+    ni validation de schéma.
+  patterns:
+    - "func deepMerge(dst, src map[string]interface{}) { for k, v := range src { dst[k] = v } } appliqué récursivement à un objet de configuration global sans allowlist de clés"
+    - "json.Unmarshal(body, &target) où target est map[string]interface{} fusionné ensuite dans une config globale via mergo.Merge ou une fonction maison, sans filtrage des clés"
+    - "reflect.ValueOf(config).FieldByName(userControlledKey).Set(...) où userControlledKey provient directement d'une requête HTTP"
+  exclude_if:
+    - "les clés du map source sont validées contre une allowlist stricte (ou un schéma via json.Unmarshal vers une struct typée avec DisallowUnknownFields) avant toute fusion/assignation"
+    - "la fusion cible exclusivement un map de données simple (jamais reflect.Set ni assignation dynamique de champs de struct via des clés utilisateur)"
+
+message: >
+  Fusion récursive d'un map contrôlé par l'attaquant dans une structure de
+  configuration, ou assignation dynamique de champs via reflect à partir de
+  clés non filtrées — équivalent Go de la pollution de prototype, pouvant
+  altérer le comportement interne de l'application (voir
+  rules/remediation/prototype-pollution-advanced.md).
+
+false_positive_notes:
+  - "Note d'adaptation : le concept JS original (Object.prototype) n'existe pas en Go ; ce rapprochement cible la fusion non filtrée de map[string]interface{} ou l'assignation via reflect, le vecteur Go le plus proche en impact."
+  - "Si le décodage utilise json.NewDecoder(...).DisallowUnknownFields() vers une struct typée stricte (jamais map[string]interface{} brut fusionné), reclasser en `low`."
+  - "Si la fusion utilise exclusivement des maps de données (jamais reflect.Set sur des instances de struct), le risque d'impact structurel est réduit — reclasser en `medium`."
+
+remediation_ref: rules/remediation/prototype-pollution-advanced.md
+knowledge_ref: knowledge/modern/prototype-pollution-advanced.md

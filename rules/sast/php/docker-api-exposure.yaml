@@ -1,0 +1,34 @@
+id: docker-api-exposure
+language: config
+category: docker
+cwe: CWE-306
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte une configuration du daemon Docker exposant l'API sur un socket
+    TCP non chiffré/non authentifié (daemon.json, unit systemd, arguments
+    de lancement dockerd).
+  patterns:
+    - "-H tcp://0.0.0.0:2375"
+    - "-H tcp://*:2375"
+    - "\"hosts\": [\"tcp://0.0.0.0:2375\"]"
+    - "dockerd --host tcp://0.0.0.0:2375"
+  exclude_if:
+    - "tlsverify=true présent avec tlscacert/tlscert/tlskey définis (TLS mutuel actif)"
+    - "port 2376 utilisé avec certificats clients configurés"
+
+message: >
+  Le daemon Docker écoute sur un socket TCP sans authentification TLS
+  mutuelle — équivaut à un accès root non authentifié sur l'hôte. Voir
+  rules/remediation/docker-api-exposure.md.
+
+false_positive_notes:
+  - "Si `tlsverify=true` et les certificats client sont correctement configurés, reclasser en `info`."
+  - "Si le port n'est accessible que sur une interface loopback/réseau privé isolé, réévaluer la sévérité manuellement."
+
+remediation_ref: rules/remediation/docker-api-exposure.md
+knowledge_ref: knowledge/docker/docker-api-exposure.md

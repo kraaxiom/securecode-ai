@@ -1,0 +1,30 @@
+id: race-condition
+language: js
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une séquence lire-puis-écrire sur une ressource critique (stock,
+    quota) via deux appels db.query séparés, sans transaction.
+  patterns:
+    - "await db.query(\"SELECT stock\", _); ... await db.query(\"UPDATE\", _, \"stock = stock -\", _)"
+    - "await db.query(\"SELECT attempts\", _); ... await db.query(\"UPDATE\", _, \"attempts = attempts +\", _)"
+  exclude_if:
+    - "Les opérations sont encapsulées dans db.transaction() avec SELECT ... FOR UPDATE"
+    - "La mise à jour utilise une clause WHERE conditionnelle atomique (ex: WHERE stock > 0) sans lecture préalable séparée"
+
+message: >
+  Séquence lire-modifier-écrire non atomique sur une ressource critique —
+  risque de condition de concurrence (voir rules/remediation/race-condition.md).
+
+false_positive_notes:
+  - "Un verrou distribué applicatif (Redis SETNX, mutex) peut atténuer le risque même sans transaction SQL explicite — vérifier sa présence."
+  - "Ressources non critiques ne justifient pas une sévérité `high`."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

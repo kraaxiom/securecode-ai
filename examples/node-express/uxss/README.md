@@ -1,0 +1,3 @@
+# Universal XSS (UXSS)
+
+`vulnerable.js` charge un script tiers depuis un CDN sans vérification d'intégrité et embarque une iframe tierce sans attribut `sandbox`, sans aucune Content Security Policy pour restreindre la surface d'exposition. `fixed.js` ajoute une CSP stricte via `helmet`, du Subresource Integrity sur le script CDN, un `sandbox` minimal sur l'iframe et une `Permissions-Policy` limitant les capacités des composants tiers. Bien que la cause première d'un UXSS soit souvent une faille du navigateur ou d'un composant tiers plutôt que du code applicatif, cette classe reste rattachée à CWE-79 (Improper Neutralization of Input During Web Page Generation) car l'application reste responsable de limiter sa surface d'exposition.

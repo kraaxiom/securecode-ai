@@ -1,0 +1,36 @@
+id: expression-language-injection
+language: js
+category: injections
+cwe: CWE-917
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte la construction d'une source de template (EJS, Pug, Handlebars)
+    ou d'une expression JavaScript évaluée dynamiquement à partir d'une
+    chaîne concaténée avec une entrée utilisateur (req.query, req.body,
+    req.params). Une regex est utilisée car ejs.render/new Function/eval
+    acceptent une chaîne libre non structurée en AST propre à l'expression.
+  patterns:
+    - "ejs\\.render\\s*\\(\\s*[`\"'].*\\$\\{.*req\\.(query|body|params)"
+    - "\\bnew\\s+Function\\s*\\(.*req\\.(query|body|params)"
+    - "\\beval\\s*\\(.*req\\.(query|body|params)"
+  exclude_if:
+    - "La chaîne de template est un littéral statique et la donnée utilisateur n'est passée que dans l'objet de données de render(), jamais dans la source"
+    - "La variable concaténée provient d'une constante interne à l'application, non d'une entrée utilisateur"
+
+message: >
+  Construction dynamique d'un template ou d'une expression évaluée avec une
+  entrée utilisateur concaténée — passer la donnée comme variable de rendu
+  plutôt que dans la source évaluée (voir
+  rules/remediation/expression-language-injection.md).
+
+false_positive_notes:
+  - "Si la valeur concaténée est un identifiant de template statique choisi dans une liste blanche fixe côté serveur, ce n'est pas exploitable."
+  - "Si le moteur de template est configuré avec échappement automatique et que seule l'interpolation de variable est utilisée (pas de source dynamique), reclasser en `info`."
+
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

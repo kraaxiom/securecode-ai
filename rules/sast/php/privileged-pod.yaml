@@ -1,0 +1,37 @@
+id: privileged-pod
+language: config
+category: kubernetes
+cwe: CWE-250
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: config-pattern
+  description: >
+    Détecte un pod/conteneur Kubernetes configuré avec des privilèges
+    excessifs (privileged, hostPID, hostNetwork, hostIPC, capabilities
+    larges, hostPath sensible).
+  patterns:
+    - "securityContext: ... privileged: true"
+    - "hostPID: true"
+    - "hostNetwork: true"
+    - "hostIPC: true"
+    - "capabilities: ... add: [SYS_ADMIN|NET_ADMIN|ALL]"
+    - "hostPath: ... path: (/|/var/run/docker.sock|/proc)"
+  exclude_if:
+    - "DaemonSet système justifié (CNI, monitoring) avec capabilities strictement scoped documentées, pas ALL/SYS_ADMIN"
+    - "allowPrivilegeEscalation: false et runAsNonRoot: true présents en complément, réduisant l'impact réel"
+
+message: >
+  Le pod est configuré avec des privilèges rompant l'isolation hôte
+  (privileged, hostPID/hostNetwork/hostIPC, capabilities larges, ou
+  hostPath sensible) — risque d'évasion vers le nœud. Voir
+  rules/remediation/privileged-pod.md.
+
+false_positive_notes:
+  - "Un DaemonSet d'agent système (CNI, monitoring) documenté avec un scope de capabilities minimal peut être accepté après revue manuelle."
+  - "Si un admission controller (OPA/Gatekeeper, Kyverno) bloque déjà ce pattern au niveau cluster, le risque résiduel est réduit mais le manifeste reste à corriger."
+
+remediation_ref: rules/remediation/privileged-pod.md
+knowledge_ref: knowledge/kubernetes/privileged-pod.md

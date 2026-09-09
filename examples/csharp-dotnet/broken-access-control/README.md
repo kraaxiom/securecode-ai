@@ -1,0 +1,3 @@
+# Broken Access Control (CWE-284)
+
+La version vulnérable protège `GET /api/invoices/{id}/download` avec `[Authorize]`, ce qui vérifie seulement que l'utilisateur est connecté, mais ne contrôle jamais si cette facture précise lui appartient : n'importe quel client authentifié peut télécharger les factures de tous les autres en changeant l'ID. La correction introduit un `IAuthorizationService` centralisé qui applique une policy dédiée (`ViewInvoice`) évaluant explicitement si l'appelant est le propriétaire de la facture ou un administrateur, selon le principe du "deny by default" : l'accès est refusé sauf autorisation explicitement accordée par le handler, plutôt que d'être implicitement accordé à tout utilisateur authentifié.

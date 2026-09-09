@@ -1,0 +1,37 @@
+id: asp-upload
+language: go
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'enregistrement d'un fichier téléversé via multipart (net/http)
+    sous une extension potentiellement interprétable par un serveur web
+    exécutant un moteur de scripts adjacent (proxy inverse vers IIS/ASP,
+    déploiement mixte), sans validation d'extension ni de signature.
+  patterns:
+    - "os.Create(string_concat(_, $header.Filename, _))"
+    - "os.Create(filepath.Join(_, $header.Filename))"
+    - "io.Copy($dst, $file)"
+    - "r.FormFile($_)"
+  exclude_if:
+    - "l'extension du fichier de destination est comparée à une liste blanche stricte avant os.Create"
+    - "le nom de fichier écrit sur disque est généré côté serveur (ex: uuid.New()) et ne réutilise jamais $header.Filename"
+    - "le répertoire de destination n'est pas servi statiquement par le serveur web ou est configuré pour interdire l'exécution de scripts"
+
+message: >
+  Écriture sur disque d'un fichier reçu via r.FormFile/multipart sans
+  validation d'extension ni de contenu réel, avec un nom de fichier
+  potentiellement issu directement du client — risque de dépôt d'un fichier
+  interprétable par le serveur web frontal (voir rules/remediation/asp-upload.md).
+
+false_positive_notes:
+  - "Si le service Go ne sert jamais le répertoire de destination via un serveur web capable d'interpréter des scripts (ex: stockage objet interne), le risque est réduit — reclasser en `info` après vérification."
+  - "Si une liste blanche d'extensions et un renommage aléatoire sont appliqués avant os.Create, ce n'est pas exploitable de cette manière."
+
+remediation_ref: rules/remediation/asp-upload.md
+knowledge_ref: knowledge/upload/asp-upload.md

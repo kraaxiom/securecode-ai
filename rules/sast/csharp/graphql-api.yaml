@@ -1,0 +1,36 @@
+id: graphql-api
+language: csharp
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un résolveur ou un champ de type HotChocolate (Hot Chocolate
+    GraphQL server pour .NET) accessible sans attribut d'autorisation, ou
+    une configuration de serveur GraphQL laissant l'introspection active en
+    production.
+  patterns:
+    - "public $Type $Resolver([Service] $Repo repo) { return repo.GetAll(); }"
+    - "services.AddGraphQLServer().AddQueryType<$QueryType>()"
+    - ".AllowIntrospection(true)"
+    - "[GraphQLName(\"$field\")] public $Type $Field { get; }"
+  exclude_if:
+    - "le résolveur est décoré de [Authorize] (HotChocolate.AspNetCore.Authorization) avec policy vérifiée"
+    - "l'introspection est explicitement désactivée en environnement de production (.AllowIntrospection(env.IsDevelopment()))"
+
+message: >
+  Résolveur GraphQL (HotChocolate) sans attribut [Authorize] ou introspection
+  laissée active en production — appliquer un contrôle d'autorisation par
+  champ et désactiver l'introspection hors environnement de développement
+  (voir rules/remediation/graphql-api.md).
+
+false_positive_notes:
+  - "Si le champ expose uniquement des données publiques non sensibles, le contrôle d'autorisation par champ peut être omis délibérément — reclasser en `info`."
+  - "Vérifier qu'une policy d'autorisation globale n'est pas déjà appliquée au niveau du QueryType parent avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

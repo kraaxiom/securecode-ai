@@ -1,0 +1,3 @@
+# Stacked Query SQL Injection (CWE-89)
+
+Le code vulnérable concatène le paramètre `name` dans une requête exécutée via `Statement`, dont le pilote JDBC autorise l'exécution de plusieurs instructions séparées par des points-virgules, permettant à un attaquant d'ajouter une instruction SQL arbitraire. La version corrigée utilise un `PreparedStatement` avec paramètre lié, ce qui empêche toute modification de la structure de la requête, et recommande de désactiver l'option de multi-instructions au niveau de la chaîne de connexion (`allowMultiQueries=false`) lorsqu'elle n'est pas nécessaire fonctionnellement.

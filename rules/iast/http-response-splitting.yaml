@@ -1,0 +1,15 @@
+id: http-response-splitting
+category: injections
+cwe: CWE-113
+type: iast
+instrumentation:
+  hook_points:
+    - "php: header() avec construction dynamique de Location ou Set-Cookie comme sink"
+    - "js: res.redirect / res.writeHead (Express/Node.js) comme sink"
+    - "python: django.http.HttpResponseRedirect / flask.redirect comme sink"
+    - "java: HttpServletResponse.sendRedirect comme sink"
+  taint_check: trace la propagation depuis une entrée utilisateur jusqu'à la construction d'un en-tête de redirection ou de cookie sans neutralisation des caractères CR/LF
+  trigger_condition: la valeur utilisée pour construire une redirection ou un en-tête de réponse contient une séquence de retour chariot/saut de ligne issue d'une source non neutralisée
+severity: medium
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

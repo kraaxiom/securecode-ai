@@ -1,0 +1,36 @@
+id: cswsh
+language: go
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler gorilla/websocket qui accepte une connexion via
+    `upgrader.Upgrade(w, r, nil)` puis authentifie le client uniquement via le
+    cookie de session HTTP transmis automatiquement par le navigateur, sans
+    vérifier l'en-tête `Origin` (via `upgrader.CheckOrigin`) ni exiger de
+    jeton anti-CSRF dédié transmis explicitement par le client.
+  patterns:
+    - "func handler(w http.ResponseWriter, r *http.Request) { conn, _ := upgrader.Upgrade(w, r, nil); ... } sans upgrader.CheckOrigin personnalisé"
+    - "websocket.Upgrader{} déclaré avec CheckOrigin absent (utilise la valeur par défaut permissive de gorilla/websocket)"
+    - "conn, err := upgrader.Upgrade(w, r, nil) suivi d'un accès direct à session, _ := store.Get(r, \"session\") sans validation d'un jeton distinct"
+  exclude_if:
+    - "upgrader.CheckOrigin est défini explicitement et compare r.Header.Get(\"Origin\") contre une allowlist stricte avant l'upgrade"
+    - "le handshake exige un jeton CSRF/anti-CSWSH distinct du cookie de session (ex: token transmis en query string ou sous-protocole et vérifié côté serveur)"
+
+message: >
+  Connexion WebSocket acceptée via upgrader.Upgrade sur la seule base du
+  cookie de session, sans vérification de l'en-tête Origin (CheckOrigin) ni
+  jeton anti-CSRF dédié — vulnérable au Cross-Site WebSocket Hijacking (voir
+  rules/remediation/cswsh.md).
+
+false_positive_notes:
+  - "Si un reverse proxy en amont (nginx, Traefik) filtre déjà l'Origin avant transmission au service Go, vérifier sa configuration avant de confirmer en `high`."
+  - "Un CheckOrigin personnalisé présent mais retournant systématiquement true équivaut à une absence de contrôle — signaler quand même."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

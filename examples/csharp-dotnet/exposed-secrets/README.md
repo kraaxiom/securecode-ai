@@ -1,0 +1,3 @@
+# Secrets exposés dans le code ou la configuration cloud (CWE-798)
+
+La version vulnérable code en dur une clé API et une chaîne de connexion directement dans le code de démarrage ASP.NET Core, ce qui les expose à quiconque a accès au dépôt source (et les rend impossibles à faire tourner sans nouveau déploiement). La correction supprime tout secret du code source et les récupère à l'exécution depuis Azure Key Vault (via `DefaultAzureCredential`), avec repli sur des variables d'environnement injectées par la plateforme d'hébergement, garantissant qu'aucun identifiant sensible n'est jamais committé ni visible dans le code compilé.

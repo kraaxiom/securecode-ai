@@ -1,0 +1,29 @@
+id: path-traversal
+language: php
+category: file-inclusion
+cwe: CWE-22
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une opération sur fichier (ouverture, écriture, suppression, renommage) dont le chemin dérive directement d'une entrée utilisateur sans normalisation.
+  patterns:
+    - "unlink(string_concat(_, $var, _))"
+    - "rename(string_concat(_, $var, _), _)"
+    - "fopen(string_concat(_, $var, _), "w")"
+  exclude_if:
+    - "$var passe par une normalisation suivie d'une vérification stricte de préfixe de répertoire"
+    - "$var est un nom de fichier généré côté serveur (UUID), pas fourni par le client"
+
+message: >
+  Chemin de fichier manipulé (écriture/suppression/renommage) construit à partir d'une entrée non validée — voir rules/remediation/path-traversal.md.
+
+false_positive_notes:
+  - "Si le nom de fichier final est généré côté serveur (UUID) et non dérivé de l'entrée client, ce n'est pas exploitable."
+  - "Si un filtrage naïf par simple remplacement de `../` est en place, garder `high` — ce filtrage est contournable."
+
+remediation_ref: rules/remediation/path-traversal.md
+knowledge_ref: knowledge/file-inclusion/path-traversal.md

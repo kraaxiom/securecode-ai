@@ -1,0 +1,37 @@
+id: dom-clobbering
+language: go
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un rendu de HTML utilisateur non sanitisé via template.HTML dans
+    html/template, susceptible de contenir des attributs `id`/`name`
+    contrôlés par l'attaquant, ouvrant la voie au DOM clobbering côté
+    frontend.
+  patterns:
+    - "template.HTML($userContent)  # sans passage préalable par un sanitizer HTML"
+    - "tmpl.Execute(w, map[string]interface{}{\"Body\": template.HTML($userContent)})"
+    - "w.Write([]byte($userContent))  # Content-Type text/html, contenu utilisateur non sanitisé"
+  exclude_if:
+    - "$userContent passe par une bibliothèque de sanitisation HTML (ex: bluemonday) avant conversion en template.HTML"
+    - "les attributs id/name sont explicitement filtrés par la politique du sanitizer configuré"
+    - "le contenu rendu provient strictement d'un auteur de confiance (administrateur applicatif)"
+
+message: >
+  Du HTML fourni par l'utilisateur est converti en template.HTML sans
+  sanitisation — des attributs id/name contrôlés par l'attaquant peuvent
+  entrer en collision avec des variables globales JavaScript attendues côté
+  frontend (DOM clobbering) (voir rules/remediation/dom-clobbering.md).
+
+false_positive_notes:
+  - "Si une bibliothèque de sanitisation HTML (ex: bluemonday) est appliquée en amont et filtre id/name, ce n'est pas exploitable."
+  - "Si le contenu rendu ne provient que d'auteurs de confiance (back-office administrateur), le risque est très réduit."
+  - "Le DOM clobbering nécessite un script frontend qui fait confiance à window.X sans validation de type — vérifier le code JS associé."
+
+remediation_ref: rules/remediation/dom-clobbering.md
+knowledge_ref: knowledge/frontend/dom-clobbering.md

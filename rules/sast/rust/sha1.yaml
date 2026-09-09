@@ -1,0 +1,32 @@
+id: sha1
+language: rust
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la dépendance et l'usage du crate `sha1` (Sha1::new, sha1::compute)
+    pour hacher un mot de passe, signer un artefact ou produire une preuve
+    d'intégrité opposable à un attaquant.
+  patterns:
+    - "sha1 = \"_\" (Cargo.toml)"
+    - "Sha1::new()"
+    - "use sha1::Sha1"
+  exclude_if:
+    - "usage exclusif comme somme de contrôle non adversariale sans enjeu de sécurité"
+
+message: >
+  SHA-1 (crate `sha1`) est cryptographiquement cassé depuis l'attaque SHAttered
+  (2017) — pour un mot de passe utiliser le crate `argon2`, pour une signature
+  ou intégrité opposable utiliser le crate `sha2`.
+
+false_positive_notes:
+  - "Si SHA-1 sert uniquement de checksum non adversarial (ex: déduplication interne), reclasser en `low`."
+  - "Si utilisé pour signer des certificats ou artefacts logiciels, maintenir `high`."
+
+remediation_ref: rules/remediation/sha1.md
+knowledge_ref: knowledge/crypto/sha1.md

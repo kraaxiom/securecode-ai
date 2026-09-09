@@ -1,0 +1,35 @@
+id: lfi
+language: java
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le chargement dynamique de ressources/templates/classes à partir d'une entrée
+    utilisateur (JSP forward, chargement de template Thymeleaf/Freemarker, classloading
+    réflexif) sans whitelist fermée des valeurs autorisées.
+  patterns:
+    - "request.getRequestDispatcher($param).forward(...)"
+    - "new ClassPathResource($param)"
+    - "Class.forName($param)"
+    - "templateEngine.process($param, ...)"
+    - "@RequestParam(...) String $param ... getRequestDispatcher(string_concat(_, $param, _))"
+  exclude_if:
+    - "$param est comparé à une whitelist fermée de valeurs autorisées avant l'appel"
+    - "$param est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Sélecteur de page/template/classe chargé dynamiquement depuis une entrée utilisateur —
+  remplacer par un mapping fermé (ID logique → ressource fixe côté serveur), voir
+  rules/remediation/lfi.md.
+
+false_positive_notes:
+  - "Si $param est systématiquement validé contre une enum ou une whitelist fermée avant l'appel, reclasser en `info`."
+  - "Le chargement de classes internes à l'application (pas piloté par l'utilisateur) n'est pas concerné."
+
+remediation_ref: rules/remediation/lfi.md
+knowledge_ref: knowledge/file-inclusion/lfi.md

@@ -1,0 +1,34 @@
+id: csv-injection
+language: js
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte la construction manuelle d'une ligne CSV par concaténation/jointure
+    de champs provenant de données utilisateur, sans passer par une fonction
+    d'échappement des caractères déclencheurs de formule (=, +, -, @), typique
+    d'un export CSV artisanal en Node.js.
+  patterns:
+    - "\\.join\\s*\\(\\s*['\"],['\"]\\s*\\)\\s*\\)?\\s*;?\\s*$"
+    - "res\\.(set|header)\\s*\\(\\s*['\"]Content-Type['\"]\\s*,\\s*['\"]text/csv['\"]"
+  exclude_if:
+    - "Les valeurs passent par une fonction de nettoyage explicite (ex: sanitizeCsvCell) avant la jointure"
+    - "L'export utilise une bibliothèque CSV maintenue (ex: csv-stringify, papaparse) avec échappement des formules activé"
+
+message: >
+  Export CSV construit manuellement à partir de valeurs utilisateur sans
+  échappement des caractères déclencheurs de formule (=, +, -, @) — préfixer
+  les cellules à risque ou utiliser une bibliothèque CSV maintenue (voir
+  rules/remediation/csv-injection.md).
+
+false_positive_notes:
+  - "Le pattern .join(',') est très générique en JavaScript et peut correspondre à un usage non lié au CSV — vérifier le contexte (Content-Type text/csv, nom de fichier .csv) avant de conclure."
+  - "Si les données exportées proviennent exclusivement de champs internes non modifiables par l'utilisateur, le risque est nul — reclasser en `info`."
+
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

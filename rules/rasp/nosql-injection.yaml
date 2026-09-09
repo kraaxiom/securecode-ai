@@ -1,0 +1,12 @@
+id: nosql-injection
+category: injections
+cwe: CWE-943
+type: rasp
+guard:
+  sink: appel de requête vers un driver NoSQL (find, findOne, update, aggregate) recevant un objet de filtre construit à partir de la requête HTTP courante
+  block_condition: l'objet de filtre évalué à l'exécution contient une clé d'opérateur (`$where`, `$ne`, `$gt`, `$regex`, `$or`, `$expr`) ou un sous-objet directement traçable à une entrée utilisateur non passée par une validation de schéma
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/nosql-injection.md
+knowledge_ref: knowledge/injections/nosql-injection.md

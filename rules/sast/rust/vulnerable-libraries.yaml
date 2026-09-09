@@ -1,0 +1,33 @@
+id: vulnerable-libraries
+language: rust
+category: supply-chain
+cwe: CWE-1035
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: medium
+confidence_default: high
+
+match:
+  type: dependency-scan
+  description: >
+    Détecte des dépendances Rust obsolètes (retard de versions majeures, fin
+    de maintenance officielle) dans Cargo.toml / Cargo.lock, indépendamment
+    d'une CVE précise déjà publiée.
+  patterns:
+    - "Cargo.toml: dépendance = \"X.Y.Z\" avec un retard de plusieurs versions majeures par rapport à la dernière version stable publiée sur crates.io"
+    - "Cargo.toml / Cargo.lock: dépendance sur une crate marquée 'unmaintained' dans la RustSec Advisory Database (catégorie 'notice', pas forcément 'vulnerability')"
+    - "Cargo.toml: edition = \"2015\" ou \"2018\" toujours ciblée sans justification alors que l'edition 2021+ est disponible et recommandée pour les correctifs de sécurité du compilateur"
+  exclude_if:
+    - "un correctif de sécurité amont est appliqué localement via patch/vendoring documenté malgré l'ancienneté de la version de base"
+
+message: >
+  Dépendance Rust obsolète, sans CVE identifiée mais en dehors de la fenêtre
+  de maintenance — risque accru de vulnérabilités non corrigées et non
+  détectées. Planifier une mise à jour régulière (cargo outdated,
+  cargo-audit) — voir rules/remediation/vulnerable-libraries.md.
+
+false_positive_notes:
+  - "Une crate stable et volontairement figée (API interne gelée, pas de faille connue) reste `low` tant qu'aucune advisory n'est publiée."
+  - "Les dépendances sous [dev-dependencies]/[build-dependencies] uniquement (non embarquées dans le binaire release) doivent être évaluées séparément avec une sévérité réduite."
+
+remediation_ref: rules/remediation/vulnerable-libraries.md
+knowledge_ref: knowledge/supply-chain/vulnerable-libraries.md

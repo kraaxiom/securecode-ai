@@ -1,0 +1,3 @@
+## Protocole SSLv3 activé (CWE-326)
+
+Le code vulnérable force `secureProtocol: 'SSLv3_method'` pour une requête sortante vers un partenaire legacy, exposant le canal à l'attaque POODLE, qui permet à un attaquant en position de man-in-the-middle de déchiffrer des données via un padding oracle sur le mode CBC. SSLv3 est interdit par la RFC 7568 depuis 2015 et ne doit plus jamais être négociable. La correction remplace la version figée par `minVersion: 'TLSv1.2'` et `maxVersion: 'TLSv1.3'`, éliminant tout repli possible vers SSLv3, et le mécanisme anti-downgrade côté serveur doit être vérifié en complément.

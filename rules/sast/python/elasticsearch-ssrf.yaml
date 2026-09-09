@@ -1,0 +1,33 @@
+id: elasticsearch-ssrf
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la configuration d'un client Elasticsearch (bibliothèque
+    elasticsearch-py) dont l'host/URL du cluster est dérivé d'une entrée
+    utilisateur, permettant à un attaquant de rediriger les requêtes vers
+    un service Elasticsearch interne arbitraire.
+  patterns:
+    - "Elasticsearch([$user_host])"
+    - "Elasticsearch(hosts=$user_host)"
+  exclude_if:
+    - "$user_host provient exclusivement de la configuration applicative (variable d'environnement, fichier de config) et non d'une requête HTTP entrante"
+
+message: >
+  Host du cluster Elasticsearch dérivé d'une entrée utilisateur — un
+  attaquant peut rediriger les requêtes vers un service interne arbitraire
+  (SSRF vers l'API Elasticsearch, souvent non authentifiée). Restreindre
+  la configuration du client à une liste fixe définie côté serveur (voir
+  rules/remediation/elasticsearch-ssrf.md).
+
+false_positive_notes:
+  - "Si l'application ne gère qu'un seul cluster configuré statiquement (jamais choisi par le client), ce n'est pas exploitable — vérifier l'origine de la valeur avant d'alerter."
+
+remediation_ref: rules/remediation/elasticsearch-ssrf.md
+knowledge_ref: knowledge/ssrf/elasticsearch-ssrf.md

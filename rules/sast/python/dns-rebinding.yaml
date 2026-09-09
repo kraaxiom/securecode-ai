@@ -1,0 +1,36 @@
+id: dns-rebinding
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'URL/host effectuée à un instant (résolution
+    DNS puis vérification d'IP) suivie d'une requête HTTP effectuée plus
+    tard sur le même hostname (pas l'IP validée) — fenêtre TOCTOU exploitable
+    par DNS rebinding. Typiquement socket.gethostbyname($host) utilisé pour
+    valider, puis requests.get($host) (et non l'IP résolue) pour la requête
+    réelle.
+  patterns:
+    - "socket.gethostbyname($host); ...; requests.get($host)"
+    - "socket.getaddrinfo($host, _); ...; urllib.request.urlopen($host)"
+  exclude_if:
+    - "la requête réelle est effectuée directement sur l'IP validée (et non recréée à partir du hostname), avec l'en-tête Host positionné séparément"
+    - "un pool de connexion épinglé (connection pinning) est utilisé pour garantir que la résolution DNS n'est faite qu'une seule fois"
+
+message: >
+  Validation du host par résolution DNS séparée de la requête HTTP réelle —
+  un attaquant contrôlant son propre DNS peut faire pointer le hostname
+  vers une IP interne entre la validation et la requête (DNS rebinding).
+  Effectuer la requête directement sur l'IP validée et épingler la
+  connexion (voir rules/remediation/dns-rebinding.md).
+
+false_positive_notes:
+  - "Ce pattern nécessite une analyse de flux inter-lignes ; en l'absence de garantie que les deux résolutions utilisent la même connexion, traiter comme `medium` par défaut plutôt que `high` sans revue manuelle."
+
+remediation_ref: rules/remediation/dns-rebinding.md
+knowledge_ref: knowledge/ssrf/dns-rebinding.md

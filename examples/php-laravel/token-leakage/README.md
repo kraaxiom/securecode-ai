@@ -1,0 +1,3 @@
+# Token Leakage
+
+La version vulnérable code en dur la clé API du fournisseur LLM directement dans le code applicatif et journalise l'en-tête d'autorisation complet sans masquage lors des appels de débogage, exposant ce jeton d'authentification à quiconque a accès au dépôt de code ou aux journaux (CWE-522, Insufficiently Protected Credentials). La version corrigée résout la clé depuis un gestionnaire de secrets à l'exécution plutôt que de la coder en dur, et masque systématiquement les en-têtes sensibles (Authorization, X-API-Key) avant toute écriture dans les journaux applicatifs, garantissant que seul le backend authentifié détient le jeton.

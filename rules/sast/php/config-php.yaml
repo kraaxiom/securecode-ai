@@ -1,0 +1,32 @@
+id: config-php
+language: php
+category: sensitive-files
+cwe: CWE-540
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: filesystem-pattern
+  description: >
+    Détecte la présence de un fichier de configuration nommé `config.php`, `config.inc.php` ou `configuration.php` directement accessible en dehors de tout traitement PHP (ex: mauvaise config serveur exposant le code source brut, ou fichier dupliqué en .php.bak), atteignable par une requête HTTP
+    directe (pas d'analyse du contenu du fichier — simple présence dans un
+    répertoire servi publiquement par le serveur web).
+  patterns:
+    - "fichier correspondant à: config.php, config.inc.php, configuration.php (et copies .bak/.old/.orig)"
+    - "chemin situé sous un répertoire configuré comme webroot (ex: public/, www/, htdocs/, wwwroot/)"
+  exclude_if:
+    - "le fichier est situé strictement en dehors de la racine documentaire du serveur web (ex: hors de public/ pour une app Laravel/Symfony)"
+    - "une règle serveur (nginx deny / Apache Require all denied) bloque explicitement et vérifiablement l'accès au fichier"
+
+message: >
+  config.php détecté dans le webroot public — accessible potentiellement par
+  une requête HTTP directe. Voir rules/remediation/config-php.md pour la
+  correction (règle serveur, .gitignore, contrôle CI).
+
+false_positive_notes:
+  - "Si le répertoire scanné n'est pas réellement le webroot déployé (ex: scan du dépôt Git complet, pas de l'artefact de déploiement), reclasser en `info`."
+  - "Vérifier qu'une règle de blocage serveur n'est pas déjà en place avant de considérer l'alerte comme exploitable."
+
+remediation_ref: rules/remediation/config-php.md
+knowledge_ref: knowledge/sensitive-files/config-php.md

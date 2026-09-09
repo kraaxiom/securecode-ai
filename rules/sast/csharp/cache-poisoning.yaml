@@ -1,0 +1,36 @@
+id: cache-poisoning
+language: csharp
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage d'en-têtes non normalisés (`X-Forwarded-Host`,
+    `X-Forwarded-Proto`) pour générer une réponse (redirection, URL absolue
+    rendue dans une vue Razor) dans une application ASP.NET Core déployée
+    derrière un cache/CDN, sans que ces en-têtes ne soient inclus dans la
+    clé de cache ni validés contre une allowlist.
+  patterns:
+    - "var host = Request.Headers[\"X-Forwarded-Host\"]; return Redirect($\"https://{host}/...\");"
+    - "Request.Headers[\"X-Forwarded-Host\"] utilisé pour construire Url.Action(_, _, _, protocol: \"https\", host: forwardedHost) sans validation contre une liste de hosts autorisés"
+    - "UseForwardedHeaders() activé avec ForwardedHeaders.XForwardedHost sans KnownProxies/KnownNetworks restreints"
+  exclude_if:
+    - "l'en-tête est validé contre une allowlist stricte de hosts autorisés avant usage (ex: comparaison à une liste de configuration)"
+    - "UseForwardedHeaders est configuré avec KnownProxies/KnownNetworks explicites et le cache/CDN inclut cet en-tête dans sa clé de cache (Vary: X-Forwarded-Host)"
+
+message: >
+  En-tête non fiable (X-Forwarded-Host/Proto) utilisé pour générer une
+  réponse mise en cache sans validation ni inclusion dans la clé de cache —
+  un attaquant peut empoisonner le cache et servir du contenu malveillant à
+  tous les visiteurs suivants (voir rules/remediation/cache-poisoning.md).
+
+false_positive_notes:
+  - "Si l'application n'est pas placée derrière un cache/CDN partagé (déploiement direct), le risque d'empoisonnement de cache partagé ne s'applique pas, bien que l'open redirect reste possible."
+  - "UseForwardedHeaders avec KnownProxies/KnownNetworks correctement restreints au reverse proxy interne limite fortement le risque de falsification."
+
+remediation_ref: rules/remediation/cache-poisoning.md
+knowledge_ref: knowledge/modern/cache-poisoning.md

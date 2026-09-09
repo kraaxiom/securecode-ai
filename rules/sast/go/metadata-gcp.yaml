@@ -1,0 +1,34 @@
+id: metadata-gcp
+language: go
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code Go, des patterns caractéristiques de SSRF vers le service de métadonnées GCP
+    lorsqu'une entrée non fiable (utilisateur, requête HTTP, paramètre externe)
+    atteint une opération sensible sans validation ni contrôle préalable.
+  patterns:
+    - "http.Get(userURL)"
+    - "http.Client{}.Do(req)  // req.URL construit depuis une entree utilisateur"
+    - "http.Post(userURL, _, _)"
+  exclude_if:
+    - "$userUrl est comparé à une liste blanche stricte de domaines/IP avant l'appel réseau"
+    - "l'URL est une constante applicative interne, non influencée par une entrée utilisateur"
+
+message: >
+  Pattern potentiellement vulnérable à SSRF vers le service de métadonnées GCP détecté — une entrée non validée
+  semble atteindre une opération sensible. Vérifier la provenance de la donnée
+  et appliquer une validation/liste blanche avant utilisation
+  (voir rules/remediation/metadata-gcp.md). Recommandation : valider l'URL/l'hôte cible contre une liste blanche stricte et bloquer les plages d'adresses internes/privées avant l'appel réseau.
+
+false_positive_notes:
+  - "Si la valeur incriminée provient exclusivement d'une constante interne ou d'une configuration serveur, ce n'est pas exploitable — reclasser en `info`."
+  - "Si une validation stricte (liste blanche, normalisation de chemin, vérification de signature/ownership) est appliquée immédiatement avant l'opération sensible, vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/metadata-gcp.md
+knowledge_ref: knowledge/ssrf/metadata-gcp.md

@@ -1,0 +1,35 @@
+id: aws-s3-public
+language: php
+category: cloud
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Vérification config/IaC : détecte une bucket policy ou une configuration
+    Terraform/CloudFormation S3 accordant un accès public en lecture/écriture,
+    ainsi que la désactivation des paramètres "Block Public Access". Un projet
+    PHP peut embarquer ces fichiers Terraform/JSON dans son dépôt (infra as code
+    versionnée aux côtés de l'application).
+  patterns:
+    - "bucket_policy(\"Principal\": \"*\") avec action s3:GetObject|s3:ListBucket|s3:PutObject sans condition IAM"
+    - "terraform: aws_s3_bucket_public_access_block(block_public_acls = false OU block_public_policy = false)"
+    - "terraform/cloudformation: acl = \"public-read\" OU \"public-read-write\""
+  exclude_if:
+    - "le bucket sert explicitement un site statique public documenté (ex: assets front-end publics sans données sensibles)"
+    - "la policy restreint l'accès via une condition (aws:SourceIp, aws:PrincipalOrgID, aws:SourceVpce) même avec Principal:*"
+
+message: >
+  Bucket S3 potentiellement accessible publiquement (policy/ACL/Block Public
+  Access) — restreindre au principe du moindre privilège et réactiver Block
+  Public Access (voir rules/remediation/aws-s3-public.md).
+
+false_positive_notes:
+  - "Un bucket destiné à héberger un site statique public est un usage légitime — vérifier qu'aucune donnée sensible n'y transite avant de confirmer la sévérité `high`."
+  - "Une policy avec Principal:* mais condition IAM stricte (VPC endpoint, OrgID) réduit fortement le risque réel — reclasser en `medium`/`low` après vérification manuelle."
+
+remediation_ref: rules/remediation/aws-s3-public.md
+knowledge_ref: knowledge/cloud/aws-s3-public.md

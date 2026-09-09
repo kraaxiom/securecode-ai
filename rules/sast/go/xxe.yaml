@@ -1,0 +1,27 @@
+id: xxe
+language: go
+category: injections
+cwe: CWE-611
+owasp: A05:2021-Security_Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un parseur XML configuré pour résoudre les entités externes/DOCTYPE sur une source non fiable.
+  patterns:
+    - "encoding/xml Decoder utilisé avec une bibliothèque tierce autorisant les entités externes (rare en stdlib, vérifier libxml2 cgo bindings)"
+    - "xml.NewDecoder(r) combiné à un résolveur d'entités externes personnalisé"
+  exclude_if:
+    - "encoding/xml stdlib ne résout pas les entités externes par défaut — signaler seulement si un résolveur personnalisé est branché"
+
+message: >
+  Injection d'entité externe XML (XXE) détectée — désactiver la résolution des entités externes et du DTD avant de parser du XML non fiable (voir rules/remediation/xxe.md).
+
+false_positive_notes:
+  - "La stdlib de ce langage ne résout pas les entités externes par défaut dans le cas courant — ne signaler que lorsqu'un résolveur externe personnalisé est explicitement branché."
+  - "Si la source XML est strictement interne/de confiance, reclasser en `info`."
+
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

@@ -1,0 +1,15 @@
+id: sqli-union
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "Java: java.sql.Statement.executeQuery (chaîne concaténée contenant UNION)"
+    - "PHP: mysqli_query / PDO::query avec fragment UNION SELECT concaténé"
+    - "Python: cursor.execute avec chaîne interpolée contenant UNION SELECT"
+    - "Node.js: mysql/pg query() avec fragment UNION SELECT interpolé"
+  taint_check: trace la propagation d'une entrée utilisateur non neutralisée jusqu'à sa concaténation dans une requête SQL contenant ou permettant l'ajout d'une clause UNION SELECT, exécutée sans liaison de paramètres
+  trigger_condition: la requête évaluée au moment de l'appel contient le mot-clé UNION dans un fragment directement traçable à une entrée utilisateur, et l'appel d'exécution n'utilise pas d'API de requête préparée/paramétrée
+severity: high
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md

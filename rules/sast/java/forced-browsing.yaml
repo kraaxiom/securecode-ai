@@ -1,0 +1,34 @@
+id: forced-browsing
+language: java
+category: authorization
+cwe: CWE-425
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Spring MVC ou une ressource statique sensible exposée sans middleware
+    d'authentification/autorisation (`permitAll()` trop large dans `SecurityFilterChain`, ou
+    fichiers de sauvegarde/config servis via un répertoire statique public), ou une étape
+    d'un flux multi-étapes sans vérification de l'état d'avancement côté serveur.
+  patterns:
+    - ".requestMatchers(\"/admin/**\").permitAll()  # route sensible rendue publique"
+    - "spring.web.resources.static-locations  # incluant un répertoire contenant des sauvegardes/config"
+    - "@GetMapping(\"/checkout/step3\") ... sans vérification que step1/step2 ont été complétées côté serveur"
+  exclude_if:
+    - "la route/ressource sensible requiert explicitement une authentification/autorisation dans SecurityFilterChain"
+    - "chaque étape d'un flux multi-étapes vérifie côté serveur l'état d'avancement réel avant de s'exécuter"
+
+message: >
+  Route ou ressource sensible accessible sans contrôle d'authentification/autorisation
+  explicite, reposant sur l'absence de lien visible — appliquer un contrôle d'accès explicite
+  indépendant de la visibilité dans l'interface (voir rules/remediation/forced-browsing.md).
+
+false_positive_notes:
+  - "Si le contenu servi n'est pas sensible (assets publics légitimes), ce n'est pas un vrai positif."
+  - "Vérifier que le répertoire statique ne contient pas accidentellement des fichiers de build/sauvegarde avant de conclure."
+
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

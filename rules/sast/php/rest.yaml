@@ -1,0 +1,33 @@
+id: rest
+language: php
+category: api
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des routes REST définies avec `Route::any`/`Route::match` (tous
+    verbes) sans distinction de contrôle d'accès par méthode, ou un
+    `APP_DEBUG`/`display_errors` activé en configuration de production.
+  patterns:
+    - "Route::any(_, _)"
+    - "Route::match(['get','post','put','delete'], _, _)"
+    - "APP_DEBUG=true" # dans un fichier .env non explicitement marqué local/dev
+    - "ini_set('display_errors', '1')" # hors contexte de développement
+  exclude_if:
+    - "la route any/match applique un contrôle d'autorisation identique et suffisant pour toutes les méthodes acceptées"
+    - "le fichier de configuration est explicitement un .env.example ou .env.testing/.env.local"
+
+message: >
+  Route acceptant tous les verbes HTTP sans distinction d'autorisation, ou
+  mode debug actif en production — voir rules/remediation/rest.md.
+
+false_positive_notes:
+  - "Fichier .env.example ou de test n'est jamais déployé en production : reclasser en `info`."
+  - "Si la route any() ne fait que déléguer à un contrôleur qui vérifie lui-même la méthode HTTP ($request->method()) avant toute action, revérifier manuellement la couverture."
+
+remediation_ref: rules/remediation/rest.md
+knowledge_ref: knowledge/api/rest.md

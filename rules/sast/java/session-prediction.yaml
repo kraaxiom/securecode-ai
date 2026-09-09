@@ -1,0 +1,34 @@
+id: session-prediction
+language: java
+category: auth
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou de token maison à partir de valeurs
+    prévisibles (timestamp, ID utilisateur, `java.util.Random`) au lieu du générateur de
+    session sécurisé du conteneur/framework ou de `SecureRandom`.
+  patterns:
+    - "new Random().nextInt()  # utilisé pour générer un identifiant de session/token sensible"
+    - "String sessionId = userId + System.currentTimeMillis()"
+    - "UUID.nameUUIDFromBytes($predictableInput)  # UUID v3 déterministe utilisé comme identifiant de session"
+  exclude_if:
+    - "l'identifiant est généré via java.security.SecureRandom ou le mécanisme de session natif du conteneur Servlet/Spring Session"
+    - "la valeur n'est pas utilisée comme identifiant de session/token sensible (usage non sécuritaire)"
+
+message: >
+  Identifiant de session/token généré à partir de valeurs prévisibles ou d'un générateur non
+  cryptographique — utiliser exclusivement `SecureRandom` ou le mécanisme de session natif du
+  framework, avec au moins 128 bits d'entropie (voir
+  rules/remediation/session-prediction.md).
+
+false_positive_notes:
+  - "Si `java.util.Random` est utilisé pour un identifiant non sensible (ex. clé de cache technique), ce n'est pas exploitable dans ce contexte."
+  - "Spring Session et les conteneurs Servlet standards génèrent déjà des identifiants sécurisés par défaut — ce pattern cible les implémentations maison."
+
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

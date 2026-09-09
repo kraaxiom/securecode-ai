@@ -1,0 +1,29 @@
+id: sqli-union
+language: rust
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une requête SQL par concaténation/formatage d'une variable non liée (injection sql par union).
+  patterns:
+    - "format!(\"... {} ...\", $var) passé à sqlx::query() ou diesel::sql_query()"
+    - "conn.execute(&format!(_, $var), [])"
+    - "diesel::sql_query(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est lié via bind parameters de sqlx (query.bind($var)) ou via diesel query builder typé, pas interpolé dans format!"
+    - "$var provient d'une constante interne, pas d'une entrée utilisateur"
+
+message: >
+  Injection SQL par UNION détectée — utiliser les bind parameters de sqlx (query!/query_as!) ou le query builder typé de diesel (voir rules/remediation/sqli-union.md).
+
+false_positive_notes:
+  - "Si la variable provient exclusivement d'une constante applicative interne, non exploitable — reclasser en `info`."
+  - "Vérifier que l'ORM/ODBC ne réalise pas déjà un échappement systématique avant de remonter en `high`/`critical`."
+
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md

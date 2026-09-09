@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mission",
+  "description": "Garde-fou : aucune modification de fichier ne doit avoir lieu hors d'une mission explicitement confirmée par l'utilisateur.",
+  "type": "object",
+  "required": ["id", "scope", "mode", "created_at"],
+  "properties": {
+    "id": { "type": "string", "description": "Identifiant unique de la mission (ex: uuid)" },
+    "scope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Fichiers ou dossiers autorisés pour le scan et/ou le patch"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["audit_only", "assisted"],
+      "description": "audit_only = Mode Audit (scan seul, aucune modification sans confirmation explicite). assisted = Mode Développement assisté (scan + correction immédiate sur du code de confiance high écrit dans la session en cours)."
+    },
+    "confirmed_by": {
+      "type": "string",
+      "description": "Identifiant/nom de l'utilisateur ayant confirmé le passage de audit_only à une correction. Requis uniquement lors de la bascule audit → correction ; non requis pour un simple scan en mode audit_only, ni en mode assisted pour du code high confidence de la session en cours."
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

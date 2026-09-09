@@ -1,0 +1,19 @@
+id: command-injection
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête, champ de formulaire ou champ JSON transmis à un appel système
+  technique: out-of-band
+  indicators:
+    - Requête sortante (DNS/HTTP) reçue par un collaborateur externe après soumission d'une entrée contenant un métacaractère shell.
+    - Temps de réponse anormalement élevé après injection d'une commande de temporisation (ex. commande de pause système).
+    - Différence de comportement applicatif (code HTTP, contenu, crash du processus) selon la présence de métacaractères shell dans l'entrée testée.
+false_positive_notes:
+  - Fonctionnalités légitimes exécutant des binaires externes avec arguments strictement validés (liste blanche).
+  - Latence réseau normale pouvant être confondue avec un signal de temporisation.
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

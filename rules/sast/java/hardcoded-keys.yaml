@@ -1,0 +1,36 @@
+id: hardcoded-keys
+language: java
+category: crypto
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé cryptographique, un secret HMAC ou une clé privée codés
+    en dur sous forme de littéral dans le code source Java, réutilisés pour
+    initialiser un objet cryptographique.
+  patterns:
+    - 'new SecretKeySpec(_literal_bytes_, _)'
+    - 'new String[] { _ } // affecté à une variable nommée *KEY*/*SECRET* puis passé à SecretKeySpec'
+    - 'static final String SECRET_KEY = "_"'
+    - 'static final byte[] KEY = { _ }'
+    - '"-----BEGIN PRIVATE KEY-----" présent comme littéral de chaîne'
+    - 'Keys.hmacShaKeyFor("_literal_".getBytes())'
+  exclude_if:
+    - "Le littéral est manifestement un placeholder de documentation (ex: \"REPLACE_ME\", \"CHANGE_ME\") non atteignable en exécution"
+    - "La valeur est lue depuis une variable d'environnement ou un gestionnaire de secrets (System.getenv, KeyStore, Vault) et non un littéral"
+
+message: >
+  Clé/secret cryptographique codé en dur dans le code source — extraire vers
+  un coffre-fort de secrets (variables d'environnement, KeyStore Java, Vault)
+  et régénérer la clé compromise (voir rules/remediation/hardcoded-keys.md).
+
+false_positive_notes:
+  - "Si la constante est utilisée uniquement dans un test unitaire isolé avec des données factices non liées à la production, reclasser en `low`."
+  - "Vérifier que la clé n'est pas déjà régénérée dynamiquement au démarrage malgré la présence d'une valeur par défaut dans le code."
+
+remediation_ref: rules/remediation/hardcoded-keys.md
+knowledge_ref: knowledge/crypto/hardcoded-keys.md

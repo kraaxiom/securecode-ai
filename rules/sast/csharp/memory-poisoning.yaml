@@ -1,0 +1,39 @@
+id: memory-poisoning
+language: csharp
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un mécanisme de mémoire conversationnelle persistante d'un agent
+    Semantic Kernel (ChatHistory persisté, ISemanticTextMemory long terme)
+    qui persiste des messages provenant d'un utilisateur ou d'un plugin
+    externe sans isolation par session/utilisateur ni validation, permettant
+    à un attaquant d'injecter des instructions qui influenceront des
+    sessions futures ou d'autres utilisateurs.
+  patterns:
+    - "static ChatHistory _sharedHistory partagée entre plusieurs utilisateurs/requêtes sans clé d'isolation par sessionId"
+    - "await memory.SaveInformationAsync(collection, pluginOutput, id) où pluginOutput provient d'un contenu externe non fiable, persisté sans expiration ni validation, puis relu dans des sessions futures"
+    - "IMemoryCache/singleton conversation store utilisé par un agent multi-utilisateur sans namespace/scoping par utilisateur"
+  exclude_if:
+    - "la mémoire est strictement isolée par session/utilisateur (clé unique par conversation) et son contenu est filtré/validé avant persistance"
+
+message: >
+  Mémoire conversationnelle persistante d'un agent Semantic Kernel sans
+  isolation par session ni validation du contenu persisté — un attaquant
+  peut injecter des instructions qui contaminent la mémoire et influencent
+  des interactions futures (y compris d'autres utilisateurs si la mémoire
+  est partagée). Isoler strictement la mémoire par session/utilisateur,
+  valider le contenu avant persistance, et appliquer une expiration/rotation
+  — voir rules/remediation/memory-poisoning.md.
+
+false_positive_notes:
+  - "Une mémoire strictement volatile (in-process, non persistée entre requêtes) et isolée par requête réduit fortement le risque."
+  - "Si la mémoire est partagée mais alimentée uniquement par du contenu système contrôlé (jamais par l'utilisateur ni un plugin externe), non applicable."
+
+remediation_ref: rules/remediation/memory-poisoning.md
+knowledge_ref: knowledge/llm/memory-poisoning.md

@@ -1,0 +1,3 @@
+# BFLA — Broken Function Level Authorization
+
+La version vulnérable protège les endpoints sensibles (suppression d'utilisateur, remboursement interne) uniquement par une vérification d'authentification (`requireAuth`), sans jamais contrôler le rôle de l'appelant : n'importe quel utilisateur connecté peut donc exécuter une fonction d'administration. La version corrigée ajoute un middleware `requireRole('admin')` centralisé, appliqué systématiquement, y compris sur les fonctions non visibles dans l'interface, conformément au principe qu'une fonctionnalité non affichée n'est pas une fonctionnalité protégée. Cela correspond à **CWE-862 (Missing Authorization)**, référencé comme API5:2023 Broken Function Level Authorization dans l'OWASP API Security Top 10.

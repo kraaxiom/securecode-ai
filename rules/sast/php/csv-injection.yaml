@@ -1,0 +1,32 @@
+id: csv-injection
+language: php
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte l'appel à fputcsv() avec un tableau de valeurs provenant
+    directement de données utilisateur (variable ou propriété d'un tableau
+    associatif), sans passer par une fonction d'échappement des caractères
+    déclencheurs de formule (=, +, -, @).
+  patterns:
+    - "fputcsv\\s*\\(\\s*\\$[A-Za-z_][A-Za-z0-9_]*\\s*,\\s*\\[[^\\]]*\\$(row|record|data|item)\\b"
+  exclude_if:
+    - "Les valeurs passent par une fonction de nettoyage explicite (ex: sanitizeCsvCell) avant fputcsv()"
+    - "Les données proviennent exclusivement d'une source interne fixe, pas d'une saisie utilisateur"
+
+message: >
+  Écriture de valeurs utilisateur dans un fichier CSV sans échappement des
+  caractères déclencheurs de formule (=, +, -, @) — préfixer les cellules à
+  risque avant écriture (voir rules/remediation/csv-injection.md).
+
+false_positive_notes:
+  - "Si les données exportées proviennent exclusivement de champs internes non modifiables par l'utilisateur, le risque est nul — reclasser en `info`."
+  - "Certaines bibliothèques d'export (PhpSpreadsheet avec options adaptées) échappent déjà les formules par défaut — vérifier la configuration avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

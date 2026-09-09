@@ -1,0 +1,15 @@
+id: boolean-sqli
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "php: PDO::query / PDOStatement::execute"
+    - "python: cursor.execute (psycopg2, sqlite3, MySQLdb)"
+    - "java: Statement.executeQuery / PreparedStatement"
+    - "csharp: SqlCommand.ExecuteReader"
+  taint_check: Suivi de la donnée depuis une source HTTP jusqu'à une clause conditionnelle SQL (WHERE) où elle est concaténée sans requête paramétrée.
+  trigger_condition: Une valeur taintée modifie la structure logique d'une clause WHERE/HAVING sans passer par un paramètre lié, indépendamment du résultat renvoyé au client.
+severity: high
+remediation_ref: rules/remediation/boolean-sqli.md
+knowledge_ref: knowledge/injections/boolean-sqli.md

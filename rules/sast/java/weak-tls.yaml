@@ -1,0 +1,36 @@
+id: weak-tls
+language: java
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de suites de chiffrement TLS incluant des
+    algorithmes obsolètes (CBC non-AEAD, RC4, export-grade, sans forward
+    secrecy) via setEnabledCipherSuites(), ou l'absence de vérification
+    explicite du hostname sur une connexion TLS.
+  patterns:
+    - 'setEnabledCipherSuites(_) // tableau contenant "_RC4_", "_DES_", "_EXPORT_", ou "_MD5"'
+    - 'setEnabledCipherSuites(_) // tableau ne contenant aucune suite avec "_GCM_" ou "_CHACHA20_"'
+    - 'HostnameVerifier // implémentation dont verify() retourne toujours true'
+    - 'TrustManager // implémentation vide de checkServerTrusted/checkClientTrusted'
+  exclude_if:
+    - "La suite de chiffrement listée sert uniquement à un test explicite de rejet de suite faible"
+
+message: >
+  Configuration TLS faible (suites de chiffrement obsolètes, absence de
+  forward secrecy, ou vérification de certificat désactivée) — restreindre
+  setEnabledCipherSuites() aux suites AEAD modernes (ECDHE_*_GCM,
+  CHACHA20_POLY1305) et ne jamais désactiver HostnameVerifier/TrustManager
+  (voir rules/remediation/weak-tls.md).
+
+false_positive_notes:
+  - "Un HostnameVerifier permissif présent uniquement dans un profil de test local (jamais packagé en production) doit être reclassé en `low` si prouvé isolé par build."
+  - "Vérifier si l'absence de suites AEAD est compensée par une configuration serveur/infra équivalente en amont (reverse proxy TLS-terminating) avant de confirmer."
+
+remediation_ref: rules/remediation/weak-tls.md
+knowledge_ref: knowledge/crypto/weak-tls.md

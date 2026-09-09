@@ -1,0 +1,19 @@
+id: privilege-escalation
+category: authorization
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: critical
+type: dast
+test:
+  method: POST|PUT|PATCH
+  target: endpoint de gestion de compte, de profil ou d'attribution de rôle (ex. /users/{id}, /team/invite, /account/role) permettant potentiellement de modifier un niveau de privilège
+  technique: differential-response
+  indicators:
+    - "un compte de rôle standard parvient, via une requête directe, à faire évoluer son propre rôle ou celui d'un autre compte vers un niveau de privilège supérieur au sien"
+    - "une fonction d'attribution de rôle accepte une valeur de rôle supérieure à celle que l'appelant est lui-même autorisé à accorder, sans rejet"
+    - "après une opération de changement de rôle, la session/jeton existant conserve l'accès aux fonctions du nouveau rôle sans réémission ni revalidation explicite"
+false_positive_notes:
+  - "élévation effectuée par un compte disposant légitimement du droit d'attribution à ce niveau : vérifier la matrice de délégation avant conclusion"
+  - "changement de rôle rejeté correctement mais avec un code de statut trompeur (ex. 200 avec message d'erreur en corps) : lire le corps de réponse avant de conclure à un succès"
+remediation_ref: rules/remediation/privilege-escalation.md
+knowledge_ref: knowledge/authorization/privilege-escalation.md

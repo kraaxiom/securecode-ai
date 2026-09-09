@@ -1,0 +1,33 @@
+id: jsp-upload
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Pattern Python generique equivalent (le pattern original vise Java/JSP) -
+    une application Python servant de passerelle vers un backend Java/Tomcat
+    accepte un upload sans restriction d'extension, permettant le depot d'un
+    fichier .jsp executable dans un repertoire partage avec le conteneur Java.
+  patterns:
+    - "file.save(...) ecrivant dans un repertoire monte/partage avec un conteneur Tomcat/Java sans whitelist d'extension"
+    - "Absence de verification d'extension avant ecriture, quand le stockage est accessible en execution par un serveur JSP en aval"
+  exclude_if:
+    - "Une whitelist stricte d'extensions non executables est appliquee avant l'ecriture"
+    - "Aucun composant Java/JSP n'est present dans l'architecture de deploiement"
+
+message: >
+  Upload sans restriction d'extension, ecrit dans un stockage potentiellement
+  executable par un conteneur Java/Tomcat en aval - un attaquant peut deposer
+  un webshell .jsp executable. Appliquer une whitelist stricte d'extensions
+  et isoler le stockage des uploads de tout repertoire executable.
+
+false_positive_notes:
+  - "Non applicable si l'architecture ne comporte aucun backend Java/JSP - reclasser en `info`."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

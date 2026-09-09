@@ -1,0 +1,37 @@
+id: clickjacking
+language: rust
+category: frontend
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence ou la suppression de l'en-tête anti-framing
+    (X-Frame-Options ou CSP frame-ancestors) dans un handler actix-web/axum ou
+    un middleware personnalisé.
+  patterns:
+    - "HttpResponse::Ok().insert_header((\"X-Frame-Options\", \"ALLOWALL\"))"
+    - "response.headers_mut().remove(\"x-frame-options\")"
+    - "App::new().route($path, web::get().to($handler))  # $handler ne définit ni X-Frame-Options ni frame-ancestors, et aucun middleware global n'en ajoute"
+    - "Router::new().route($path, get($handler))  # axum, sans tower_http::set_header::SetResponseHeaderLayer pour X-Frame-Options/CSP"
+  exclude_if:
+    - "un middleware global (ex: actix_web::middleware::DefaultHeaders, tower_http SetResponseHeaderLayer) applique déjà X-Frame-Options ou frame-ancestors sur toutes les routes"
+    - "la Content-Security-Policy définie contient une directive frame-ancestors restrictive"
+    - "la route sert exclusivement une API JSON non rendue dans un navigateur"
+
+message: >
+  Le handler ou middleware Rust ne définit pas l'en-tête X-Frame-Options ni de
+  directive CSP frame-ancestors sur les réponses HTML — la page peut être
+  intégrée dans un iframe tiers et exposée au clickjacking (voir
+  rules/remediation/clickjacking.md).
+
+false_positive_notes:
+  - "Si un middleware global (DefaultHeaders, SetResponseHeaderLayer) applique déjà ces en-têtes sur toutes les routes, ce n'est pas un vrai positif isolé."
+  - "Les endpoints d'API JSON pure ne sont pas concernés par le clickjacking."
+  - "Vérifier si l'intégration en iframe est un besoin métier documenté avant de remonter la sévérité."
+
+remediation_ref: rules/remediation/clickjacking.md
+knowledge_ref: knowledge/frontend/clickjacking.md

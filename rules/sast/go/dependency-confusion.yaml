@@ -1,0 +1,36 @@
+id: dependency-confusion
+language: go
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte dans go.mod, go.sum et la configuration GOPROXY/GONOSUMCHECK des
+    indices de confusion de dépendances : module interne référencé par un
+    chemin public sans proxy privé prioritaire ni GOPRIVATE déclaré.
+  patterns:
+    - "go.mod: require d'un module au chemin interne (ex: github.com/<org-interne>/...) sans variable GOPRIVATE/GONOSUMCHECK correspondante déclarée dans l'environnement CI"
+    - "absence de fichier .netrc / GOFLAGS=-mod=mod configurant un GOPROXY privé alors que des modules internes sont importés"
+    - "GOPROXY défini uniquement sur https://proxy.golang.org (registre public) sans GOPRIVATE ni GONOSUMDB pour les chemins de module internes"
+    - "go.sum: entrée absente ou incohérente pour un module interne alors que 'go mod tidy' aurait dû la générer depuis un proxy privé"
+  exclude_if:
+    - "GOPRIVATE ou GONOSUMCHECK couvre explicitement le préfixe de chemin des modules internes dans la configuration du projet ou de la CI"
+    - "GOPROXY pointe en priorité vers un proxy interne (ex: Athens, JFrog Artifactory) avec 'direct' en repli uniquement pour les modules publics"
+
+message: >
+  La configuration Go Modules ne garantit pas la priorité d'un proxy privé
+  pour un module au chemin interne — un attaquant peut publier un module
+  public portant le même chemin d'import pour qu'il soit résolu à sa place.
+  Déclarer GOPRIVATE/GONOSUMCHECK pour les préfixes internes et utiliser un
+  proxy privé prioritaire (voir rules/remediation/dependency-confusion.md).
+
+false_positive_notes:
+  - "Si tous les modules requis sont publics et hébergés sur des dépôts légitimes (aucun module interne), non applicable."
+  - "Si GOPRIVATE est défini globalement au niveau de l'environnement CI/CD (hors dépôt), le risque est mitigé — vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

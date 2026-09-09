@@ -1,0 +1,32 @@
+id: http2-rapid-reset
+language: js
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la création d'un serveur HTTP/2 Node.js (http2.createSecureServer/
+    createServer) sans configuration de maxConcurrentStreams ni gestion des
+    annulations de flux (RST_STREAM) en rafale.
+  patterns:
+    - "http2.createSecureServer(_) without settings.maxConcurrentStreams configured"
+    - "http2.createServer(_) without a 'session' handler tracking stream resets"
+  exclude_if:
+    - "settings.maxConcurrentStreams est explicitement défini dans les options du serveur"
+    - "un handler 'session' surveille et coupe les connexions à ratio de reset anormal"
+
+message: >
+  Serveur HTTP/2 Node.js sans limite de flux concurrents ni détection des
+  annulations en rafale — exposé au déni de service HTTP/2 Rapid Reset
+  (CVE-2023-44487), voir rules/remediation/http2-rapid-reset.md.
+
+false_positive_notes:
+  - "Si le serveur HTTP/2 est toujours placé derrière un reverse proxy externe qui applique la limite (Nginx/Envoy), le risque applicatif est réduit."
+  - "Vérifier la version de Node.js utilisée — les versions patchées post-2023 réduisent partiellement le risque par défaut."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

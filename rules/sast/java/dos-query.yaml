@@ -1,0 +1,39 @@
+id: dos-query
+language: java
+category: graphql
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur GraphQL (graphql-java / Netflix DGS) sans analyse de
+    coût de requête (query cost analysis) ni timeout d'exécution, exposant
+    des champs de liste sans pagination obligatoire (`first`/`limit`),
+    permettant à une requête unique de déclencher un traitement démesurément
+    coûteux côté serveur.
+  patterns:
+    - "GraphQL.newGraphQL($schema).build() // aucune Instrumentation de coût (ex: MaxQueryComplexityInstrumentation) ni timeout configuré"
+    - "type Query { $field: [$T] } // liste exposée sans arguments first/limit obligatoires ni connexion paginée (Relay-style)"
+    - "@DgsQuery $ret $method() { return $repository.findAll(); } // retourne un jeu de données complet sans limite ni pagination"
+  exclude_if:
+    - "MaxQueryComplexityInstrumentation ou un calcul de coût personnalisé est enregistré et rejette les requêtes dépassant un seuil"
+    - "Tous les champs de type liste imposent une pagination (first/limit) avec une valeur maximale plafonnée côté serveur"
+
+message: >
+  Le serveur GraphQL n'applique aucune analyse de coût ni timeout
+  d'exécution, et expose des champs de liste sans pagination obligatoire —
+  une requête unique peut forcer le serveur à charger et résoudre un volume
+  de données disproportionné (déni de service). Enregistrer une
+  `Instrumentation` de complexité/coût, imposer une pagination obligatoire
+  plafonnée sur tous les champs de type liste, et appliquer un timeout
+  d'exécution par requête.
+
+false_positive_notes:
+  - "Si l'API est strictement interne, à faible volume, et derrière une authentification forte avec rate limiting agressif, la sévérité peut être réduite en `medium`."
+  - "Si tous les champs de liste retournent des jeux de données bornés en base par construction (ex: table de taille fixe), vérifier manuellement avant de reclasser."
+
+remediation_ref: rules/remediation/dos-query.md
+knowledge_ref: knowledge/graphql/dos-query.md

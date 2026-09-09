@@ -1,0 +1,35 @@
+id: broken-object-level-authorization
+language: python
+category: api
+cwe: CWE-639
+owasp: API1:2023-Broken Object Level Authorization
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un acces a un objet par identifiant fourni par le client
+    (parametre d'URL, corps de requete) sans verification que l'utilisateur
+    authentifie est bien proprietaire ou autorise a acceder a cet objet.
+  patterns:
+    - "get_object_or_404(Model, pk=request.GET['id']) (Django) sans filtre owner=request.user"
+    - "Model.objects.get(id=kwargs['id']) sans clause .filter(user=request.user)"
+    - "@app.route('/orders/<int:order_id>') def get_order(order_id): Order.query.get(order_id) sans verifier order.user_id == current_user.id (Flask)"
+    - "DRF ViewSet.get_queryset() retournant Model.objects.all() sans filtrer par request.user"
+  exclude_if:
+    - "Une clause de filtrage explicite par proprietaire/permission (filter(user=request.user), get_object_or_404(Model, pk=id, owner=request.user)) est presente"
+    - "Une verification manuelle d'autorisation (if obj.owner != request.user: abort(403)) suit la recuperation"
+
+message: >
+  Objet recupere par identifiant fourni par le client sans verification de
+  propriete/autorisation — un attaquant authentifie peut acceder aux
+  ressources d'un autre utilisateur en changeant simplement l'identifiant
+  (IDOR). Filtrer systematiquement par proprietaire ou verifier
+  explicitement l'autorisation avant de retourner l'objet.
+
+false_positive_notes:
+  - "Si la ressource est publique par design (ex: catalogue produit), ce pattern ne s'applique pas — verifier la nature de la donnee exposee."
+
+remediation_ref: rules/remediation/broken-object-level-authorization.md
+knowledge_ref: knowledge/api/broken-object-level-authorization.md

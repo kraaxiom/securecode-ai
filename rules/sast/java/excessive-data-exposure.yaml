@@ -1,0 +1,35 @@
+id: excessive-data-exposure
+language: java
+category: api
+cwe: CWE-213
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint Spring REST retournant directement une entité JPA
+    complète (@ResponseBody / retour d'entité depuis un @RestController) au
+    lieu d'un DTO filtré, exposant des champs sensibles (mot de passe haché,
+    jetons internes, données d'autres utilisateurs) que le client frontend
+    n'utilise pas.
+  patterns:
+    - "@GetMapping retournant directement une entité @Entity (ex: return userRepository.findById(id)) sans mapping vers un DTO de sortie"
+    - "entité JPA sérialisée en JSON sans @JsonIgnore sur les champs sensibles (password, passwordHash, resetToken, internalNotes)"
+  exclude_if:
+    - "un DTO de sortie dédié ne mappe que les champs destinés au client"
+    - "les champs sensibles de l'entité sont annotés @JsonIgnore ou @JsonProperty(access = WRITE_ONLY)"
+
+message: >
+  L'endpoint retourne l'entité complète au format JSON sans filtrage — des
+  champs sensibles non nécessaires au client (hash de mot de passe, jetons
+  internes) peuvent fuiter. Créer un DTO de sortie dédié ou annoter les champs
+  sensibles avec @JsonIgnore.
+
+false_positive_notes:
+  - "Si l'entité ne contient aucun champ sensible au-delà de données déjà publiques, reclasser en `low`."
+  - "@JsonIgnore correctement positionné sur tous les champs sensibles neutralise le risque même sans DTO dédié."
+
+remediation_ref: rules/remediation/excessive-data-exposure.md
+knowledge_ref: knowledge/api/excessive-data-exposure.md

@@ -1,0 +1,3 @@
+## Bucket Google Cloud Storage public (CWE-284)
+
+Le code vulnérable appelle `file.makePublic()` après chaque upload, ce qui ajoute un binding IAM accordant le rôle `storage.objectViewer` à `allUsers` et rend l'objet lisible par quiconque possède l'URL publique. Combiné au renvoi direct de cette URL au client, cela expose durablement les fichiers sans aucun contrôle d'accès. La correction supprime cet appel afin que le bucket reste protégé par la prévention d'accès public, et génère à la place une URL signée via `file.getSignedUrl()` avec une expiration de 30 minutes. L'accès en lecture devient ainsi temporaire et scoped à la demande, sans exposition publique permanente.

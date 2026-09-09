@@ -1,0 +1,37 @@
+id: graphql-api
+language: java
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration Spring for GraphQL / graphql-java exposant
+    l'introspection en production, sans limite de profondeur/complexité de
+    requête, ou avec des resolvers exposant des champs sensibles sans contrôle
+    d'autorisation par champ.
+  patterns:
+    - "GraphQlSource.Builder sans configuration de MaxQueryDepthInstrumentation ni MaxQueryComplexityInstrumentation (graphql-java)"
+    - "introspection GraphQL non désactivée en profil de production (spring.graphql.schema.introspection.enabled non restreint)"
+    - "@SchemaMapping / @QueryMapping résolvant un champ sensible sans vérification d'autorisation (SecurityContextHolder) dans le DataFetcher"
+  exclude_if:
+    - "MaxQueryDepthInstrumentation et MaxQueryComplexityInstrumentation sont enregistrées sur le GraphQlSource"
+    - "chaque DataFetcher exposant des données sensibles vérifie explicitement l'autorisation de l'utilisateur courant"
+
+message: >
+  L'API GraphQL ne limite pas la profondeur/complexité des requêtes et/ou
+  n'applique pas de contrôle d'autorisation par champ dans les resolvers —
+  expose à des requêtes imbriquées coûteuses (DoS) et à une exposition de
+  données non voulue. Configurer MaxQueryDepthInstrumentation/
+  MaxQueryComplexityInstrumentation et vérifier l'autorisation dans chaque
+  DataFetcher sensible.
+
+false_positive_notes:
+  - "L'introspection activée en environnement de développement uniquement (profil dev) n'est pas un risque en soi — vérifier le profil actif avant de remonter."
+  - "Un DataFetcher ne retournant que des données publiques n'a pas besoin de contrôle d'autorisation par champ — reclasser en `low`."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

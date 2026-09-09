@@ -1,0 +1,15 @@
+id: uxss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: point de génération de la réponse HTML incluant des balises script/iframe tierces
+  block_condition: >
+    Une réponse HTML sortante contient une balise script référençant une origine tierce sans
+    attribut integrity, ou une iframe tierce sans attribut sandbox restrictif, alors qu'aucune
+    Content-Security-Policy ni Permissions-Policy n'est présente dans les en-têtes de réponse.
+  action: alert-only
+  fail_mode: fail-open
+severity: critical
+remediation_ref: rules/remediation/uxss.md
+knowledge_ref: knowledge/xss/uxss.md

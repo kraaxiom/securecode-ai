@@ -1,0 +1,33 @@
+id: prompt-injection
+language: javascript
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un prompt par concaténation de chaîne brute
+    (system + entrée utilisateur) au lieu de rôles structurés de l'API, et/ou
+    l'exécution directe d'un appel d'outil issu de la réponse du modèle sans
+    validation de schéma applicative.
+  patterns:
+    - "const prompt = SYSTEM_PROMPT + \"\\n\" + userInput (concaténation directe, pas de tableau de messages à rôles)"
+    - "for (const call of response.toolCalls) { await call.tool.execute(call.args) } sans validateAgainstSchema() préalable"
+  exclude_if:
+    - "Le prompt est construit via un tableau de messages avec rôles explicites (system/user/assistant)"
+    - "Chaque appel d'outil passe par une validation de schéma applicative avant exécution"
+
+message: >
+  Construction de prompt par concaténation brute et/ou exécution d'outil
+  sans validation de schéma — risque d'injection de prompt (voir
+  rules/remediation/prompt-injection.md).
+
+false_positive_notes:
+  - "Une concaténation limitée à du texte statique interne (pas d'entrée utilisateur) n'est pas exploitable."
+  - "Si l'agent ne dispose d'aucun outil (tools: []), le risque d'exécution d'action non autorisée est nul même sans validation de schéma."
+
+remediation_ref: rules/remediation/prompt-injection.md
+knowledge_ref: knowledge/llm/prompt-injection.md

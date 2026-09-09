@@ -1,0 +1,32 @@
+id: backup-exposure
+language: php
+category: database
+cwe: CWE-538
+owasp: A05:2021-Security-Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture d'un fichier de sauvegarde (.sql, .dump, .bak) dans un
+    répertoire situé sous le webroot public de l'application.
+  patterns:
+    - "exec(string_concat(\"mysqldump\", _, \">\", _))"
+    - "file_put_contents(string_concat(\"public/\", _, \".sql\"), _)"
+    - "file_put_contents(string_concat(__DIR__, \"/../public/\", _), $dump)"
+  exclude_if:
+    - "Le chemin de destination est explicitement en dehors d'un répertoire servi par le serveur web (ex: /var/backups)"
+    - "Le fichier est chiffré immédiatement après écriture et supprimé du répertoire temporaire public"
+
+message: >
+  Fichier de sauvegarde écrit dans un répertoire potentiellement accessible
+  via HTTP — déplacer hors du webroot et chiffrer (voir
+  rules/remediation/backup-exposure.md).
+
+false_positive_notes:
+  - "Si le répertoire 'public/' cible est en réalité protégé par une règle serveur web (deny all) documentée, reclasser en `info`."
+  - "Vérifier la configuration réelle du serveur web (Apache/Nginx) plutôt que de conclure uniquement sur le chemin littéral."
+
+remediation_ref: rules/remediation/backup-exposure.md
+knowledge_ref: knowledge/database/backup-exposure.md

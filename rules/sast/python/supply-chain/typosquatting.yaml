@@ -1,0 +1,34 @@
+id: typosquatting
+language: python
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte dans requirements.txt / pyproject.toml des noms de paquets très
+    proches (distance de Levenshtein faible, permutation de caractères, ajout
+    de tiret/underscore) de paquets PyPI populaires largement utilisés.
+  patterns:
+    - "requirements.txt: nom de paquet à distance d'édition 1-2 d'un paquet PyPI très populaire (ex: 'reqeusts', 'python-request', 'urlib3', 'crypto' au lieu de 'pycryptodome')"
+    - "requirements.txt: paquet avec underscore/tiret substitué par rapport au nom officiel (ex: 'beautiful_soup' au lieu de 'beautifulsoup4')"
+    - "import dans le code source: nom de module importé ne correspondant à aucune entrée déclarée de requirements.txt (paquet potentiellement installé manuellement/typosquatté hors suivi)"
+  exclude_if:
+    - "le paquet au nom proche est documenté comme fork légitime maintenu et publié par une organisation identifiable (README/PyPI page vérifiée)"
+
+message: >
+  Nom de paquet Python très proche d'un paquet légitime largement utilisé —
+  risque de typosquatting (paquet malveillant installé par erreur de frappe
+  ou copier-coller). Vérifier l'identité du mainteneur sur PyPI avant
+  installation et corriger le nom si erreur — voir
+  rules/remediation/typosquatting.md.
+
+false_positive_notes:
+  - "Certains noms proches sont des paquets légitimes distincts de longue date (ex: 'six' vs autres utilitaires courts) — vérifier l'historique de publication PyPI avant de conclure."
+  - "Les paquets internes de l'organisation au nom proche d'un paquet public ne sont pas du typosquatting si publiés uniquement sur un registre privé."
+
+remediation_ref: rules/remediation/typosquatting.md
+knowledge_ref: knowledge/supply-chain/typosquatting.md

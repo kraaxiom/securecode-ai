@@ -1,0 +1,34 @@
+id: mfa-bypass
+language: java
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'émission d'un token/session pleinement authentifié (JWT complet, session
+    Spring Security `SecurityContextHolder.getContext().setAuthentication(...)`) avant la
+    vérification du second facteur, ou un état MFA vérifié via un paramètre client plutôt
+    qu'un état serveur.
+  patterns:
+    - "SecurityContextHolder.getContext().setAuthentication($fullAuth)  # avant vérification du code MFA"
+    - "if (request.getParameter(\"mfa_verified\").equals(\"true\")) { ... }  # état MFA porté par le client"
+  exclude_if:
+    - "l'authentification complète n'est établie qu'après validation côté serveur du second facteur (état intermédiaire distinct utilisé entre les deux étapes)"
+    - "l'état MFA est stocké exclusivement en session serveur, jamais transmis/vérifié via un paramètre client"
+
+message: >
+  Session/token pleinement privilégié émis avant validation complète du second facteur, ou
+  état MFA vérifié depuis une valeur contrôlée par le client — ne délivrer l'authentification
+  complète qu'après validation serveur du second facteur, via un état intermédiaire dédié
+  (voir rules/remediation/mfa-bypass.md).
+
+false_positive_notes:
+  - "Si l'application n'implémente pas de MFA, cette règle ne s'applique pas au flux de connexion standard."
+  - "Vérifier que tous les points d'entrée (web, mobile, API) appliquent la même séquence MFA avant de conclure à un vrai positif."
+
+remediation_ref: rules/remediation/mfa-bypass.md
+knowledge_ref: knowledge/auth/mfa-bypass.md

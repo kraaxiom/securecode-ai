@@ -1,0 +1,32 @@
+id: brute-force
+language: java
+category: auth
+cwe: CWE-307
+owasp: A07:2021-Identification and Authentication Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint d'authentification Spring Security (`/login`, endpoint personnalisé
+    de connexion/OTP) sans configuration de limitation de débit ni de compteur d'échecs
+    persistant par compte/IP (Bucket4j, `AuthenticationFailureBadCredentialsEvent` non géré).
+  patterns:
+    - "@PostMapping(\"/login\") ... authenticationManager.authenticate(...)  # sans RateLimiter ni compteur d'échecs"
+    - "class ...AuthenticationController ... sans @RateLimiter/Bucket4j/AccountLockoutService"
+  exclude_if:
+    - "un mécanisme de rate limiting (Bucket4j, filtre dédié, WAF) protège explicitement l'endpoint"
+    - "un service de verrouillage de compte après N échecs est appliqué (ex. écoute de AuthenticationFailureBadCredentialsEvent)"
+
+message: >
+  Endpoint d'authentification sans limitation de débit ni verrouillage progressif après
+  échecs répétés — ajouter un rate limiting par compte/IP et un verrouillage temporaire
+  (voir rules/remediation/brute-force.md).
+
+false_positive_notes:
+  - "Si la protection est appliquée en amont au niveau infrastructure (WAF, API Gateway) et documentée, reclasser en `info` après vérification."
+  - "Les endpoints internes non exposés publiquement présentent un risque réduit."
+
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

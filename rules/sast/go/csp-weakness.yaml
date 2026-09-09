@@ -1,0 +1,37 @@
+id: csp-weakness
+language: go
+category: frontend
+cwe: CWE-693
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une Content-Security-Policy configurée côté Go (en-tête manuel ou
+    middleware) contenant des directives trop permissives (unsafe-inline,
+    unsafe-eval, joker large) ou son absence totale sur les routes HTML.
+  patterns:
+    - "w.Header().Set(\"Content-Security-Policy\", string_concat(_, \"unsafe-inline\", _))"
+    - "w.Header().Set(\"Content-Security-Policy\", string_concat(_, \"unsafe-eval\", _))"
+    - "w.Header().Set(\"Content-Security-Policy\", \"default-src *\")"
+    - "http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _ })  # sert du HTML sans jamais définir Content-Security-Policy"
+  exclude_if:
+    - "unsafe-inline/unsafe-eval n'est actif que sous condition d'environnement de développement"
+    - "la CSP utilise des nonces ou hashes générés dynamiquement plutôt que unsafe-inline"
+    - "la directive est envoyée en Content-Security-Policy-Report-Only avec un suivi de durcissement référencé"
+
+message: >
+  La Content-Security-Policy définie par le backend Go contient des directives
+  trop permissives (unsafe-inline/unsafe-eval/joker *) ou n'est jamais définie
+  sur les routes HTML, réduisant l'efficacité de cette défense en profondeur
+  contre le XSS (voir rules/remediation/csp-weakness.md).
+
+false_positive_notes:
+  - "Si unsafe-inline/unsafe-eval n'est actif qu'en environnement de développement, l'impact en production est nul."
+  - "Une CSP en mode Report-Only n'est pas bloquante mais reste un signal à corriger, pas un vrai positif critique."
+  - "Vérifier qu'un middleware plus spécifique en aval ne surcharge pas cette valeur avec une politique plus stricte."
+
+remediation_ref: rules/remediation/csp-weakness.md
+knowledge_ref: knowledge/frontend/csp-weakness.md

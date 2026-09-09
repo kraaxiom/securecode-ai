@@ -1,0 +1,3 @@
+# Embedding Poisoning
+
+La version vulnérable transforme le contenu soumis par un utilisateur en embedding puis l'indexe directement dans la base vectorielle sans modération, sans limite de fréquence par source et sans détection de densité anormale, permettant à un attaquant de fabriquer du contenu dont le vecteur est artificiellement proche de requêtes fréquentes afin de polluer les résultats de recherche sémantique (CWE-349, Acceptance of Extraneous Untrusted Data With Trust). La version corrigée fait passer tout contenu par une modération avant génération d'embedding, applique une limite de débit d'indexation par source, et détecte les vecteurs présentant une densité anormale pour les mettre en quarantaine plutôt que de les indexer.

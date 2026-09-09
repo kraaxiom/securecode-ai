@@ -1,0 +1,38 @@
+id: model-extraction
+language: go
+category: llm
+cwe: CWE-200
+owasp: LLM10:2025-Unbounded-Consumption
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint Go (net/http, gin, echo) exposant un appel
+    LangChainGo/OpenAI Go SDK (proxy interne vers un modèle propriétaire ou
+    fine-tuné) sans limitation de débit/volume, ce qui permet à un attaquant
+    d'interroger massivement le modèle pour en extraire le comportement, les
+    poids approximés, ou des données d'entraînement (model extraction/
+    inversion via requêtes répétées).
+  patterns:
+    - "router.POST(\"/api/llm\", handler) appelant client.CreateChatCompletion(ctx, req) sans middleware de rate limiting (golang.org/x/time/rate ou équivalent) ni quota par clé API"
+    - "Endpoint exposant les logprobs/probabilités complètes du modèle (openai.ChatCompletionRequest{LogProbs: true, TopLogProbs: N élevé}) à un client externe sans restriction"
+    - "Absence de détection de pattern de requêtes systématiques (balayage exhaustif de l'espace d'entrée) sur l'endpoint LLM"
+  exclude_if:
+    - "un rate limiting strict par clé API/utilisateur est en place ET les logprobs/probabilités détaillées ne sont jamais exposées au client"
+
+message: >
+  Endpoint exposant un appel LangChainGo/OpenAI Go SDK propriétaire/
+  fine-tuné sans limitation de débit ni restriction des informations de
+  sortie (logprobs) — un attaquant peut extraire le comportement ou des
+  données du modèle par requêtes massives. Mettre en place un rate limiting
+  strict par clé, masquer les logprobs aux clients externes, et surveiller
+  les patterns de requêtes anormaux — voir rules/remediation/model-extraction.md.
+
+false_positive_notes:
+  - "Un modèle interne non propriétaire (open-source, sans donnée sensible d'entraînement) réduit fortement l'impact — reclasser en `low`."
+  - "Un rate limiting au niveau infrastructure (API gateway) non visible dans le code applicatif peut déjà mitiger le risque — vérifier l'architecture avant de confirmer."
+
+remediation_ref: rules/remediation/model-extraction.md
+knowledge_ref: knowledge/llm/model-extraction.md

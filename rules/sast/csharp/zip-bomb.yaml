@@ -1,0 +1,37 @@
+id: zip-bomb
+language: csharp
+category: upload
+cwe: CWE-409
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'extraction d'une archive téléversée via ZipArchive/
+    ZipFile sans vérification préalable de la taille totale décompressée
+    annoncée ni du ratio de compression, exposant à une bombe de
+    décompression.
+  patterns:
+    - "ZipFile.ExtractToDirectory($archivePath, _)"
+    - "$zipArchive.ExtractToDirectory(_)"
+    - "$entry.ExtractToFile(_)"
+  exclude_if:
+    - "la somme des Entry.Length (taille décompressée annoncée) est vérifiée par rapport à un seuil maximal avant tout appel à ExtractToDirectory/ExtractToFile"
+    - "le ratio Entry.Length / Entry.CompressedLength est vérifié pour chaque entrée et l'extraction est interrompue au-delà d'un seuil"
+    - "l'extraction s'effectue dans un environnement isolé avec quotas de mémoire, disque et CPU, et un timeout explicite"
+
+message: >
+  Extraction d'une archive téléversée via ZipArchive/ZipFile sans
+  vérification préalable de la taille décompressée annoncée ni du ratio
+  de compression — risque de déni de service par bombe de décompression.
+  Vérifier Entry.Length et le ratio de compression avant extraction (voir
+  rules/remediation/zip-bomb.md).
+
+false_positive_notes:
+  - "Si la somme des tailles décompressées annoncées (Entry.Length) est déjà vérifiée avant l'appel à ExtractToDirectory/ExtractToFile, ce n'est pas exploitable — reclasser en `info`."
+  - "Si l'extraction est bornée par un environnement isolé avec quotas stricts (conteneur avec limite mémoire/disque et timeout), l'impact réel est limité même sans contrôle applicatif explicite."
+
+remediation_ref: rules/remediation/zip-bomb.md
+knowledge_ref: knowledge/upload/zip-bomb.md

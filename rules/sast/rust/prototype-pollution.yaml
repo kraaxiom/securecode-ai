@@ -1,0 +1,39 @@
+id: prototype-pollution
+language: rust
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent Rust le plus proche de la pollution de prototype JS : un
+    serde_json::from_str/from_value d'une entrée utilisateur en
+    serde_json::Value, ensuite fusionné récursivement (merge manuel ou via
+    une fonction utilitaire) sur une structure de configuration
+    partagée/globale (static/Mutex/OnceCell) sans filtrage de clés.
+  patterns:
+    - "serde_json::from_str::<Value>($userJSON)  # puis merge récursif sur une variable static/Mutex/OnceCell partagée"
+    - "merge($sharedConfig, serde_json::from_str($userJSON).unwrap())"
+    - "GLOBAL_CONFIG.lock().unwrap().merge($userValue)  # $userValue dérivé directement d'une entrée utilisateur"
+  exclude_if:
+    - "la cible de la fusion/désérialisation est toujours une struct locale nouvellement créée, jamais une variable static/Mutex/OnceCell partagée"
+    - "les clés de $userValue sont filtrées contre une liste blanche explicite avant fusion"
+    - "$userJSON est désérialisé directement vers une struct typée (pas un Value générique) avec serde, empêchant l'ajout de champs arbitraires"
+
+message: >
+  Une entrée JSON utilisateur est désérialisée en Value générique puis
+  fusionnée sur une structure de configuration partagée/globale sans filtrage
+  de clés — l'équivalent Rust le plus proche de la pollution de prototype JS,
+  pouvant permettre l'injection de champs de configuration inattendus (voir
+  rules/remediation/prototype-pollution.md).
+
+false_positive_notes:
+  - "Si la cible de la fusion est toujours une variable locale (jamais static/Mutex/OnceCell partagé), l'impact global est nul."
+  - "Si serde désérialise directement vers une struct typée fermée (pas un Value générique), les champs arbitraires sont déjà rejetés par construction."
+  - "Vérifier qu'un schéma de validation strict ou une liste blanche de clés n'est pas déjà appliqué en amont."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

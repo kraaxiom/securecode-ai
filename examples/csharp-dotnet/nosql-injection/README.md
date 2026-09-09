@@ -1,0 +1,3 @@
+# NoSQL Injection (CWE-943)
+
+La version vulnérable désérialise `Username`/`Password` en `BsonValue`, un type qui accepte aussi bien une chaîne qu'un objet JSON arbitraire (ex: `{"$ne": null}`), permettant à un attaquant de remplacer une valeur scalaire attendue par un opérateur MongoDB et de contourner l'authentification. La correction type strictement ces champs en `string` (la désérialisation rejette tout objet) et construit le filtre avec les builders typés du driver (`Builders<T>.Filter.Eq`) plutôt qu'un `BsonDocument` libre, garantissant que la valeur est toujours traitée comme un littéral.

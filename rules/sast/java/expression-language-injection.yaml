@@ -1,0 +1,36 @@
+id: expression-language-injection
+language: java
+category: injections
+cwe: CWE-917
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'évaluation d'une expression SpEL (Spring Expression Language),
+    OGNL (Struts) ou JSF/JSP EL construite par concaténation d'une entrée
+    utilisateur, exploitable en exécution de code arbitraire (RCE).
+  patterns:
+    - "ExpressionParser.parseExpression(string_concat(_, $var, _)).getValue(_)"
+    - "SpelExpressionParser().parseExpression(string_concat(_, $var, _))"
+    - "OgnlContext / Ognl.getValue(string_concat(_, $var, _), _)"
+    - "@Value(string_concat(\"#{\", $var, \"}\"))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var est validé par whitelist stricte d'expressions pré-approuvées"
+
+message: >
+  Expression SpEL/OGNL/EL construite avec une entrée utilisateur non fiable
+  et évaluée dynamiquement — vecteur d'exécution de code arbitraire côté
+  serveur (RCE) ; ne jamais évaluer d'expression contenant une entrée
+  utilisateur, utiliser un SimpleEvaluationContext restreint ou une whitelist
+  de templates figés (voir rules/remediation/expression-language-injection.md).
+
+false_positive_notes:
+  - "L'utilisation d'un SimpleEvaluationContext (sans accès aux méthodes/réflexion) réduit la surface mais n'élimine pas totalement le risque selon la configuration — vérifier manuellement."
+  - "Si $var ne provient d'aucune entrée externe, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

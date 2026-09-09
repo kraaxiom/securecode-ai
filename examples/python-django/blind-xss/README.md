@@ -1,0 +1,3 @@
+# Blind XSS (CWE-79)
+
+Le code vulnérable utilisait `mark_safe()` pour injecter le message d'un ticket support (soumis par un utilisateur externe anonyme) directement dans le HTML de l'interface d'administration, sans aucun échappement. Un agent support consultant le ticket exécuterait alors tout script injecté par l'attaquant, sans que celui-ci ne voie de retour direct (d'où « blind »). Le correctif supprime `mark_safe()` et laisse le moteur de templates Django appliquer son échappement automatique par défaut, ce qui neutralise l'injection quel que soit l'écran d'affichage, y compris les outils internes.

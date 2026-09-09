@@ -1,0 +1,3 @@
+# Déni de service par expression régulière — ReDoS (CWE-1333)
+
+Le code vulnérable valide une adresse email avec une regex contenant des quantificateurs imbriqués (`([a-zA-Z0-9]+)+`) appliquée sans limite de taille sur l'entrée, ce qui expose le moteur PCRE/Java à un backtracking catastrophique et permet à un attaquant de bloquer un thread serveur avec une seule requête contenant une chaîne pathologique. La version corrigée remplace la regex par une expression non ambiguë à complexité linéaire garantie et impose une limite de longueur (254 caractères, conforme RFC 5321) avant toute application du pattern.

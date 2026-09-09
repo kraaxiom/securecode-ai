@@ -1,0 +1,34 @@
+id: vulnerable-libraries
+language: csharp
+category: supply-chain
+cwe: CWE-1035
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: medium
+confidence_default: high
+
+match:
+  type: dependency-scan
+  description: >
+    Détecte des dépendances NuGet obsolètes (retard de versions majeures, fin
+    de maintenance officielle) dans *.csproj / packages.config, indépendamment
+    d'une CVE précise déjà publiée.
+  patterns:
+    - "*.csproj: <PackageReference Version=\"X.Y.Z\"> avec un retard de plusieurs versions majeures par rapport à la dernière version stable publiée sur nuget.org"
+    - "*.csproj / packages.config: dépendance sur un paquet marqué 'deprecated' sur nuget.org (ex: dernière publication > 3 ans, message de dépréciation dans les métadonnées)"
+    - "*.csproj: <TargetFramework> ciblant une version .NET en fin de vie officielle (ex: .NET Framework 4.5, .NET Core 2.1) toujours utilisée en production"
+  exclude_if:
+    - "un correctif de sécurité amont est appliqué localement via patch/vendoring documenté malgré l'ancienneté de la version de base"
+
+message: >
+  Dépendance NuGet ou cible de framework .NET obsolète, sans CVE identifiée
+  mais en dehors de la fenêtre de maintenance — risque accru de
+  vulnérabilités non corrigées et non détectées. Planifier une mise à jour
+  régulière (dotnet list package --outdated, Dependabot) — voir
+  rules/remediation/vulnerable-libraries.md.
+
+false_positive_notes:
+  - "Un paquet stable et volontairement figé (API interne gelée, pas de faille connue) reste `low` tant qu'aucune CVE n'est publiée."
+  - "Les dépendances de projets de test uniquement (non déployées en production) doivent être évaluées séparément avec une sévérité réduite."
+
+remediation_ref: rules/remediation/vulnerable-libraries.md
+knowledge_ref: knowledge/supply-chain/vulnerable-libraries.md

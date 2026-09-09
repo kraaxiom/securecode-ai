@@ -1,0 +1,15 @@
+id: mutation-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: sink DOM (innerHTML, insertAdjacentHTML) recevant un contenu ayant subi un aller-retour de sérialisation
+  block_condition: >
+    Un contenu préalablement sanitisé est réinséré dans un sink DOM après un cycle de
+    sérialisation/reparsing sans passage par une re-sanitisation à cette étape, ou la
+    bibliothèque de sanitisation active est répertoriée comme vulnérable aux mutations connues.
+  action: sanitize
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/mutation-xss.md
+knowledge_ref: knowledge/xss/mutation-xss.md

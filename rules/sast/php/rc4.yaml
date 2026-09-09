@@ -1,0 +1,31 @@
+id: rc4
+language: php
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage explicite du chiffrement par flux RC4 via openssl_encrypt
+    ou une configuration de suites de chiffrement autorisant RC4.
+  patterns:
+    - "openssl_encrypt(_, \"RC4\", _)"
+    - "openssl_encrypt(_, \"rc4*\", _)"
+    - "stream_context_create({\"ssl\": {\"ciphers\": \"*RC4*\"}})"
+  exclude_if:
+    - "l'appel est présent uniquement dans un test de compatibilité désactivé par défaut (skip/marked incomplete)"
+
+message: >
+  RC4 présente des biais statistiques exploitables et est interdit dans TLS
+  depuis la RFC 7465 — migrer vers AES-256-GCM ou ChaCha20-Poly1305
+  (voir rules/remediation/rc4.md).
+
+false_positive_notes:
+  - "Si RC4 n'apparaît que dans une liste de ciphers explicitement exclue (ex: '!RC4'), ce n'est pas un finding — vérifier le signe avant de remonter."
+  - "Un usage isolé dans un outil de rétro-compatibilité avec un système tiers legacy documenté reste un vrai risque, ne pas déclasser sans justification."
+
+remediation_ref: rules/remediation/rc4.md
+knowledge_ref: knowledge/crypto/rc4.md

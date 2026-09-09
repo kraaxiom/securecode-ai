@@ -1,0 +1,32 @@
+id: sslv3
+language: java
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration SSLContext ou un tableau de protocoles activant
+    explicitement SSLv3, vulnérable à l'attaque POODLE et interdit par la
+    RFC 7568.
+  patterns:
+    - 'SSLContext.getInstance("SSLv3")'
+    - 'setEnabledProtocols(_) // tableau contenant "SSLv3"'
+    - 'new String[] { "SSLv3", _ }'
+  exclude_if:
+    - "La chaîne 'SSLv3' apparaît uniquement dans un test qui vérifie explicitement le rejet du protocole"
+
+message: >
+  Protocole SSLv3 activé — configurer SSLContext.getInstance("TLSv1.3") (ou
+  "TLSv1.2" minimum) et retirer SSLv3 de setEnabledProtocols()
+  (voir rules/remediation/sslv3.md).
+
+false_positive_notes:
+  - "Un test unitaire vérifiant explicitement qu'une connexion SSLv3 est refusée par le serveur n'est pas une vulnérabilité — reclasser en `info`."
+  - "Vérifier si le protocole est réellement négociable en sortie ou uniquement listé puis filtré par un contrôle applicatif ultérieur."
+
+remediation_ref: rules/remediation/sslv3.md
+knowledge_ref: knowledge/crypto/sslv3.md

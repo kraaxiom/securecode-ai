@@ -1,0 +1,37 @@
+id: account-takeover
+language: csharp
+category: business-logic
+cwe: CWE-640
+owasp: A07:2021-Identification-and-Authentication-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des flux C# de réinitialisation de mot de passe ou de changement
+    d'e-mail sans contrôles anti-abus : token prévisible, absence
+    d'expiration, absence de vérification que l'utilisateur courant est bien
+    le propriétaire du compte avant la modification.
+  patterns:
+    - "var resetToken = Guid.NewGuid().ToString() ou new Random().Next(...) utilisé comme token de réinitialisation — générateur non cryptographiquement sûr (au lieu de RandomNumberGenerator.GetBytes / System.Security.Cryptography)"
+    - "public async Task ResetPassword(string token, string newPassword) { var user = await _db.Users.FirstAsync(u => u.ResetToken == token); user.PasswordHash = Hash(newPassword); } — sans vérification d'expiration du token (CreatedAt/ExpiresAt) ni invalidation après usage"
+    - "public async Task ChangeEmail(ClaimsPrincipal principal, string newEmail) { var user = await GetUser(principal); user.Email = newEmail; await _db.SaveChangesAsync(); } — changement d'e-mail sans revérification du mot de passe courant ni confirmation par lien envoyé à l'ancien e-mail"
+  exclude_if:
+    - "le token est généré avec RandomNumberGenerator (System.Security.Cryptography) ou via ASP.NET Core Identity (UserManager.GeneratePasswordResetTokenAsync), possède une expiration courte vérifiée, est invalidé après usage, et le changement d'email/mot de passe déclenche une notification/confirmation vers l'adresse existante"
+
+message: >
+  Flux de réinitialisation de mot de passe ou de changement d'e-mail avec
+  contrôles anti-abus insuffisants (token prévisible, pas d'expiration, pas
+  de reconfirmation) — un attaquant peut détourner un compte sans connaître
+  le mot de passe actuel. Utiliser RandomNumberGenerator ou ASP.NET Core
+  Identity pour les tokens, appliquer une expiration courte et un usage
+  unique, et notifier/confirmer tout changement sensible sur l'ancien canal —
+  voir rules/remediation/account-takeover.md.
+
+false_positive_notes:
+  - "Un token généré par ASP.NET Core Identity (UserManager.GeneratePasswordResetTokenAsync) est déjà cryptographiquement sûr — vérifier son usage correct plutôt que le signaler comme faible."
+  - "Si l'expiration est appliquée au niveau base de données (TTL) plutôt que dans le code applicatif visible, vérifier l'architecture avant de confirmer l'absence de contrôle."
+
+remediation_ref: rules/remediation/account-takeover.md
+knowledge_ref: knowledge/business-logic/account-takeover.md

@@ -1,0 +1,37 @@
+id: account-takeover
+language: rust
+category: business-logic
+cwe: CWE-640
+owasp: A07:2021-Identification-and-Authentication-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des flux Rust de réinitialisation de mot de passe ou de
+    changement d'e-mail sans contrôles anti-abus : token prévisible, absence
+    d'expiration, absence de vérification que l'utilisateur courant est bien
+    le propriétaire du compte avant la modification.
+  patterns:
+    - "let reset_token = Uuid::new_v4().to_string() ou rand::thread_rng().gen::<u64>().to_string() utilisé comme token de réinitialisation — générateur non garanti cryptographiquement sûr pour ce contexte (au lieu de rand::rngs::OsRng ou de la crate `rand` avec CryptoRng)"
+    - "async fn reset_password(token: &str, new_password: &str) -> Result<()> { let user = get_user_by_reset_token(token).await?; update_password_hash(user.id, hash(new_password)).await } — sans vérification d'expiration du token (created_at/expires_at) ni invalidation après usage"
+    - "async fn change_email(user: AuthUser, new_email: String) -> Result<()> { update_email(user.id, &new_email).await } — changement d'e-mail sans revérification du mot de passe courant ni confirmation par lien envoyé à l'ancien e-mail"
+  exclude_if:
+    - "le token est généré avec un CSPRNG (OsRng, rand::rngs::StdRng correctement initialisé, ou la crate `rand_core` avec CryptoRng), possède une expiration courte vérifiée, est invalidé après usage, et le changement d'email/mot de passe déclenche une notification/confirmation vers l'adresse existante"
+
+message: >
+  Flux de réinitialisation de mot de passe ou de changement d'e-mail avec
+  contrôles anti-abus insuffisants (token prévisible, pas d'expiration, pas
+  de reconfirmation) — un attaquant peut détourner un compte sans connaître
+  le mot de passe actuel. Utiliser un CSPRNG (OsRng) pour les tokens,
+  appliquer une expiration courte et un usage unique, et notifier/confirmer
+  tout changement sensible sur l'ancien canal — voir
+  rules/remediation/account-takeover.md.
+
+false_positive_notes:
+  - "Un token généré via OsRng avec un nombre suffisant d'octets (≥ 32) est déjà cryptographiquement sûr — vérifier son usage correct plutôt que le signaler comme faible."
+  - "Si l'expiration est appliquée au niveau base de données (TTL) plutôt que dans le code applicatif visible, vérifier l'architecture avant de confirmer l'absence de contrôle."
+
+remediation_ref: rules/remediation/account-takeover.md
+knowledge_ref: knowledge/business-logic/account-takeover.md

@@ -1,0 +1,12 @@
+id: bola
+category: authorization
+cwe: CWE-639
+type: rasp
+guard:
+  sink: "fonction d'accès à un objet par identifiant (lecture/mise à jour/suppression) exposée via un endpoint d'API"
+  block_condition: "l'objet retourné/modifié par le sink n'appartient pas au tenant/utilisateur associé au contexte d'authentification courant de la requête"
+  action: alert-only
+  fail_mode: fail-open
+severity: high
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

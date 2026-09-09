@@ -1,0 +1,38 @@
+id: smtp-injection
+language: python
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un message email (en-têtes To/From/Subject
+    ou corps MIME) par interpolation directe d'une variable non filtrée
+    contre les retours à la ligne, passée à smtplib.sendmail ou à
+    email.message.EmailMessage sans validation, permettant l'injection
+    d'en-têtes SMTP supplémentaires (BCC, corps falsifié).
+  patterns:
+    - "msg[\"Subject\"] = f\"...{var}...\""
+    - "smtp.sendmail(from_addr, f\"{to_addr}\", f\"Subject: {subject}\\n\\n{body}\")"
+    - "email_body = \"To: \" + var + \"\\r\\nSubject: ...\""
+  exclude_if:
+    - "var passe par une validation/suppression explicite des caractères \\r et \\n avant assignation"
+    - "les en-têtes sont assignés via email.message.EmailMessage/email.header (qui encodent automatiquement) et non par concaténation manuelle de texte brut"
+
+message: >
+  En-tête ou corps SMTP construit par interpolation directe d'une variable
+  non filtrée contre les retours à la ligne — un attaquant peut injecter
+  des en-têtes supplémentaires (ajout de destinataires BCC, falsification
+  du corps) via CRLF. Utiliser l'API email.message.EmailMessage qui encode
+  correctement les en-têtes, et filtrer tout caractère \\r/\\n dans les
+  champs libres.
+
+false_positive_notes:
+  - "L'API email.message.EmailMessage échappe correctement les en-têtes par défaut — le risque concerne surtout la construction manuelle de texte brut MIME."
+  - "Si var est validé par un format strict (regex email RFC 5322 sans \\r\\n possible), le risque est neutralisé."
+
+remediation_ref: rules/remediation/smtp-injection.md
+knowledge_ref: knowledge/injections/smtp-injection.md

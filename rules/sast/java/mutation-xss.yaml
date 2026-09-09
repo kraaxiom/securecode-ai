@@ -1,0 +1,39 @@
+id: mutation-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'un sanitizer HTML côté serveur (Jsoup.clean,
+    OWASP Java HTML Sanitizer) avec une whitelist permissive ou une
+    politique custom mal configurée, dont la sortie sûre peut ensuite
+    "muter" une fois réinterprétée par le parseur HTML du navigateur
+    (mXSS), typiquement via des balises imbriquées ambiguës (`<noscript>`,
+    `<template>`, `<svg><style>`).
+  patterns:
+    - "Jsoup.clean($var, Whitelist.relaxed())"
+    - "Jsoup.clean($var, Safelist.relaxed())"
+    - "PolicyFactory personnalisée autorisant des balises structurantes (noscript, template, svg) sans restriction stricte"
+  exclude_if:
+    - "la whitelist utilisée est strictement restreinte (Safelist.basic() ou plus strict, sans balises structurantes ambiguës)"
+    - "la sortie sanitizée n'est jamais réinsérée dans un contexte DOM interprété (innerHTML côté client)"
+
+message: >
+  Sanitisation HTML avec une politique permissive dont la sortie, bien que
+  syntaxiquement propre côté serveur, peut être réinterprétée différemment
+  par le parseur HTML du navigateur une fois insérée via innerHTML (mutation
+  XSS) ; utiliser une whitelist stricte (Safelist.basic() ou plus
+  restrictive) et éviter les balises structurantes ambiguës
+  (voir rules/remediation/mutation-xss.md).
+
+false_positive_notes:
+  - "Une politique de sanitisation strictement limitée à un sous-ensemble de balises inline sûres (b, i, a avec href validé) réduit fortement le risque de mutation."
+  - "Si la sortie n'est jamais insérée via innerHTML côté client (rendu texte uniquement), le vecteur mXSS ne s'applique pas."
+
+remediation_ref: rules/remediation/mutation-xss.md
+knowledge_ref: knowledge/xss/mutation-xss.md

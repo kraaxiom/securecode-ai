@@ -1,0 +1,38 @@
+id: dom-clobbering
+language: java
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un template Thymeleaf/JSP qui laisse l'utilisateur injecter des
+    éléments HTML avec des attributs id/name arbitraires (ex: contenu HTML
+    riche non filtré) dans une zone où un script client se fie ensuite à
+    window.<id> ou document.<name> pour retrouver une variable globale, sans
+    déclaration explicite préalable de cette variable.
+  patterns:
+    - "th:utext=\"${userGeneratedHtmlContent}\" rendant du HTML utilisateur non filtré, combiné à un script client référençant une variable globale implicite (window.config, document.someId) plutôt qu'une déclaration explicite (var/let/const)"
+    - "JSP affichant du contenu utilisateur brut via <%= request.getParameter(...) %> sans échappement, dans une page dont le JavaScript s'appuie sur des globals implicites"
+  exclude_if:
+    - "tout contenu utilisateur riche est assaini par une bibliothèque de type OWASP Java HTML Sanitizer avant rendu (th:utext)"
+    - "le JavaScript client déclare explicitement toutes ses variables globales sensibles (const/let) au lieu de se fier à des globals implicites potentiellement clobberables"
+
+message: >
+  Du contenu HTML fourni par l'utilisateur est rendu sans assainissement
+  (th:utext) dans une page dont le script client s'appuie sur des variables
+  globales implicites — un attaquant peut injecter des éléments avec
+  id/name ciblés pour écraser ces globals (DOM Clobbering) et détourner la
+  logique client. Assainir tout HTML utilisateur avec OWASP Java HTML
+  Sanitizer et déclarer explicitement les variables globales sensibles côté
+  client.
+
+false_positive_notes:
+  - "Ce pattern est difficile à confirmer par analyse statique côté serveur seul (le clobbering dépend du JS client) — confidence par défaut basse, à valider manuellement avec le code frontend."
+  - "Si aucun contenu HTML utilisateur riche n'est jamais rendu sans échappement, ce risque ne s'applique pas."
+
+remediation_ref: rules/remediation/dom-clobbering.md
+knowledge_ref: knowledge/frontend/dom-clobbering.md

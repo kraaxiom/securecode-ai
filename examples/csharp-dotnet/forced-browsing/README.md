@@ -1,0 +1,3 @@
+# Forced Browsing (CWE-425)
+
+La version vulnérable expose le répertoire `wwwroot/backups/` via `app.UseStaticFiles()`, ce qui rend chaque fichier de sauvegarde accessible à quiconque devine ou énumère son nom, sans aucun contrôle d'authentification ni d'autorisation — seule l'absence de lien dans l'interface "protège" ces fichiers, ce qui constitue de la sécurité par obscurité. La correction retire les sauvegardes du répertoire statique public et les sert via un contrôleur dédié protégé par `[Authorize(Policy = "RequireAdminRole")]`, avec une résolution de chemin sécurisée empêchant en plus la traversée de répertoire : l'accès dépend désormais d'un contrôle serveur systématique, indépendant de la découvrabilité de l'URL.

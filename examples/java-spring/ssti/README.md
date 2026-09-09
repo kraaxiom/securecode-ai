@@ -1,0 +1,3 @@
+# Server-Side Template Injection (CWE-1336)
+
+Le code vulnérable construit le texte du template FreeMarker par concaténation directe du paramètre `name` avant de le compiler, ce qui permet à un attaquant d'injecter des directives FreeMarker exécutant du code arbitraire côté serveur (par exemple via `freemarker.template.utility.Execute`). La version corrigée charge un template statique préexistant sur disque et ne fait transiter la valeur utilisateur que par le modèle de variables (`model.put("name", ...)`), jamais par la structure du template elle-même, ce qui élimine toute possibilité d'injecter de la logique de template.

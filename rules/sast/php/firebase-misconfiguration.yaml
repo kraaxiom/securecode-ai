@@ -1,0 +1,34 @@
+id: firebase-misconfiguration
+language: php
+category: cloud
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: config-pattern
+  description: >
+    Vérification config : détecte des règles de sécurité Firestore/Realtime
+    Database/Cloud Storage laxistes dans les fichiers `firestore.rules` /
+    `storage.rules` / `database.rules.json` du dépôt, qu'un backend PHP peut
+    accompagner en tant que projet Firebase associé.
+  patterns:
+    - "firestore.rules / storage.rules: allow read, write: if true;"
+    - "database.rules.json: \".read\": true ou \".write\": true sans condition auth"
+    - "règle vérifiant uniquement request.auth != null sans contrôle de propriété (resource.data.uid == request.auth.uid)"
+  exclude_if:
+    - "la règle `if true` est explicitement scoping à une collection publique documentée sans donnée sensible (ex: contenu éditorial public)"
+    - "une vérification de propriété ou de rôle est présente en plus de la vérification d'authentification"
+
+message: >
+  Règles de sécurité Firebase permissives (accès sans authentification ou sans
+  contrôle de propriété) — restreindre les règles au principe du moindre
+  privilège (voir rules/remediation/firebase-misconfiguration.md).
+
+false_positive_notes:
+  - "Le mode test Firebase (`if true`) est acceptable en développement local uniquement — vérifier qu'il n'est pas déployé sur le projet de production avant de confirmer `high`."
+  - "Des règles basées sur un rôle custom claim valide (`request.auth.token.role == 'admin'`) ne sont pas un faux positif même sans vérification de propriété directe."
+
+remediation_ref: rules/remediation/firebase-misconfiguration.md
+knowledge_ref: knowledge/cloud/firebase-misconfiguration.md

@@ -1,0 +1,37 @@
+id: session-hijacking
+language: csharp
+category: sessions
+cwe: CWE-613
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de session sans expiration raisonnable, une
+    déconnexion qui ne détruit pas la session côté serveur, ou une
+    journalisation de l'identifiant de session en clair.
+  patterns:
+    - "services.AddSession(options => { options.IdleTimeout = TimeSpan.FromDays(_); })" # durée excessive
+    - "services.AddSession(options => { _ })" # IdleTimeout absent
+    - "async Task Logout(_) { _ Response.Cookies.Delete(_); _ }" # sans HttpContext.Session.Clear() ni SignOutAsync
+    - "_logger.LogInformation($_, HttpContext.Session.Id)" # log de l'identifiant de session
+    - "_logger.LogInformation($_, Request.Cookies[\".AspNetCore.Session\"])"
+  exclude_if:
+    - "IdleTimeout est défini à une valeur raisonnable (ex: <= 30 minutes) avec renouvellement (SlidingExpiration)"
+    - "Logout appelle explicitement HttpContext.Session.Clear() et/ou await HttpContext.SignOutAsync(_)"
+    - "l'identifiant loggé est tronqué ou hashé avant journalisation"
+
+message: >
+  Configuration de session ou de déconnexion insuffisamment protégée
+  (expiration trop longue, absence de destruction côté serveur, ou
+  identifiant de session journalisé en clair) — facilite le détournement de
+  session par un attaquant (voir rules/remediation/session-hijacking.md).
+
+false_positive_notes:
+  - "Un IdleTimeout court avec SlidingExpiration activé constitue une configuration acceptable, ne pas remonter le signal."
+  - "Si le logout appelle SignOutAsync sur tous les schémas concernés et Session.Clear(), le risque de session persistante côté serveur est neutralisé."
+
+remediation_ref: rules/remediation/session-hijacking.md
+knowledge_ref: knowledge/sessions/session-hijacking.md

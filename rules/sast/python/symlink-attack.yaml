@@ -1,0 +1,34 @@
+id: symlink-attack
+language: python
+category: file-inclusion
+cwe: CWE-61
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une création ou un accès fichier dans un répertoire partagé
+    (ex: /tmp) sans vérification préalable de l'existence d'un lien
+    symbolique, via os.open sans O_NOFOLLOW, ou os.path.exists suivi d'une
+    écriture (TOCTOU classique).
+  patterns:
+    - "open($path_in_shared_dir, 'w')"
+    - "os.open($path_in_shared_dir, os.O_CREAT | os.O_WRONLY)"
+  exclude_if:
+    - "l'ouverture utilise os.open avec le flag O_NOFOLLOW"
+    - "le fichier est créé via tempfile.NamedTemporaryFile ou tempfile.mkstemp (gestion sécurisée native)"
+
+message: >
+  Création/écriture de fichier dans un répertoire potentiellement partagé
+  sans protection contre les liens symboliques — un attaquant local peut
+  précréer un lien pointant vers un fichier sensible. Utiliser le module
+  tempfile avec ses primitives sécurisées ou os.open avec O_NOFOLLOW (voir
+  rules/remediation/symlink-attack.md).
+
+false_positive_notes:
+  - "Sur un chemin qui n'est jamais dans un répertoire accessible en écriture par d'autres utilisateurs (ex: répertoire applicatif dédié à permissions restreintes), le risque est nul — vérifier le contexte de déploiement avant d'alerter."
+
+remediation_ref: rules/remediation/symlink-attack.md
+knowledge_ref: knowledge/file-inclusion/symlink-attack.md

@@ -1,0 +1,38 @@
+id: imagetragick
+language: csharp
+category: upload
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le traitement d'une image téléversée par un wrapper natif
+    d'ImageMagick/GraphicsMagick (Magick.NET) sans policy restrictive ni
+    isolation, exposant l'application à la classe de vulnérabilités
+    ImageTragick (delegates externes invoqués via construction de commande).
+  patterns:
+    - "new MagickImage($stream)"
+    - "new MagickImage($path)"
+    - "$image.Write(_)"
+    - "MagickNET.SetEnv(_, _)"
+  exclude_if:
+    - "une policy.xml restrictive désactivant les coders/delegates non nécessaires (MVG, MSL, EPHEMERAL, URL, HTTPS) est chargée avant tout traitement"
+    - "le traitement d'image s'exécute dans un conteneur isolé sans accès réseau ni fichier sensible et avec des privilèges minimaux"
+    - "la bibliothèque Magick.NET est maintenue à une version corrigée des CVE connues de cette classe et le format d'entrée est restreint à une liste blanche de formats sûrs (JPEG, PNG raster uniquement)"
+
+message: >
+  Traitement d'une image téléversée via Magick.NET sans policy restrictive
+  ni isolation — la bibliothèque peut déléguer certains formats à des
+  programmes externes, exposant à une classe de vulnérabilités de type
+  ImageTragick (exécution de commande). Restreindre les coders/delegates et
+  isoler le traitement (voir rules/remediation/imagetragick.md).
+
+false_positive_notes:
+  - "Si l'application restreint strictement les formats d'entrée acceptés (ex: décodage forcé en JPEG/PNG raster uniquement, formats vectoriels/MVG/MSL rejetés en amont) et maintient la bibliothèque à jour, le risque résiduel est faible."
+  - "Cette règle ne peut pas vérifier la configuration de policy externe au code (policy.xml) — une confirmation manuelle de la configuration de la bibliothèque native est nécessaire avant de conclure à une vulnérabilité exploitable."
+
+remediation_ref: rules/remediation/imagetragick.md
+knowledge_ref: knowledge/upload/imagetragick.md

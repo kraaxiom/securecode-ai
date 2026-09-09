@@ -1,0 +1,36 @@
+id: zip-bomb
+language: go
+category: upload
+cwe: CWE-409
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'extraction d'une archive téléversée via archive/zip sans
+    vérification préalable de la taille totale décompressée annoncée ni
+    du ratio de compression, exposant à une bombe de décompression.
+  patterns:
+    - "zip.OpenReader($archivePath)"
+    - "$zipFile.Open()"
+    - "io.Copy($dst, $zipEntryReader)"
+  exclude_if:
+    - "la somme des File.UncompressedSize64 (taille décompressée annoncée) est vérifiée par rapport à un seuil maximal avant toute extraction"
+    - "le ratio UncompressedSize64 / CompressedSize64 est vérifié pour chaque entrée et l'extraction est interrompue au-delà d'un seuil"
+    - "io.Copy est remplacé par io.CopyN avec une limite explicite de taille par fichier extrait"
+
+message: >
+  Extraction d'une archive téléversée via archive/zip sans vérification
+  préalable de la taille décompressée annoncée ni du ratio de
+  compression — risque de déni de service par bombe de décompression.
+  Vérifier UncompressedSize64 et le ratio de compression, et limiter
+  io.Copy avec io.CopyN (voir rules/remediation/zip-bomb.md).
+
+false_positive_notes:
+  - "Si la somme des tailles décompressées annoncées (UncompressedSize64) est déjà vérifiée avant extraction et io.Copy est borné, ce n'est pas exploitable — reclasser en `info`."
+  - "Si l'extraction s'exécute dans un environnement isolé avec quotas stricts (conteneur avec limite mémoire/disque et timeout), l'impact réel est limité même sans contrôle applicatif explicite."
+
+remediation_ref: rules/remediation/zip-bomb.md
+knowledge_ref: knowledge/upload/zip-bomb.md

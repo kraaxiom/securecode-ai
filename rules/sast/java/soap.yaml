@@ -1,0 +1,36 @@
+id: soap
+language: java
+category: api
+cwe: CWE-611
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint SOAP Java (JAX-WS, Spring-WS) traitant un document XML
+    entrant avec un parseur autorisant la résolution d'entités externes (DTD),
+    exposant à une injection XXE (XML External Entity), fréquente sur les
+    services SOAP legacy.
+  patterns:
+    - "DocumentBuilderFactory / SAXParserFactory / XMLInputFactory utilisé par un endpoint @WebService/Spring-WS sans désactivation de FEATURE_SECURE_PROCESSING ni des DTD externes"
+    - "javax.xml.parsers.DocumentBuilderFactory.newInstance() sans setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true)"
+    - "Spring-WS Endpoint (@Endpoint) manipulant le payload XML brut via un parseur non durci"
+  exclude_if:
+    - "le parseur XML désactive explicitement les DTD (disallow-doctype-decl=true) et les entités externes (external-general-entities, external-parameter-entities à false)"
+    - "le framework SOAP utilisé (CXF, Spring-WS récent) applique un durcissement XXE par défaut documenté et non désactivé"
+
+message: >
+  Le traitement du payload SOAP/XML entrant n'a pas de protection explicite
+  contre les entités externes — expose à une injection XXE (lecture de
+  fichiers locaux, SSRF, DoS par entité récursive). Désactiver
+  disallow-doctype-decl et les entités externes sur le DocumentBuilderFactory/
+  SAXParserFactory/XMLInputFactory utilisé.
+
+false_positive_notes:
+  - "Les frameworks SOAP modernes (Apache CXF récent) durcissent le parseur XML par défaut — vérifier la version et la configuration avant de remonter en `high`."
+  - "Si le payload SOAP n'est jamais désérialisé en DOM/SAX côté application (délégué entièrement à un framework durci), reclasser en `low`."
+
+remediation_ref: rules/remediation/soap.md
+knowledge_ref: knowledge/api/soap.md

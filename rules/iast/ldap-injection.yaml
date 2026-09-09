@@ -1,0 +1,15 @@
+id: ldap-injection
+category: injections
+cwe: CWE-90
+type: iast
+instrumentation:
+  hook_points:
+    - "Java: javax.naming.directory.DirContext.search / InitialDirContext"
+    - "PHP: ldap_search / ldap_bind"
+    - "Python: ldap3.Connection.search / python-ldap ldap.search_s"
+    - "Node.js: ldapjs client.search"
+  taint_check: trace la propagation d'une entrée utilisateur (paramètre HTTP, champ de formulaire) non passée par un échappement de filtre LDAP (RFC 4515) jusqu'à sa concaténation dans une chaîne de filtre ou un DN transmis à l'API d'annuaire
+  trigger_condition: la valeur atteignant le sink de recherche/bind LDAP contient un ou plusieurs métacaractères de filtre non neutralisés (`(`, `)`, `*`, `\`, `NUL`, `&`, `|`) et provient directement d'une source non fiable sans passer par une fonction d'échappement reconnue
+severity: high
+remediation_ref: rules/remediation/ldap-injection.md
+knowledge_ref: knowledge/injections/ldap-injection.md

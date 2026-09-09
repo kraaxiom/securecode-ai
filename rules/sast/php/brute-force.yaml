@@ -1,0 +1,31 @@
+id: brute-force
+language: php
+category: auth
+cwe: CWE-307
+owasp: A07:2021-Identification and Authentication Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint d'authentification (login) appelant Auth::attempt,
+    password_verify ou équivalent sans passage préalable par un middleware
+    ou une fonction de limitation de débit (RateLimiter, throttle).
+  patterns:
+    - "Auth::attempt(_) sans RateLimiter::tooManyAttempts(_) ni middleware('throttle:*') dans la même méthode/route"
+    - "password_verify($_, $_) dans un handler de route sans compteur d'échecs persistant associé"
+  exclude_if:
+    - "La route est protégée par le middleware Laravel `throttle` (vérifier routes/web.php ou routes/api.php)"
+    - "Un appel à RateLimiter::hit()/tooManyAttempts() est présent avant ou après le call d'authentification"
+
+message: >
+  Endpoint d'authentification sans limitation de tentatives détectée —
+  ajouter un rate limiting par compte et par IP (voir rules/remediation/brute-force.md).
+
+false_positive_notes:
+  - "Si la limitation est appliquée globalement via un middleware nommé dans le routeur plutôt que dans le contrôleur, vérifier le fichier de routes avant de confirmer."
+  - "Un service tiers de WAF/API gateway peut déjà appliquer un rate limiting en amont — à confirmer avec l'équipe infra avant de remonter en `high`."
+
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

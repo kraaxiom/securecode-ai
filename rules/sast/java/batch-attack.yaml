@@ -1,0 +1,38 @@
+id: batch-attack
+language: java
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint GraphQL (graphql-java / Netflix DGS) qui accepte un
+    tableau JSON de requêtes en une seule requête HTTP (batching) sans
+    limite sur le nombre d'opérations traitées, permettant de contourner le
+    rate limiting HTTP et de multiplier des attaques par force brute ou des
+    appels coûteux.
+  patterns:
+    - "@PostMapping(\"/graphql\") $ret $method(@RequestBody List<$T> $batch) { ... $batch.forEach(...) ... } // aucune limite de taille de $batch"
+    - "class $C implements GraphQLQueryResolver { ... } // DgsQueryExecutor.execute() appelé en boucle sans limite sur la taille de la liste d'entrée"
+    - "objectMapper.readValue($body, $T[].class) // désérialisation d'un batch GraphQL sans validation de taille max"
+  exclude_if:
+    - "Une validation explicite limite la taille du tableau de requêtes batchées (ex: if (batch.size() > MAX) reject)"
+    - "Le batching GraphQL est désactivé côté serveur (un seul objet requête accepté, pas de tableau)"
+
+message: >
+  L'endpoint GraphQL accepte un batch de requêtes sans limite de taille — un
+  attaquant peut empaqueter des centaines d'opérations (ex: tentatives de
+  connexion, mutations coûteuses) dans une seule requête HTTP pour
+  contourner le rate limiting basé sur le nombre de requêtes. Limiter
+  explicitement le nombre d'opérations autorisées par batch et appliquer un
+  coût agrégé avant exécution.
+
+false_positive_notes:
+  - "Si le batching est utilisé uniquement pour des requêtes en lecture peu coûteuses avec authentification forte, la sévérité peut être réduite en `low`."
+  - "Si un rate limiter mesure le coût cumulé des opérations d'un batch plutôt que le nombre de requêtes HTTP, ce n'est pas vulnérable."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

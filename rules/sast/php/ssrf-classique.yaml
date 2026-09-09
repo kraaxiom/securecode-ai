@@ -1,0 +1,29 @@
+id: ssrf-classique
+language: php
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à une bibliothèque HTTP sortante avec une URL/hôte provenant directement d'une entrée utilisateur, sans whitelist de destinations ni filtrage des plages d'adresses privées.
+  patterns:
+    - "file_get_contents($url)"
+    - "curl_init($url)"
+    - "fopen($url, "r")"
+  exclude_if:
+    - "$url est validée contre une whitelist explicite de domaines/hôtes constants avant l'appel"
+    - "$url est une constante applicative, pas dérivée d'une entrée utilisateur"
+
+message: >
+  Requête HTTP sortante dont la destination dérive d'une entrée utilisateur non validée — voir rules/remediation/ssrf-classique.md.
+
+false_positive_notes:
+  - "Si une whitelist stricte de hosts est appliquée avant l'appel, reclasser en `info`."
+  - "Si l'URL est entièrement constante (pas de partie contrôlée par l'utilisateur), ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/ssrf-classique.md
+knowledge_ref: knowledge/ssrf/ssrf-classique.md

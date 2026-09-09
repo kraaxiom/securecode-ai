@@ -1,0 +1,36 @@
+id: regex-dos
+language: java
+category: injections
+cwe: CWE-1333
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une expression régulière vulnérable au backtracking catastrophique
+    (groupes imbriqués avec quantificateurs, ex: `(a+)+`, `(a*)*`,
+    `([a-zA-Z]+)*`) compilée via Pattern.compile() et appliquée à une entrée
+    utilisateur de longueur non bornée.
+  patterns:
+    - "Pattern.compile($regex_with_nested_quantifiers).matcher($var)"
+    - "String.matches($regex_with_nested_quantifiers) appliqué à $var"
+  exclude_if:
+    - "la longueur de $var est strictement bornée en amont (ex: @Size(max=...) ou vérification explicite) à une valeur raisonnable (<100 caractères)"
+    - "le regex ne contient aucun groupe quantifié imbriqué ambigu"
+
+message: >
+  Expression régulière à motif ambigu (quantificateurs imbriqués)
+  appliquée à une entrée utilisateur non bornée — un attaquant peut
+  provoquer un backtracking catastrophique et un déni de service (ReDoS) ;
+  réécrire le motif pour éviter l'ambiguïté, borner la longueur d'entrée,
+  ou utiliser un moteur regex à temps linéaire garanti
+  (voir rules/remediation/regex-dos.md).
+
+false_positive_notes:
+  - "Une entrée strictement bornée en longueur (quelques dizaines de caractères) réduit fortement le risque pratique même avec un motif ambigu."
+  - "Tous les regex avec groupes imbriqués ne sont pas exploitables — une analyse de complexité du motif reste nécessaire pour confirmer."
+
+remediation_ref: rules/remediation/regex-dos.md
+knowledge_ref: knowledge/injections/regex-dos.md

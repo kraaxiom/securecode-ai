@@ -1,0 +1,33 @@
+id: cors-misconfiguration
+language: php
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le reflet direct de l'en-tête `Origin` reçu dans
+    `Access-Control-Allow-Origin`, ou l'usage de `*` combiné à
+    `Access-Control-Allow-Credentials: true`.
+  patterns:
+    - "header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN'])"
+    - "header('Access-Control-Allow-Origin: *')" # avec Allow-Credentials: true présent dans le même fichier
+    - "'allowed_origins' => ['*']" # avec 'supports_credentials' => true
+  exclude_if:
+    - "l'origine reflétée est vérifiée via in_array($origin, $whitelist, true) avant l'envoi de l'en-tête"
+    - "Allow-Credentials n'est jamais défini à true dans le même contexte de réponse"
+
+message: >
+  Configuration CORS permissive (reflet d'origine non validé ou wildcard
+  combiné à des credentials) — voir
+  rules/remediation/cors-misconfiguration.md.
+
+false_positive_notes:
+  - "API strictement publique sans notion de session/cookie (Allow-Credentials jamais true) : le wildcard seul n'est pas critique, reclasser en `low`."
+  - "Si la liste blanche est chargée depuis une configuration externe (fichier .env), vérifier son contenu réel avant de confirmer le finding."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

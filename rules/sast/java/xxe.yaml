@@ -1,0 +1,39 @@
+id: xxe
+language: java
+category: injections
+cwe: CWE-611
+owasp: A05:2021-Security
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'instanciation d'un parseur XML (DocumentBuilderFactory,
+    SAXParserFactory, XMLInputFactory, XMLReader, SAXReader, TransformerFactory)
+    sans désactivation explicite des entités externes et du DOCTYPE,
+    exposant à l'injection d'entités externes (lecture de fichiers, SSRF).
+  patterns:
+    - "DocumentBuilderFactory.newInstance() sans setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true)"
+    - "SAXParserFactory.newInstance() sans setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true)"
+    - "XMLInputFactory.newInstance() sans setProperty(XMLInputFactory.SUPPORT_DTD, false)"
+    - "new SAXReader() sans setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true)"
+    - "TransformerFactory.newInstance() sans setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, \"\")"
+  exclude_if:
+    - "disallow-doctype-decl est explicitement positionné à true sur la factory avant tout parsing"
+    - "SUPPORT_DTD est explicitement positionné à false (StAX) et IS_SUPPORTING_EXTERNAL_ENTITIES à false"
+    - "le document XML parsé provient exclusivement d'une source interne et fixe (jamais d'entrée utilisateur ni de fichier uploadé)"
+
+message: >
+  Parseur XML configuré avec les valeurs par défaut, qui autorisent la
+  résolution des entités externes et du DOCTYPE — un attaquant peut exploiter
+  une XXE pour lire des fichiers locaux, exfiltrer des données ou déclencher
+  un SSRF ; désactiver DOCTYPE et les entités externes sur la factory avant
+  tout parsing (voir rules/remediation/xxe.md).
+
+false_positive_notes:
+  - "Si le document XML est strictement généré en interne (aucune entrée externe, aucun upload), le risque pratique est réduit — mais la configuration durcie reste recommandée en défense en profondeur."
+  - "Certaines librairies (ex: JAXB avec un XMLStreamReader durci en amont) héritent d'une configuration déjà sécurisée — vérifier la chaîne complète avant de conclure."
+
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

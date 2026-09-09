@@ -1,0 +1,34 @@
+id: missing-samesite
+language: rust
+category: sessions
+cwe: CWE-1275
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une construction de cookie ou une configuration de
+    SessionMiddleware sans appel explicite à .same_site(...), ou avec
+    SameSite::None non associé à .secure(true).
+  patterns:
+    - "Cookie::build($name, $value)._finish()" # .same_site(_) absent de la chaîne
+    - "Cookie::build($name, $value).same_site(SameSite::None)._finish()" # sans .secure(true) dans la même chaîne
+    - "SessionMiddleware::builder($store, $key)._build()" # .cookie_same_site(_) absent
+  exclude_if:
+    - ".same_site(SameSite::Lax) ou .same_site(SameSite::Strict) est présent dans la même chaîne"
+    - ".same_site(SameSite::None) est associé à .secure(true) dans la même chaîne, avec justification fonctionnelle (intégration cross-site)"
+
+message: >
+  Cookie construit sans .same_site(...) explicite (ou avec SameSite::None non
+  sécurisé) — le navigateur continuera d'envoyer ce cookie lors de requêtes
+  cross-site, exposant l'application au CSRF (voir
+  rules/remediation/missing-samesite.md).
+
+false_positive_notes:
+  - "Si SameSite::None est associé à .secure(true) pour un besoin cross-site documenté, le risque est acceptable — reclasser en `info` avec justification."
+  - "Vérifier la configuration par défaut de SessionMiddleware::builder (souvent Lax) avant de remonter le signal si aucun appel .cookie_same_site n'est présent."
+
+remediation_ref: rules/remediation/missing-samesite.md
+knowledge_ref: knowledge/sessions/missing-samesite.md

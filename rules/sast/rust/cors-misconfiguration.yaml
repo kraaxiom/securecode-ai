@@ -1,0 +1,38 @@
+id: cors-misconfiguration
+language: rust
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une politique CORS Rust (actix-cors ou tower-http CorsLayer)
+    combinant une origine trop permissive (allow_any_origin / Any) avec
+    l'autorisation des identifiants (supports_credentials /
+    allow_credentials).
+  patterns:
+    - "Cors::default().allow_any_origin().supports_credentials()"
+    - "CorsLayer::new().allow_origin(Any).allow_credentials(true)"
+    - "Cors::default().allowed_origin_fn(|_, _| true).supports_credentials()"
+  exclude_if:
+    - "allow_origin/allowed_origin utilise une liste blanche statique explicite (pas Any ni closure toujours vraie)"
+    - "supports_credentials()/allow_credentials(true) n'est pas appelé sur cette même configuration"
+    - "l'endpoint concerné est une API publique sans authentification par cookie/session"
+
+message: >
+  La politique CORS Rust autorise une origine arbitraire (allow_any_origin /
+  Any ou une fonction d'origine toujours vraie) tout en autorisant les
+  identifiants (supports_credentials/allow_credentials) — un site tiers
+  malveillant peut lire des réponses authentifiées de la victime (voir
+  rules/remediation/cors-misconfiguration.md).
+
+false_positive_notes:
+  - "Si supports_credentials()/allow_credentials(true) n'est pas activé sur cette configuration, la combinaison n'est pas exploitable pour voler des données authentifiées."
+  - "Si l'API n'utilise pas de cookies/sessions pour l'authentification (uniquement Bearer token en header), l'impact est réduit."
+  - "Vérifier qu'allowed_origin_fn ne réimplémente pas un reflet déguisé (toujours true) sous couvert d'une liste blanche."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

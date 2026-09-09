@@ -1,0 +1,19 @@
+id: crlf-injection
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête ou en-tête HTTP réutilisé pour construire un en-tête de réponse (Location, Set-Cookie) ou une ligne de log
+  technique: error-signature
+  indicators:
+    - Présence d'un en-tête HTTP supplémentaire non prévu par l'application, reflété dans la réponse après injection d'une séquence de retour à la ligne.
+    - Découpage de la réponse HTTP observable (corps de réponse scindé en deux blocs distincts) après injection de la valeur testée.
+    - Nouvelle ligne de log ou entrée de protocole texte falsifiée observable via un canal de sortie accessible (log exposé, endpoint de debug).
+false_positive_notes:
+  - Encodage automatique des retours à la ligne par le framework HTTP, neutralisant l'injection sans indiquer une absence de vulnérabilité ailleurs.
+  - Proxy ou reverse-proxy intermédiaire pouvant normaliser les en-têtes avant qu'ils n'atteignent l'application testée.
+remediation_ref: rules/remediation/crlf-injection.md
+knowledge_ref: knowledge/injections/crlf-injection.md

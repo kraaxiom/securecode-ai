@@ -1,0 +1,40 @@
+id: http-request-smuggling
+language: python
+category: injections
+cwe: CWE-444
+owasp: A03:2021-Injection
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction manuelle d'une requête HTTP sortante (via
+    socket brut ou http.client bas niveau) où les en-têtes
+    Content-Length et Transfer-Encoding sont tous deux définis à partir de
+    valeurs potentiellement incohérentes, ou l'ajout d'un en-tête
+    Transfer-Encoding construit à partir d'une entrée utilisateur —
+    signature de désynchronisation de requêtes (request smuggling) côté
+    proxy/reverse-proxy applicatif écrit en Python.
+  patterns:
+    - "conn.putheader(\"Transfer-Encoding\", var)"
+    - "headers = {\"Content-Length\": len1, \"Transfer-Encoding\": var}"
+    - "raw_request = f\"POST / HTTP/1.1\\r\\nContent-Length: {a}\\r\\nTransfer-Encoding: {b}\\r\\n\\r\\n\""
+  exclude_if:
+    - "un seul des deux en-têtes (Content-Length ou Transfer-Encoding) est présent, jamais les deux simultanément"
+    - "la requête est entièrement générée par une bibliothèque HTTP haut niveau (requests, httpx) sans manipulation manuelle des en-têtes de longueur"
+
+message: >
+  Construction manuelle d'une requête HTTP avec des en-têtes
+  Content-Length et Transfer-Encoding potentiellement incohérents — un
+  proxy et le serveur en amont peuvent interpréter différemment les
+  limites du corps, permettant une désynchronisation de requêtes (request
+  smuggling). Ne jamais définir manuellement ces deux en-têtes ; déléguer
+  la gestion du framing HTTP à une bibliothèque de confiance.
+
+false_positive_notes:
+  - "Cette classe de vulnérabilité est surtout pertinente pour du code de proxy/gateway applicatif écrit en Python — un client HTTP standard (requests) n'est généralement pas concerné."
+  - "confidence_default bas : la détection statique ne peut confirmer la désynchronisation réelle côté infrastructure sans test dynamique."
+
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

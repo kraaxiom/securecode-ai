@@ -1,0 +1,3 @@
+# DES / 3DES — Chiffrement obsolète
+
+`vulnerable.rs` chiffre des données sensibles avec 3DES (`TdesEde3`), un algorithme dont la clé effective et la taille de bloc (64 bits) le rendent vulnérable à l'attaque Sweet32 et au cassage par force brute, ce qui correspond à CWE-327 (Use of a Broken or Risky Cryptographic Algorithm). `fixed.rs` migre vers AES-256-GCM, un chiffrement authentifié moderne, en générant systématiquement un nonce unique et aléatoire à chaque opération de chiffrement. Cette correction applique directement la recommandation de `rules/remediation/des.md` : remplacer tout usage de DES/3DES par AES-256 en mode authentifié et ne jamais réutiliser un nonce/IV.

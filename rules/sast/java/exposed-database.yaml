@@ -1,0 +1,35 @@
+id: exposed-database
+language: java
+category: database
+cwe: CWE-284
+owasp: A05:2021-Security-Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: config-pattern
+  description: >
+    Détecte, dans application.properties/application.yml ou du code de
+    configuration DataSource Java, une base de données configurée pour
+    écouter sur toutes les interfaces réseau sans authentification forte, ou
+    des identifiants par défaut/vides, exposant la base directement.
+  patterns:
+    - "application.yml: spring.datasource.url=jdbc:mysql://0.0.0.0:3306/... ou hôte bindé sur une interface publique sans restriction de pare-feu documentée"
+    - "spring.datasource.username=root / spring.datasource.password= (vide) ou identifiants par défaut (postgres/postgres, root/root) en configuration"
+    - "DataSource configuré avec sslMode=DISABLE ou useSSL=false pour une connexion à une base distante non locale"
+    - "docker-compose.yml associé au projet Java exposant le port de la base (ports: \"3306:3306\"/\"5432:5432\") vers 0.0.0.0 sans restriction réseau"
+
+message: >
+  Base de données configurée pour être accessible depuis des interfaces
+  réseau publiques et/ou avec des identifiants par défaut ou vides (exposed
+  database) — expose directement les données à un accès non autorisé.
+  Restreindre l'écoute réseau à des interfaces internes/privées, exiger des
+  identifiants forts uniques par environnement, et forcer une connexion
+  chiffrée (SSL/TLS).
+
+false_positive_notes:
+  - "Si l'exposition réseau publique est protégée par un groupe de sécurité/pare-feu restreignant l'accès à des IP de confiance (vérifiable dans l'infra as code), reclasser en `medium`."
+  - "Les configurations locales de développement isolées (localhost uniquement, jamais déployées) présentent un risque réduit."
+
+remediation_ref: rules/remediation/exposed-database.md
+knowledge_ref: knowledge/database/exposed-database.md

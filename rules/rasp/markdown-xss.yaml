@@ -1,0 +1,15 @@
+id: markdown-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: sortie HTML du moteur de rendu Markdown insérée dans la réponse ou le DOM
+  block_condition: >
+    HTML généré par un moteur de rendu Markdown à partir d'un contenu non fiable contient des
+    constructions actives (balise script, gestionnaire d'événement, schéma javascript:/data:) et
+    atteint le sink d'insertion sans passage par une sanitisation HTML dédiée.
+  action: sanitize
+  fail_mode: fail-closed
+severity: medium
+remediation_ref: rules/remediation/markdown-xss.md
+knowledge_ref: knowledge/xss/markdown-xss.md

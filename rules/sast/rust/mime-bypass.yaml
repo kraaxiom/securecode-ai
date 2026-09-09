@@ -1,0 +1,35 @@
+id: mime-bypass
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé basée uniquement sur le
+    Content-Type déclaré par le client dans la partie multipart
+    (field.content_type()), sans vérification du contenu réel.
+  patterns:
+    - "$field.content_type() == Some($mime)"
+    - "$field.content_type().map(|ct| ct.to_string() == $mime)"
+    - "$allowedTypes.contains($field.content_type())"
+  exclude_if:
+    - "le type réel du fichier est déterminé côté serveur à partir du contenu (ex: crate infer appliquée aux octets réellement lus) en complément du Content-Type déclaré"
+    - "une incohérence entre extension déclarée, Content-Type déclaré et contenu détecté côté serveur entraîne un rejet explicite"
+
+message: >
+  Validation d'un fichier téléversé basée uniquement sur
+  field.content_type() (valeur entièrement contrôlée par le client,
+  falsifiable) — combiner avec une détection du type réel basée sur le
+  contenu (ex: crate infer) et une liste blanche d'extensions (voir
+  rules/remediation/mime-bypass.md).
+
+false_positive_notes:
+  - "Si content_type() n'est utilisé qu'à titre indicatif et que l'acceptation repose sur une détection de signature appliquée au contenu réel, ce n'est pas exploitable — reclasser en `info`."
+  - "Si un middleware générique applique déjà une vérification de contenu systématique en amont, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

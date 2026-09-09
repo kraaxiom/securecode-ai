@@ -1,0 +1,3 @@
+## Prompt Injection (CWE-1427)
+
+Le code vulnérable construit le prompt en concaténant le system prompt et l'entrée utilisateur dans une seule chaîne de texte brute, sans séparation structurelle des rôles, puis exécute directement tout appel d'outil retourné par le modèle sans validation, ce qui permet à des instructions insérées dans l'entrée utilisateur de faire ignorer les garde-fous ou de déclencher des actions non autorisées. La correction utilise les rôles structurés system/user de l'API de chat plutôt que la concaténation, valide chaque appel d'outil contre un schéma applicatif indépendant, applique le moindre privilège sur les outils exposés et exige une confirmation humaine pour les actions à fort impact.

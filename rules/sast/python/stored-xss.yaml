@@ -1,0 +1,38 @@
+id: stored-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'enregistrement d'une entrée utilisateur non échappée en base
+    de données (modèle Django/SQLAlchemy) puis son rendu ultérieur dans une
+    page HTML avec désactivation explicite de l'autoescape (|safe en
+    Jinja2, mark_safe() en Django, Markup() sans échappement préalable).
+  patterns:
+    - "model.field = request.form[\"comment\"]; model.save()"
+    - "mark_safe(user_comment)"
+    - "{{ comment|safe }}"
+    - "Markup(user_input)"
+  exclude_if:
+    - "la valeur stockée est échappée avant persistance ou son rendu utilise l'autoescape par défaut (pas de |safe ni mark_safe)"
+    - "la donnée provient exclusivement d'une source interne de confiance, jamais d'un utilisateur final"
+
+message: >
+  Donnée utilisateur persistée puis rendue avec l'autoescape explicitement
+  désactivé (mark_safe/|safe/Markup) — un attaquant peut stocker un payload
+  JavaScript exécuté pour chaque visiteur consultant la page (XSS stocké,
+  impact élevé). Échapper la donnée à l'affichage (autoescape par défaut)
+  ou, si du HTML doit être autorisé, le nettoyer avec une bibliothèque de
+  sanitisation dédiée (ex: bleach) avant persistance ou avant rendu.
+
+false_positive_notes:
+  - "mark_safe()/|safe appliqué à une donnée déjà sanitisée par bleach.clean() en amont n'est pas vulnérable — vérifier la présence effective de la sanitisation."
+  - "Une donnée strictement numérique/enum stockée sans échappement particulier ne présente pas de risque XSS."
+
+remediation_ref: rules/remediation/stored-xss.md
+knowledge_ref: knowledge/xss/stored-xss.md

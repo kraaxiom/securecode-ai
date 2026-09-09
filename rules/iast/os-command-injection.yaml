@@ -1,0 +1,15 @@
+id: os-command-injection
+category: injections
+cwe: CWE-78
+type: iast
+instrumentation:
+  hook_points:
+    - "PHP: exec / shell_exec / system / passthru / popen"
+    - "Python: subprocess.run(shell=True) / os.system / os.popen"
+    - "Java: Runtime.exec / ProcessBuilder"
+    - "Node.js: child_process.exec / child_process.execSync"
+  taint_check: trace la propagation d'une entrée utilisateur non neutralisée jusqu'à sa concaténation dans la chaîne de commande ou dans un argument passé à un appel d'exécution shell
+  trigger_condition: la commande évaluée au moment de l'appel contient un fragment directement traçable à une entrée utilisateur, combiné à un appel effectué avec interprétation shell activée (`shell=True`, chaîne unique plutôt que tableau d'arguments)
+severity: critical
+remediation_ref: rules/remediation/os-command-injection.md
+knowledge_ref: knowledge/injections/os-command-injection.md

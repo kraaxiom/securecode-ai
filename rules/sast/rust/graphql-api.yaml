@@ -1,0 +1,34 @@
+id: graphql-api
+language: rust
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un résolveur async-graphql qui accède directement à la base de
+    données sans vérification du contexte d'autorisation (ctx.data), ou une
+    configuration de schéma laissant l'introspection active en production.
+  patterns:
+    - "async fn $field(&self, ctx: &Context<'_>) -> $Type { ctx.data::<$Db>().unwrap().query().await }"
+    - "Schema::build($Query, $Mutation, $Subscription).finish()"
+    - ".disable_introspection()"
+  exclude_if:
+    - "le résolveur vérifie explicitement l'autorisation via un guard (#[graphql(guard = \"$Guard\")]) ou une vérification de ctx.data::<CurrentUser>() avant exécution"
+    - ".disable_introspection() est appelé conditionnellement hors développement"
+
+message: >
+  Résolveur GraphQL (async-graphql) sans guard d'autorisation, ou
+  introspection laissée active en production — ajouter un guard par champ
+  sensible et désactiver l'introspection hors développement
+  (voir rules/remediation/graphql-api.md).
+
+false_positive_notes:
+  - "Si le champ expose uniquement des données publiques non sensibles, l'absence de guard peut être acceptable — reclasser en `info`."
+  - "Vérifier qu'un guard global n'est pas déjà appliqué au niveau du type Query avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

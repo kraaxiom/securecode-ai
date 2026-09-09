@@ -1,0 +1,3 @@
+# Universal XSS / UXSS (CWE-79)
+
+L'application n'émettait aucun en-tête de sécurité et intégrait un script CDN sans intégrité vérifiée ainsi qu'une iframe tierce sans `sandbox`, élargissant inutilement la surface d'exposition à une faille UXSS d'un composant tiers. La correction ajoute un middleware définissant une Content-Security-Policy stricte et une Permissions-Policy, ajoute l'attribut `integrity`/`crossorigin` au script CDN et restreint l'iframe avec un `sandbox` minimal. Bien que la cause première d'un UXSS soit rarement applicative, ces mesures réduisent la surface d'exposition liée au CWE-79 (Improper Neutralization of Input During Web Page Generation) en limitant ce que les composants tiers intégrés peuvent exécuter.

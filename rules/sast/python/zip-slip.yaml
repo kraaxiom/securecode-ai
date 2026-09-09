@@ -1,0 +1,35 @@
+id: zip-slip
+language: python
+category: file-inclusion
+cwe: CWE-22
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'extraction d'une archive (zipfile, tarfile) sans validation
+    que chaque entrée reste confinée au répertoire de destination —
+    ZipFile.extractall() ou TarFile.extractall() appelés directement sur une
+    archive non fiable sans vérification des chemins membres.
+  patterns:
+    - "zipfile.ZipFile($archive).extractall($dest)"
+    - "tarfile.open($archive).extractall($dest)"
+  exclude_if:
+    - "chaque membre de l'archive est validé individuellement (os.path.realpath du chemin de destination vérifié comme sous-chemin de $dest) avant extraction"
+    - "l'archive provient exclusivement d'une source interne de confiance et non d'un upload utilisateur"
+
+message: >
+  Extraction d'archive sans validation des chemins membres — une archive
+  malveillante peut contenir des entrées avec '../' écrivant en dehors du
+  répertoire de destination (Zip Slip). Valider chaque chemin membre avant
+  extraction ou utiliser une bibliothèque qui le fait nativement (voir
+  rules/remediation/zip-slip.md).
+
+false_positive_notes:
+  - "tarfile.extractall() dispose depuis Python 3.12 d'un paramètre filter='data' qui neutralise nativement ce risque — si présent et correctement configuré, reclasser en `info`."
+  - "Si l'archive est générée par l'application elle-même (jamais fournie par un tiers), ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/zip-slip.md
+knowledge_ref: knowledge/file-inclusion/zip-slip.md

@@ -1,0 +1,15 @@
+id: command-injection
+category: injections
+cwe: CWE-78
+type: iast
+instrumentation:
+  hook_points:
+    - "php: exec() / shell_exec() / system() / popen() / proc_open()"
+    - "python: subprocess.call / os.system (shell=True)"
+    - "java: Runtime.exec / ProcessBuilder"
+    - "node: child_process.exec / child_process.spawn (shell:true)"
+  taint_check: Suivi de la donnée depuis une source HTTP jusqu'à un sink d'exécution de commande système, en tenant compte du mode shell activé ou non.
+  trigger_condition: Une valeur taintée atteint un sink d'exécution de commande avec interprétation shell active, sans passage par une liste blanche ou un échappement d'arguments strict.
+severity: critical
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

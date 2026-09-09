@@ -1,0 +1,35 @@
+id: weak-session-id
+language: go
+category: sessions
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou de jeton à l'aide
+    du package math/rand (non cryptographique) ou à partir de données
+    prévisibles, au lieu de crypto/rand.
+  patterns:
+    - "math/rand" # import utilisé pour générer un identifiant de session/token
+    - "rand.Intn(_)" # provenant de math/rand, utilisé pour un ID de session
+    - "sessionID := fmt.Sprintf(\"%d-%d\", $userID, time.Now().Unix())" # concaténation prévisible
+    - "strconv.Itoa($userID) + strconv.FormatInt(time.Now().Unix(), 10)"
+  exclude_if:
+    - "l'identifiant provient de crypto/rand (rand.Read, crypto/rand.Int) ou de gorilla/securecookie (générateur natif non réimplémenté)"
+    - "la valeur générée n'est pas utilisée comme identifiant de session, jeton d'authentification, ou jeton de réinitialisation"
+
+message: >
+  Identifiant de session ou jeton généré avec math/rand (non cryptographique)
+  ou à partir de données prévisibles — un attaquant pourrait deviner ou
+  reconstituer des identifiants valides (voir
+  rules/remediation/weak-session-id.md).
+
+false_positive_notes:
+  - "math/rand n'est jamais cryptographiquement sûr, même avec une graine (seed) complexe ; seul crypto/rand doit être utilisé pour des identifiants de session ou jetons."
+  - "Si la génération s'appuie sur gorilla/sessions ou gorilla/securecookie par défaut (non modifié), ce n'est pas un vrai positif."
+
+remediation_ref: rules/remediation/weak-session-id.md
+knowledge_ref: knowledge/sessions/weak-session-id.md

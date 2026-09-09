@@ -1,0 +1,50 @@
+id: sqli-union
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+crs_alignment: "Compatible avec la logique de la règle OWASP CRS 942100 (SQL Injection Attack Detected via libinjection) — ne redéfinit pas libinjection, sert de spécification pour une règle ModSecurity-compatible équivalente."
+
+description: >
+  Règle de périmètre (WAF) générée à partir de la taxonomie du skill : bloque au
+  niveau du reverse proxy les motifs syntaxiques SQL les plus révélateurs d'une
+  tentative d'injection UNION-based, en amont de l'application. Couche de défense
+  en profondeur — ne remplace jamais la correction du code source
+  (rules/remediation/sqli-union.md).
+
+modsecurity_equivalent: |
+  # Spécification de règle, à adapter au moteur WAF réel du projet (ModSecurity/CRS,
+  # ou équivalent cloud type AWS WAF / Cloudflare) — ce bloc documente l'intention,
+  # pas une règle prête à charger telle quelle sans revue.
+  SecRule ARGS "@detectSQLi" \
+    "id:900001,\
+    phase:2,\
+    block,\
+    msg:'Motif SQL UNION-based détecté (sqli-union)',\
+    logdata:'Matched Data: %{MATCHED_VAR} found within %{MATCHED_VAR_NAME}',\
+    tag:'securecode-ai/injections/sqli-union',\
+    severity:'CRITICAL'"
+
+detection_patterns:
+  - "Séquence UNION SELECT (avec variations d'espacement/casse) dans un paramètre de requête"
+  - "Enchaînement de commentaires SQL (--, #, /* */) suivant immédiatement un guillemet non fermé"
+  - "Nombre de colonnes déclaré dans une clause ORDER BY/GROUP BY suivi d'une clause UNION dans le même paramètre"
+
+action:
+  default: block
+  options: [block, log_only]
+  description: >
+    `log_only` recommandé en phase de calibration initiale (mesure du taux de faux
+    positifs sur le trafic réel avant `block`) — voir docs/Performance.md pour la
+    méthodologie de déploiement progressif.
+
+exclude_if:
+  - "Le paramètre est un champ de recherche libre en texte pleine langue où le mot 'union' peut apparaître légitimement (ex: recherche syndicale) — nécessite un allow-list contextuel par endpoint plutôt qu'un blocage global"
+
+false_positive_notes:
+  - "Les motifs regex génériques de cette règle sont volontairement plus larges qu'une règle SAST/RASP (qui voit le contexte du code) — le taux de faux positifs attendu au niveau WAF est plus élevé, d'où confidence_default: medium et la recommandation de calibration en log_only avant activation stricte."
+
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md
+sast_ref: rules/sast/php/sqli-union.yaml

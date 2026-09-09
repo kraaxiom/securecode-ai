@@ -1,0 +1,35 @@
+id: graphql-api
+language: go
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un résolveur gqlgen (bibliothèque GraphQL Go la plus courante)
+    qui accède directement à la base de données sans passer par un
+    middleware/directive d'autorisation, ou une configuration de serveur
+    laissant l'introspection active en production.
+  patterns:
+    - "func (r *$queryResolver) $Field(ctx context.Context) ($Type, error) { return r.DB.$Query() }"
+    - "handler.NewDefaultServer($schema)"
+    - "IntrospectionEnabled: true"
+  exclude_if:
+    - "le résolveur vérifie explicitement l'identité/l'autorisation via ctx (ex: auth.ForContext(ctx)) avant d'exécuter la requête"
+    - "l'introspection est désactivée conditionnellement hors développement (IntrospectionEnabled: env == \"development\")"
+
+message: >
+  Résolveur GraphQL (gqlgen) sans vérification d'autorisation via le
+  contexte, ou introspection laissée active en production — ajouter une
+  vérification d'autorisation par champ et désactiver l'introspection hors
+  développement (voir rules/remediation/graphql-api.md).
+
+false_positive_notes:
+  - "Si le champ expose uniquement des données publiques non sensibles, l'absence de contrôle par champ peut être acceptable — reclasser en `info`."
+  - "Vérifier qu'une directive d'autorisation globale (@auth) n'est pas déjà appliquée au niveau du schéma avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

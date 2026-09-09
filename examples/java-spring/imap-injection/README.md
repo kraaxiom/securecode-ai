@@ -1,0 +1,3 @@
+# IMAP Injection (CWE-93)
+
+Le code vulnérable construit la commande IMAP `SEARCH` par concaténation directe du critère `q` fourni par l'utilisateur et utilise le nom de dossier `folder` sans validation, ce qui permet à un attaquant d'injecter des guillemets ou des mots-clés IMAP pour modifier la commande exécutée sur le serveur de messagerie. La version corrigée restreint le dossier accessible à une liste blanche (`INBOX`, `Sent`, `Drafts`) et utilise l'API structurée de Jakarta Mail (`SubjectTerm`), qui transmet le critère de recherche comme valeur typée encodée nativement plutôt que comme texte concaténé, éliminant tout vecteur d'injection de commande IMAP.

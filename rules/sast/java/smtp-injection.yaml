@@ -1,0 +1,36 @@
+id: smtp-injection
+language: java
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'assignation d'une entrée utilisateur non filtrée à un en-tête
+    de message JavaMail (setSubject, addHeader, setFrom, setRecipients à
+    partir d'une chaîne concaténée), permettant l'injection de séquences
+    CRLF pour ajouter des en-têtes SMTP arbitraires (BCC caché, spoofing).
+  patterns:
+    - "MimeMessage.setSubject($var)"
+    - "MimeMessage.addHeader($name, $var)"
+    - "MimeMessage.setFrom(new InternetAddress(string_concat(_, $var, _)))"
+  exclude_if:
+    - "$var passe par une neutralisation/suppression des caractères \\r et \\n avant utilisation"
+    - "$var est un littéral constant"
+
+message: >
+  En-tête ou champ de message e-mail assigné avec une entrée non filtrée —
+  un attaquant peut injecter des séquences CRLF pour ajouter des
+  destinataires cachés (BCC) ou usurper l'expéditeur ; filtrer/rejeter les
+  caractères \\r et \\n dans tous les champs d'en-tête avant construction du
+  message (voir rules/remediation/smtp-injection.md).
+
+false_positive_notes:
+  - "InternetAddress avec le constructeur strict (validation RFC 822) rejette généralement les CR/LF bruts — vérifier la surcharge utilisée avant de conclure."
+  - "Si $var ne provient d'aucune entrée externe, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/smtp-injection.md
+knowledge_ref: knowledge/injections/smtp-injection.md

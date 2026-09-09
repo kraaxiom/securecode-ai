@@ -1,0 +1,36 @@
+id: session-prediction
+language: python
+category: auth
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou d'un jeton
+    sensible (reset password token, session ID custom) à partir d'une
+    source non cryptographiquement sûre — random.random(), time.time(),
+    uuid.uuid1() (basé sur MAC/horodatage prévisible), ou une concaténation
+    prévisible (username + timestamp).
+  patterns:
+    - "session_id = str(random.random())"
+    - "token = hashlib.md5(str(time.time()).encode()).hexdigest()"
+    - "session_id = uuid.uuid1()"
+    - "reset_token = $username + str(int(time.time()))"
+  exclude_if:
+    - "l'identifiant est généré via secrets.token_urlsafe(), secrets.token_hex(), ou uuid.uuid4() (générateur cryptographiquement sûr)"
+
+message: >
+  Identifiant de session ou jeton sensible généré à partir d'une source
+  prévisible (random non cryptographique, timestamp, UUID v1) — un
+  attaquant peut prédire ou reconstituer des jetons valides d'autres
+  utilisateurs. Utiliser exclusivement le module secrets pour toute valeur
+  liée à la sécurité (voir rules/remediation/session-prediction.md).
+
+false_positive_notes:
+  - "uuid.uuid4() est cryptographiquement sûr (basé sur os.urandom) contrairement à uuid1() — ne pas confondre les deux variantes lors de l'analyse."
+
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

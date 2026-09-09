@@ -1,0 +1,35 @@
+id: excessive-data-exposure
+language: csharp
+category: api
+cwe: CWE-213
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une action de contrôleur ASP.NET Core Web API qui retourne
+    directement une entité Entity Framework (ou un DbSet) dans la réponse
+    JSON au lieu de projeter vers un DTO de sortie restreint, exposant
+    potentiellement des champs internes ou sensibles au client.
+  patterns:
+    - "return Ok(_context.$Set.ToList())"
+    - "return Ok($entity)"
+    - "return Json($entity)"
+    - "public $EntityType $Action(int id) { return _context.$Set.Find(id); }"
+  exclude_if:
+    - "l'entité est projetée vers un DTO avant retour (ex: .Select(x => new $Dto { ... }) ou mapping AutoMapper vers un type de sortie dédié)"
+    - "les propriétés sensibles de l'entité sont marquées [JsonIgnore] et aucune autre propriété interne ne subsiste"
+
+message: >
+  Retour direct d'une entité Entity Framework en réponse API sans DTO de
+  sortie — risque d'exposition de champs internes ou sensibles (mots de
+  passe hachés, jetons, données d'autres relations) (voir rules/remediation/excessive-data-exposure.md).
+
+false_positive_notes:
+  - "Si l'entité ne contient que des champs déjà publics et documentés, le risque réel est faible — reclasser en `low`."
+  - "Vérifier les relations de navigation EF chargées implicitement (lazy loading) qui pourraient exposer des données liées non voulues."
+
+remediation_ref: rules/remediation/excessive-data-exposure.md
+knowledge_ref: knowledge/api/excessive-data-exposure.md

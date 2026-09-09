@@ -1,0 +1,37 @@
+id: os-command-injection
+language: java
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Variante ciblant spécifiquement les appels bas niveau au système
+    d'exploitation (exec/fork de processus natifs) où une entrée utilisateur
+    atteint directement l'argument de commande sans passer par une API
+    métier de haut niveau.
+  patterns:
+    - "Runtime.exec(new String[]{\"sh\", \"-c\", string_concat(_, $var, _)})"
+    - "ProcessBuilder.command(string_concat(_, $var, _))"
+    - "ProcessBuilder.command(java.util.List.of(string_concat(_, $var, _)))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var est validé par whitelist stricte avant utilisation"
+    - "aucun interpréteur shell n'est invoqué (pas de sh -c / cmd /c) et l'argument est passé isolément au tableau d'arguments"
+
+message: >
+  Commande système du système d'exploitation construite avec une entrée non
+  fiable transmise à un interpréteur shell — exécution de commandes
+  arbitraires possible ; passer les arguments individuellement à
+  ProcessBuilder sans interpréteur shell et valider par whitelist
+  (voir rules/remediation/os-command-injection.md).
+
+false_positive_notes:
+  - "Les appels ProcessBuilder qui n'invoquent jamais /bin/sh ou cmd.exe et passent chaque argument séparément ne sont pas vulnérables à l'injection de métacaractères shell."
+  - "Si $var ne provient d'aucune entrée externe, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/os-command-injection.md
+knowledge_ref: knowledge/injections/os-command-injection.md

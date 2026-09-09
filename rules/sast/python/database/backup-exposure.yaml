@@ -1,0 +1,36 @@
+id: backup-exposure
+language: python
+category: database
+cwe: CWE-538
+owasp: A05:2021-Security-Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des scripts Python de sauvegarde de base de données (pg_dump via
+    subprocess, mysqldump, dump SQLAlchemy) qui écrivent le fichier de backup
+    dans un emplacement accessible publiquement ou sans chiffrement, ou qui
+    l'envoient vers un stockage cloud sans contrôle d'accès explicite.
+  patterns:
+    - "subprocess.run(['pg_dump', ..., '-f', '/var/www/html/backup.sql']) — sauvegarde écrite dans un répertoire servi publiquement par le serveur web"
+    - "boto3.client('s3').upload_file(backup_path, bucket, key) sans ExtraArgs={'ServerSideEncryption': ...} et sans vérification que le bucket est privé (ACL public par défaut non exclue)"
+    - "shutil.copy(backup_file, '/srv/static/') ou tout chemin de sortie situé sous un DocumentRoot/dossier statique exposé par Flask/Django/Nginx"
+  exclude_if:
+    - "le fichier de sauvegarde est écrit dans un emplacement non exposé publiquement ET chiffré (au repos ou via l'option d'export chiffrée du SGBD), avec accès restreint (permissions fichier, bucket privé, IAM dédié)"
+
+message: >
+  Sauvegarde de base de données écrite dans un emplacement accessible
+  publiquement ou transférée sans chiffrement/contrôle d'accès explicite —
+  un attaquant capable d'atteindre ce chemin peut exfiltrer l'intégralité des
+  données. Écrire les sauvegardes hors de toute racine servie publiquement,
+  chiffrer au repos, et restreindre l'accès (IAM, permissions fichier) — voir
+  rules/remediation/backup-exposure.md.
+
+false_positive_notes:
+  - "Un backup temporaire supprimé immédiatement après transfert vers un stockage sécurisé, jamais exposé entre-temps, réduit le risque — vérifier la fenêtre d'exposition réelle."
+  - "Un bucket S3 avec chiffrement par défaut au niveau bucket (SSE-S3/SSE-KMS activé globalement) peut ne pas nécessiter ExtraArgs explicite — vérifier la configuration du bucket avant de confirmer."
+
+remediation_ref: rules/remediation/backup-exposure.md
+knowledge_ref: knowledge/database/backup-exposure.md

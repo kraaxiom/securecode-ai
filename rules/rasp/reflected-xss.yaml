@@ -1,0 +1,15 @@
+id: reflected-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: fonction de rendu de la réponse HTML (moteur de templates, concaténation, écriture de réponse brute)
+  block_condition: >
+    Une valeur issue directement des paramètres, en-têtes ou corps de la requête HTTP courante
+    atteint le sink de rendu HTML sans avoir traversé de fonction d'encodage contextuel enregistrée
+    dans la chaîne d'exécution de cette même requête.
+  action: sanitize
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/reflected-xss.md
+knowledge_ref: knowledge/xss/reflected-xss.md

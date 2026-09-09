@@ -1,0 +1,36 @@
+id: metadata-aws
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un SSRF exploitable pour atteindre le service de métadonnées
+    AWS EC2 (169.254.169.254) — requête HTTP sortante vers une URL
+    utilisateur non filtrée, sans blocage explicite de la plage d'adresses
+    link-local, dans un contexte s'exécutant potentiellement sur AWS.
+  patterns:
+    - "requests.get($user_url)"
+    - "requests.get($user_url, headers=_)"
+  exclude_if:
+    - "$user_url est validé contre une liste blanche fermée de domaines externes avant l'appel"
+    - "la résolution IP du host est explicitement rejetée si elle appartient à 169.254.0.0/16 (métadonnées cloud) avant l'envoi de la requête"
+    - "IMDSv2 est imposé côté instance (jeton de session obligatoire), réduisant fortement l'impact même si le SSRF existe"
+
+message: >
+  Requête HTTP sortante vers une URL contrôlée par l'utilisateur sans
+  exclusion explicite de la plage 169.254.0.0/16 — un attaquant peut
+  atteindre le service de métadonnées AWS EC2 et exfiltrer des identifiants
+  IAM temporaires. Bloquer les plages IP privées/link-local et imposer
+  IMDSv2 (voir rules/remediation/metadata-aws.md).
+
+false_positive_notes:
+  - "Si l'application ne s'exécute jamais sur une instance EC2/ECS/Lambda (déploiement on-premise confirmé), l'impact spécifique AWS ne s'applique pas — mais le SSRF générique reste à traiter via la règle ssrf-classique."
+  - "IMDSv2 seul n'élimine pas le SSRF, il réduit l'impact — ne pas reclasser en `info` sur cette seule base, au mieux `high`."
+
+remediation_ref: rules/remediation/metadata-aws.md
+knowledge_ref: knowledge/ssrf/metadata-aws.md

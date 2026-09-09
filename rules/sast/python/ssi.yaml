@@ -1,0 +1,37 @@
+id: ssi
+language: python
+category: injections
+cwe: CWE-97
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture d'une entrée utilisateur non filtrée dans un fichier
+    servi par un serveur avec Server-Side Includes activé (extension
+    .shtml/.shtm), ou la génération dynamique d'une directive SSI
+    (<!--#exec ... -->) à partir d'une variable, typiquement via open()/write()
+    dans une route Flask/Django générant du contenu statique.
+  patterns:
+    - "open(f\"static/{var}.shtml\", \"w\").write(content)"
+    - "f.write(f\"<!--#exec cmd=\\\"{var}\\\" -->\")"
+    - "response_content = f\"<!--#include virtual=\\\"{var}\\\" -->\""
+  exclude_if:
+    - "le fichier généré n'a pas d'extension traitée par le module SSI du serveur (.shtml/.shtm/.stm)"
+    - "var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Génération d'un contenu incluant une directive SSI (Server-Side Includes)
+  à partir d'une entrée utilisateur non filtrée — un attaquant peut
+  injecter <!--#exec cmd=\"...\"--> pour exécuter des commandes côté
+  serveur. Ne jamais insérer d'entrée utilisateur dans un fichier interprété
+  par le moteur SSI ; désactiver SSI si non nécessaire.
+
+false_positive_notes:
+  - "SSI est rarement utilisé dans les stacks Python modernes (Flask/Django) — vérifier la configuration réelle du serveur web (Apache mod_include, Nginx ssi on) avant de confirmer."
+  - "Si le contenu est échappé avant écriture (remplacement de <!--# ), le risque est neutralisé."
+
+remediation_ref: rules/remediation/ssi.md
+knowledge_ref: knowledge/injections/ssi.md

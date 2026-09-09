@@ -1,0 +1,18 @@
+id: imap-injection
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: POST
+  target: champ de recherche ou de sélection de dossier transmis à la commande IMAP SEARCH/SELECT
+  technique: error-signature
+  indicators:
+    - message d'erreur du serveur IMAP exposé dans la réponse applicative suite à l'injection d'une séquence de fin de ligne dans le terme de recherche
+    - résultat de recherche incluant des messages hors du périmètre attendu, suggérant l'exécution d'une commande IMAP additionnelle
+  false_positive_notes:
+    - une erreur générique de recherche sans changement de comportement ne prouve pas l'injection de commande
+    - vérifier que le résultat retourné dépend bien de la commande injectée et non d'un comportement normal du client mail
+remediation_ref: rules/remediation/imap-injection.md
+knowledge_ref: knowledge/injections/imap-injection.md

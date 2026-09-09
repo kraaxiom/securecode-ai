@@ -1,0 +1,33 @@
+id: exposed-database
+language: js
+category: database
+cwe: CWE-284
+owasp: A05:2021-Security-Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de connexion à la base de données avec des
+    identifiants par défaut en dur, ou une publication de port Docker sur
+    toutes les interfaces réseau de l'hôte.
+  patterns:
+    - "new Pool({ user: \"postgres\", password: \"postgres\" })"
+    - "new Pool({ user: \"root\", password: \"root\" })"
+    - "mongoose.connect(\"mongodb://localhost:27017\", { user: undefined })"
+  exclude_if:
+    - "Les identifiants proviennent de process.env plutôt que d'un littéral en dur"
+    - "La configuration cible explicitement un environnement de test isolé non déployé"
+
+message: >
+  Connexion à la base de données avec des identifiants par défaut en dur —
+  vérifier également l'exposition réseau de l'instance (voir
+  rules/remediation/exposed-database.md).
+
+false_positive_notes:
+  - "Ce rule ne couvre pas la configuration Docker/Compose (ports publiés) — vérifier séparément les fichiers docker-compose.yml."
+  - "Des identifiants par défaut utilisés uniquement en CI éphémère isolée constituent un risque moindre."
+
+remediation_ref: rules/remediation/exposed-database.md
+knowledge_ref: knowledge/database/exposed-database.md

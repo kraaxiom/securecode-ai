@@ -1,0 +1,35 @@
+id: ssi
+language: java
+category: injections
+cwe: CWE-97
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture d'une entrée utilisateur non échappée dans une
+    réponse servie par un contexte supportant les Server Side Includes
+    (ex: servlet configurant SSIServlet, ou fichier .shtml généré
+    dynamiquement avec du contenu utilisateur intégré tel quel).
+  patterns:
+    - "response.getWriter().write(string_concat(_, $var, _)) sur une ressource .shtml/.shtm servie par SSIServlet"
+    - "Files.write(path_shtml, string_concat(_, $var, _))"
+  exclude_if:
+    - "$var passe par un échappement des directives SSI (<!--#, -->) avant écriture"
+    - "SSIServlet n'est pas activé/configuré sur l'application"
+
+message: >
+  Entrée utilisateur écrite sans échappement dans une ressource interprétée
+  par un moteur SSI — un attaquant peut injecter une directive
+  `<!--#exec cmd=... -->` pour exécuter des commandes côté serveur ;
+  désactiver SSI si non nécessaire, sinon échapper strictement les
+  séquences `<!--#` et `-->` (voir rules/remediation/ssi.md).
+
+false_positive_notes:
+  - "Si le serveur d'application ne charge pas le module/servlet SSI, ce vecteur n'est pas exploitable."
+  - "Un échappement des caractères `<`, `!`, `-`, `#` avant écriture neutralise l'injection de directive."
+
+remediation_ref: rules/remediation/ssi.md
+knowledge_ref: knowledge/injections/ssi.md

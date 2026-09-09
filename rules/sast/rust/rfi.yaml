@@ -1,0 +1,36 @@
+id: rfi
+language: rust
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code Rust, des patterns caractéristiques de Remote File Inclusion (RFI)
+    lorsqu'une entrée non fiable (utilisateur, requête HTTP, paramètre externe)
+    atteint une opération sensible sans validation ni contrôle préalable.
+  patterns:
+    - "std::fs::File::open(user_input)"
+    - "std::fs::read_to_string(user_input)"
+    - "Path::new(&user_input)"
+    - "std::fs::File::create(user_input)"
+    - "ZipArchive::new(file)  // extraction sans validation du chemin des entrees"
+  exclude_if:
+    - "$userInput est une constante littérale interne, pas une entrée utilisateur"
+    - "le chemin est validé/normalisé puis comparé à une liste blanche de répertoires autorisés avant utilisation"
+
+message: >
+  Pattern potentiellement vulnérable à Remote File Inclusion (RFI) détecté — une entrée non validée
+  semble atteindre une opération sensible. Vérifier la provenance de la donnée
+  et appliquer une validation/liste blanche avant utilisation
+  (voir rules/remediation/rfi.md). Recommandation : valider le chemin contre une liste blanche et refuser toute séquence `..` ou chemin absolu avant toute opération fichier.
+
+false_positive_notes:
+  - "Si la valeur incriminée provient exclusivement d'une constante interne ou d'une configuration serveur, ce n'est pas exploitable — reclasser en `info`."
+  - "Si une validation stricte (liste blanche, normalisation de chemin, vérification de signature/ownership) est appliquée immédiatement avant l'opération sensible, vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/rfi.md
+knowledge_ref: knowledge/file-inclusion/rfi.md

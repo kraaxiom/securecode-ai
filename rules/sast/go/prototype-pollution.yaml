@@ -1,0 +1,38 @@
+id: prototype-pollution
+language: go
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent Go le plus proche de la pollution de prototype JS : un
+    json.Unmarshal d'une entrée utilisateur vers une map[string]interface{}
+    ensuite fusionnée récursivement sur une structure de configuration
+    partagée/globale sans filtrage de clés.
+  patterns:
+    - "json.Unmarshal($userJSON, &sharedConfig)  # sharedConfig est une variable globale/package-level"
+    - "json.Unmarshal($userJSON, &userMap)  # userMap map[string]interface{}, puis mergo.Merge(&GlobalConfig, userMap)"
+    - "mergo.Merge($dst, $userMap)  # $dst pointe vers une variable globale ou un singleton partagé"
+  exclude_if:
+    - "la cible de Unmarshal/Merge est toujours une struct locale nouvellement créée, jamais une variable globale/package-level"
+    - "les clés de $userMap sont filtrées contre une liste blanche explicite avant fusion"
+    - "$userJSON est validé contre un schéma strict avant désérialisation"
+
+message: >
+  Une entrée JSON utilisateur est désérialisée puis fusionnée sur une
+  structure de configuration partagée/globale sans filtrage de clés —
+  l'équivalent Go le plus proche de la pollution de prototype JS, pouvant
+  permettre l'injection de champs de configuration inattendus (voir
+  rules/remediation/prototype-pollution.md).
+
+false_positive_notes:
+  - "Si la cible de la fusion est toujours une variable locale (jamais globale/package-level ni un singleton), l'impact global est nul."
+  - "Si les clés utilisateur sont filtrées contre une liste blanche avant fusion, ce n'est pas exploitable."
+  - "Vérifier qu'un schéma de validation strict n'est pas déjà appliqué en amont sur le JSON utilisateur."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

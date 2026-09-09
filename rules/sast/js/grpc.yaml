@@ -1,0 +1,31 @@
+id: grpc
+language: js
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur/client gRPC Node.js (`@grpc/grpc-js`) instancié avec
+    `grpc.credentials.createInsecure()` ou un serveur sans intercepteur
+    d'authentification global.
+  patterns:
+    - "grpc.credentials.createInsecure()"
+    - "new grpc.Server()" # sans middleware/interceptor d'auth ajouté avant addService
+  exclude_if:
+    - "createInsecure() est utilisé uniquement dans un fichier de test/mock explicitement nommé (*.test.js, *.spec.js)"
+    - "un intercepteur d'authentification (ex: via grpc-middleware) est enregistré avant l'ajout des services"
+
+message: >
+  Canal gRPC non chiffré (createInsecure) ou serveur sans intercepteur
+  d'authentification global — voir rules/remediation/grpc.md.
+
+false_positive_notes:
+  - "Environnement de développement local isolé, jamais déployé : réduire la sévérité si confirmé par le contexte du fichier."
+  - "Si le mesh réseau (ex: Istio mTLS) applique déjà le chiffrement en dehors du code applicatif, documenter la compensation avant de fermer le finding."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

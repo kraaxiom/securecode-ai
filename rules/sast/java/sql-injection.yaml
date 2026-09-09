@@ -1,0 +1,42 @@
+id: sql-injection
+language: java
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une requête SQL par concaténation de chaînes
+    incluant une variable non liée, exécutée via java.sql.Statement,
+    JdbcTemplate.query/update avec SQL concaténé, ou Hibernate
+    createQuery/createNativeQuery avec chaîne construite dynamiquement.
+  patterns:
+    - "Statement.execute(string_concat(_, $var, _))"
+    - "Statement.executeQuery(string_concat(_, $var, _))"
+    - "Statement.executeUpdate(string_concat(_, $var, _))"
+    - "JdbcTemplate.query(string_concat(_, $var, _), _)"
+    - "JdbcTemplate.update(string_concat(_, $var, _))"
+    - "Session.createQuery(string_concat(_, $var, _))"
+    - "Session.createNativeQuery(string_concat(_, $var, _))"
+    - "EntityManager.createQuery(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant (pas une variable/paramètre de méthode ou champ)"
+    - "$var passe par une whitelist stricte ou un enum avant concaténation"
+    - "$var est casté/validé en type numérique (Integer.parseInt, etc.) avant la requête"
+
+message: >
+  Requête SQL construite par concaténation de chaînes avec une donnée non
+  fiable — remplacer par un PreparedStatement paramétré (`?`), ou par les
+  paramètres nommés de JdbcTemplate/Hibernate/JPA
+  (voir rules/remediation/sql-injection.md).
+
+false_positive_notes:
+  - "Si la variable concaténée provient uniquement de constantes internes (nom de table/colonne fixé au moment de la compilation), le risque est nul — reclasser en `info`."
+  - "L'usage de Statement seul n'est pas systématiquement vulnérable si aucune entrée externe n'entre dans la chaîne — vérifier la provenance de la variable avant de remonter en `critical`."
+  - "Un ORM avec requête nommée paramétrée (`:param`) correctement liée via setParameter n'est pas concerné."
+
+remediation_ref: rules/remediation/sql-injection.md
+knowledge_ref: knowledge/injections/sql-injection.md

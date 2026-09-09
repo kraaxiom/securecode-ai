@@ -1,0 +1,33 @@
+id: dependency-confusion
+language: javascript
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans package.json, une dépendance interne non scopée
+    (pas de préfixe @org/) résolue via le registre npm public par défaut,
+    en l'absence d'une entrée .npmrc fixant un registre privé prioritaire
+    pour ce scope.
+  patterns:
+    - "dependencies.<package> sans scope @org/ pour un nom correspondant à une convention interne connue"
+    - "Absence de .npmrc avec @org:registry=<registre-privé> pour un package sans scope réservé"
+  exclude_if:
+    - ".npmrc déclare @org:registry pointant vers un registre privé pour ce scope"
+    - "Le package est un paquet public établi et largement téléchargé"
+
+message: >
+  Paquet interne potentiellement résolu sans scope réservé ni registre privé
+  prioritaire — scoper le paquet (@org/nom) et fixer explicitement le
+  registre dans .npmrc (voir rules/remediation/dependency-confusion.md).
+
+false_positive_notes:
+  - "Si le package est un paquet public reconnu (forte popularité, dépôt source vérifiable), ce n'est pas une confusion de dépendance."
+  - "Si l'entreprise utilise un registre proxy unique faisant autorité pour toutes les résolutions, reclasser en `info`."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

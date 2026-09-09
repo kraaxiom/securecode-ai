@@ -1,0 +1,3 @@
+# JWT Algorithm Confusion (CWE-347)
+
+La version vulnérable configure `TokenValidationParameters` sans `ValidAlgorithms`, ce qui laisse la bibliothèque déduire l'algorithme de vérification depuis le header du token lui-même. Un attaquant peut alors forger un token signé en HS256 en réutilisant la clé publique RSA de l'application — exposée pour la vérification légitime — comme secret HMAC, trompant ainsi la vérification de signature. La correction fige explicitement `ValidAlgorithms` sur `RS256` uniquement, rendant impossible toute bascule vers HMAC, et ajoute une vérification défensive de l'algorithme réellement présent dans le header du token validé. Ainsi, seule une signature RSA authentique produite avec la clé privée de l'émetteur peut être acceptée.

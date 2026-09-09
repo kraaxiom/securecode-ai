@@ -1,0 +1,12 @@
+id: xml-injection
+category: injections
+cwe: CWE-91
+type: rasp
+guard:
+  sink: construction d'une chaîne de document XML par concaténation avant parsing/sérialisation
+  block_condition: la chaîne XML construite contient des métacaractères XML non échappés (<, >, &) provenant d'une donnée taintée
+  action: sanitize
+  fail_mode: fail-open
+severity: medium
+remediation_ref: rules/remediation/xml-injection.md
+knowledge_ref: knowledge/injections/xml-injection.md

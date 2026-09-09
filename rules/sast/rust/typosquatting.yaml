@@ -1,0 +1,34 @@
+id: typosquatting
+language: rust
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte dans Cargo.toml des noms de crates très proches (distance de
+    Levenshtein faible, permutation de caractères, tiret/underscore substitué)
+    de crates crates.io populaires largement utilisées.
+  patterns:
+    - "Cargo.toml: dépendance à distance d'édition 1-2 d'une crate très populaire (ex: 'toKio', 'serd', 'reqwests' au lieu de 'tokio', 'serde', 'reqwest')"
+    - "Cargo.toml: nom de crate avec tiret/underscore substitué par rapport au nom officiel (ex: 'rand_core2' au lieu de 'rand_core')"
+    - "use dans le code source: chemin de crate importé ne correspondant à aucune dépendance déclarée dans Cargo.toml (crate potentiellement introduite manuellement/typosquattée hors suivi)"
+  exclude_if:
+    - "la crate au nom proche est documentée comme fork légitime maintenu et publié par une organisation identifiable (page crates.io vérifiée)"
+
+message: >
+  Nom de crate très proche d'une crate légitime largement utilisée — risque
+  de typosquatting (crate malveillante installée par erreur de frappe ou
+  copier-coller). Vérifier l'identité du mainteneur sur crates.io avant
+  installation et corriger le nom si erreur — voir
+  rules/remediation/typosquatting.md.
+
+false_positive_notes:
+  - "Certains noms proches sont des crates légitimes distinctes de longue date (ex: crates courtes à usages différents) — vérifier l'historique de publication crates.io avant de conclure."
+  - "Les crates internes de l'organisation au nom proche d'une crate publique ne sont pas du typosquatting si publiées uniquement sur un registre privé."
+
+remediation_ref: rules/remediation/typosquatting.md
+knowledge_ref: knowledge/supply-chain/typosquatting.md

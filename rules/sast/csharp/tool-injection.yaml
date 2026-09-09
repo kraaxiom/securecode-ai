@@ -1,0 +1,37 @@
+id: tool-injection
+language: csharp
+category: llm
+cwe: CWE-1427
+owasp: LLM06:2025-Excessive-Agency
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel de fonction/plugin Semantic Kernel dont les arguments
+    proviennent directement d'un texte généré par le modèle (function
+    calling) ou d'une sortie d'outil précédente, sans validation de schéma
+    strict avant exécution.
+  patterns:
+    - "kernel.InvokeAsync(pluginName, functionName, KernelArguments(string_concat(_, toolCallResult.Arguments, _)))"
+    - "await kernelFunction.InvokeAsync(kernel, new KernelArguments(JsonSerializer.Deserialize<KernelArguments>(chatMessage.Content)))"
+    - "plugin.LoadFromUri(externalToolRegistryUrl)"
+    - "kernelBuilder.Plugins.AddFromFunctions(dynamicallyLoadedTools)"
+  exclude_if:
+    - "les arguments passent par un validateur de schéma explicite (ex: JsonSchema.Validate, FluentValidation) avant InvokeAsync"
+    - "la liste des plugins/outils est statique et définie en dur dans le code, sans chargement dynamique externe"
+
+message: >
+  Arguments d'appel d'outil transmis depuis une sortie du modèle ou une
+  source externe sans validation de schéma stricte — valider chaque
+  paramètre contre un schéma typé et appliquer une liste blanche d'outils
+  autorisés avant exécution (voir rules/remediation/tool-injection.md).
+
+false_positive_notes:
+  - "Si KernelArguments est construit à partir de valeurs strictement typées définies par le développeur (pas depuis chatMessage.Content), reclasser en `info`."
+  - "Si un middleware de validation de schéma (JSON Schema, FluentValidation) intercepte systématiquement les arguments avant InvokeAsync, reclasser en `low`."
+  - "Si le chargement de plugin dynamique provient d'une source interne signée et vérifiée (pas d'un registre tiers), reclasser en `medium`."
+
+remediation_ref: rules/remediation/tool-injection.md
+knowledge_ref: knowledge/llm/tool-injection.md

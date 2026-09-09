@@ -1,0 +1,3 @@
+# Agent Hijacking (CWE-1427)
+
+La version vulnérable laisse un agent LLM autonome invoquer directement des outils à fort impact (paiement, suppression de compte, envoi d'e-mail) dès qu'ils figurent dans le plan produit par le modèle, sans validation métier ni confirmation humaine, et conserve les mêmes privilèges élevés même lors du traitement de contenu externe non fiable. La correction sépare la couche de décision (LLM) de la couche d'exécution : les outils à fort impact exigent une confirmation humaine explicite avant exécution, chaque étape est revalidée par des règles métier indépendantes du modèle, et toutes les décisions et actions sont journalisées pour l'audit.

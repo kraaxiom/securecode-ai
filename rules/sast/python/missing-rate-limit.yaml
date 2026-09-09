@@ -1,0 +1,32 @@
+id: missing-rate-limit
+language: python
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un endpoint sensible (login, reset de mot de passe, envoi
+    d'email, endpoint de recherche couteux) sans decorateur ou middleware de
+    limitation de debit (rate limiting).
+  patterns:
+    - "@app.route('/login', methods=['POST']) (Flask) sans decorateur @limiter.limit(...) (Flask-Limiter)"
+    - "class LoginView(APIView): (DRF) sans throttle_classes defini alors que DEFAULT_THROTTLE_CLASSES n'est pas configure globalement"
+    - "@app.post('/api/reset-password') (FastAPI) sans dependance de limitation de debit (slowapi ou equivalent)"
+  exclude_if:
+    - "Un decorateur/middleware de rate limiting (Flask-Limiter, DRF throttle_classes, slowapi, gateway API en amont) est present sur l'endpoint ou globalement"
+
+message: >
+  Endpoint sensible sans limitation de debit — expose a des attaques par
+  force brute (login), a de l'abus de ressources (envoi d'email en masse) ou
+  a un deni de service applicatif. Ajouter une limitation de debit
+  (Flask-Limiter, DRF throttling, slowapi) sur les endpoints sensibles.
+
+false_positive_notes:
+  - "Si un rate limiting est deja applique au niveau de la passerelle API/CDN (ex: Cloudflare, API Gateway), le risque applicatif est reduit — reclasser en `low` avec verification de la config amont."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

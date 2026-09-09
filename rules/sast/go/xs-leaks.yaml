@@ -1,0 +1,39 @@
+id: xs-leaks
+language: go
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse net/http qui expose des différences observables
+    cross-origin liées à l'état d'authentification (redirection selon
+    l'état de connexion, code de statut différent, en-tête
+    `X-Frame-Options`/`Content-Security-Policy: frame-ancestors` absent sur
+    des pages sensibles autorisant leur inclusion en iframe cross-origin,
+    absence d'en-tête `Cross-Origin-Opener-Policy`/`Cross-Origin-Resource-
+    Policy`).
+  patterns:
+    - "handler sensible sans w.Header().Set(\"X-Frame-Options\", ...) ni Content-Security-Policy: frame-ancestors, permettant l'inclusion en iframe cross-origin"
+    - "func dashboardHandler(w http.ResponseWriter, r *http.Request) sans w.Header().Set(\"Cross-Origin-Opener-Policy\", \"same-origin\") sur une page authentifiée sensible"
+    - "handler qui renvoie http.Redirect (302) uniquement si l'utilisateur est connecté vs http.StatusOK sinon, sans normalisation de la réponse observable cross-origin"
+  exclude_if:
+    - "les en-têtes Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy et frame-ancestors/X-Frame-Options sont explicitement fixés sur les pages sensibles (directement ou via middleware)"
+    - "la page ne contient aucune information dont la présence/absence pourrait révéler l'état d'authentification ou des données spécifiques à l'utilisateur"
+
+message: >
+  Réponse sensible sans en-têtes d'isolation cross-origin
+  (X-Frame-Options/frame-ancestors, Cross-Origin-Opener-Policy,
+  Cross-Origin-Resource-Policy) — un site malveillant peut observer des
+  effets de bord révélant l'état d'authentification ou des données de
+  l'utilisateur (voir rules/remediation/xs-leaks.md).
+
+false_positive_notes:
+  - "Si un middleware Go global (chaîne de handlers) applique déjà ces en-têtes à toutes les réponses, reclasser en `low`."
+  - "Les XS-Leaks nécessitent souvent une confirmation par test dynamique (mesure de timing/taille) ; la revue statique identifie l'absence de contrôle, pas l'exploitabilité confirmée."
+
+remediation_ref: rules/remediation/xs-leaks.md
+knowledge_ref: knowledge/modern/xs-leaks.md

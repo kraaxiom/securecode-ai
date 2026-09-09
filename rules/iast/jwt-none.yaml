@@ -1,0 +1,24 @@
+id: jwt-none
+category: auth
+cwe: CWE-347
+type: iast
+instrumentation:
+  hook_points:
+    - "php: fonction de décodage/vérification JWT (firebase/php-jwt JWT::decode ou équivalent)"
+    - "js: fonction jwt.verify/jwt.decode (jsonwebtoken ou équivalent)"
+    - "python: fonction jwt.decode (PyJWT ou équivalent)"
+    - "java: méthode de parsing/vérification JWT (JJWT parser, Nimbus JOSE)"
+    - "csharp: méthode ValidateToken (System.IdentityModel.Tokens.Jwt)"
+    - "go: fonction de vérification jwt.Parse (golang-jwt ou équivalent)"
+  taint_check: >
+    Trace si un jeton dont l'en-tête annonce l'algorithme `none` (source: en-tête JWT non
+    fiable) atteint une décision d'authentification/autorisation (sink: établissement de
+    session ou octroi d'accès) sans avoir été rejeté par une liste explicite d'algorithmes
+    acceptés excluant `none`.
+  trigger_condition: >
+    Un jeton avec `alg: none` est traité par la logique métier comme authentifié (claims
+    lus et utilisés pour une décision d'accès) sans qu'un rejet explicite n'ait eu lieu
+    au niveau de la vérification de signature.
+severity: critical
+remediation_ref: rules/remediation/jwt-none.md
+knowledge_ref: knowledge/auth/jwt-none.md

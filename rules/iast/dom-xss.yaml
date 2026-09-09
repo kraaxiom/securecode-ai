@@ -1,0 +1,20 @@
+id: dom-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "js: location.hash / location.search / document.URL / document.referrer comme sources"
+    - "js: window message event (event.data) comme source"
+    - "js: localStorage.getItem / sessionStorage.getItem comme sources"
+    - "js: innerHTML / outerHTML / document.write / insertAdjacentHTML / eval / Function() comme sinks"
+  taint_check: >
+    Trace la donnée depuis une source contrôlable côté client (URL, message, stockage local)
+    jusqu'à un sink DOM interprétant du HTML ou exécutant du code.
+  trigger_condition: >
+    Donnée marquée non fiable issue d'une source client atteignant un sink HTML/exécution sans
+    passer par une API texte (textContent) ni par une bibliothèque de sanitisation DOM reconnue,
+    ou écouteur message déclenché sans validation préalable de event.origin.
+severity: high
+remediation_ref: rules/remediation/dom-xss.md
+knowledge_ref: knowledge/xss/dom-xss.md

@@ -1,0 +1,12 @@
+id: http-parameter-pollution
+category: injections
+cwe: CWE-235
+type: rasp
+guard:
+  sink: fonction de lecture de paramètre de requête utilisée par un contrôle de sécurité ou une logique métier sensible (getParameter, request.args, req.query)
+  block_condition: un paramètre consommé par un contrôle d'accès ou de validation possède plusieurs occurrences avec des valeurs divergentes dans la même requête
+  action: alert-only
+  fail_mode: fail-open
+severity: medium
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

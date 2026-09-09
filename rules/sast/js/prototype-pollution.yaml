@@ -1,0 +1,34 @@
+id: prototype-pollution
+language: js
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction de fusion récursive maison ou un appel
+    `lodash.merge`/`lodash.set` opérant sur un objet/chemin dérivé
+    directement d'une entrée utilisateur (body de requête, query string),
+    sans filtrage des clés dangereuses.
+  patterns:
+    - "_.merge(_, JSON.parse(req.body._))"
+    - "_.set(_, req.body.path, _)"
+    - "for (const key in userInput) { target[key] = _ }" # sans exclusion de __proto__/constructor/prototype
+  exclude_if:
+    - "la boucle/fonction exclut explicitement les clés __proto__, constructor et prototype"
+    - "le chemin passé à lodash.set est validé contre une liste blanche statique avant l'appel"
+
+message: >
+  Fusion/assignation dynamique d'un objet utilisateur sans filtrage des clés
+  dangereuses — risque de prototype pollution (voir
+  rules/remediation/prototype-pollution.md).
+
+false_positive_notes:
+  - "Version de lodash >= 4.17.21 corrige certains vecteurs connus mais ne dispense pas du filtrage applicatif — ne pas fermer uniquement sur la base de la version."
+  - "Si l'objet source est strictement contrôlé côté serveur (jamais dérivé d'une entrée utilisateur), non applicable — reclasser en `info`."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

@@ -1,0 +1,33 @@
+id: backup-exposure
+language: js
+category: database
+cwe: CWE-538
+owasp: A05:2021-Security-Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une écriture de sauvegarde vers un chemin public/webroot, ou une
+    configuration de bucket cloud en accès public pour des objets de
+    sauvegarde.
+  patterns:
+    - "fs.writeFileSync(string_concat(\"public/\", _, \".sql\"), _)"
+    - "s3.putObject({ Bucket: _, ACL: \"public-read\", Key: string_concat(_, \"backup\", _) })"
+    - "new PutObjectCommand({ ACL: \"public-read\" })"
+  exclude_if:
+    - "Le chemin de destination n'est pas servi statiquement par le serveur web (hors répertoire public/static)"
+    - "ServerSideEncryption ou un chiffrement applicatif est appliqué et l'ACL n'est pas public-read"
+
+message: >
+  Sauvegarde écrite dans un répertoire public ou bucket en accès public —
+  déplacer vers un stockage privé chiffré (voir
+  rules/remediation/backup-exposure.md).
+
+false_positive_notes:
+  - "Un bucket avec ACL public-read utilisé intentionnellement pour des exports non sensibles (ex: données déjà publiques) n'est pas concerné."
+  - "Vérifier la politique de bucket réelle (Bucket Policy) qui peut restreindre l'accès malgré une ACL objet permissive."
+
+remediation_ref: rules/remediation/backup-exposure.md
+knowledge_ref: knowledge/database/backup-exposure.md

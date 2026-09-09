@@ -1,0 +1,3 @@
+# XPath Injection (CWE-643)
+
+La version vulnérable construit `//user[username='{user}' and password='{pass}']` par interpolation de chaîne, permettant à un attaquant d'injecter un opérateur XPath (ex: `' or '1'='1`) pour contourner l'authentification. La correction utilise des variables XPath liées via un `XsltContext` personnalisé (`$u`, `$p` résolues par `ResolveVariable`), de sorte que les valeurs utilisateur sont toujours traitées comme des littéraux et ne peuvent jamais modifier la structure de l'expression. Note : XPath reste déconseillé comme mécanisme d'authentification ; une base de données avec hachage de mot de passe (Argon2id) est préférable en production.

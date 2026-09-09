@@ -1,0 +1,30 @@
+id: mfa-bypass
+language: js
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'émission d'un token complet (issueToken/issueFullToken) juste
+    après authenticate() sans branchement conditionnel sur mfaEnabled.
+  patterns:
+    - "await authenticate(_, _) suivi directement de res.json({ token: issueToken(user) }) sans test sur user.mfaEnabled"
+    - "req.session.authenticated = true assigné avant toute vérification de code MFA"
+  exclude_if:
+    - "Un test conditionnel sur user.mfaEnabled/user.twoFactorEnabled précède l'émission du token complet"
+    - "Un token partiel/intermédiaire (scope: 'mfa_pending') est émis à la place du token complet"
+
+message: >
+  Token/session pleinement privilégié émis avant vérification du second
+  facteur — voir rules/remediation/mfa-bypass.md.
+
+false_positive_notes:
+  - "Si l'application ne propose pas de MFA (fonctionnalité absente du tout), cette règle ne s'applique pas."
+  - "Vérifier si le token émis est réellement limité en scope (JWT avec claim restreint) avant de confirmer l'absence de contrôle."
+
+remediation_ref: rules/remediation/mfa-bypass.md
+knowledge_ref: knowledge/auth/mfa-bypass.md

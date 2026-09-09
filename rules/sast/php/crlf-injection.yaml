@@ -1,0 +1,33 @@
+id: crlf-injection
+language: php
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte l'appel à header() avec une valeur construite par concaténation
+    d'une variable non constante, sans validation préalable de l'absence de
+    caractères CR/LF — motif typique de l'injection CRLF / falsification
+    d'en-tête HTTP en PHP.
+  patterns:
+    - "header\\s*\\(\\s*[\"'][^\"']*[\"']\\s*\\.\\s*\\$[A-Za-z_][A-Za-z0-9_]*"
+  exclude_if:
+    - "La variable est filtrée en amont par preg_match/preg_replace supprimant explicitement \\r et \\n"
+    - "La valeur provient d'une constante applicative interne, pas d'une entrée $_GET/$_POST/$_SERVER"
+
+message: >
+  Valeur utilisateur concaténée directement dans un en-tête HTTP sans
+  validation de l'absence de retour chariot/saut de ligne — filtrer ou
+  rejeter les caractères CR/LF avant utilisation (voir
+  rules/remediation/crlf-injection.md).
+
+false_positive_notes:
+  - "PHP rejette nativement les en-têtes contenant \\r ou \\n depuis PHP 5.1.2 (header() lève une erreur) — sur les versions récentes, le risque direct via header() est réduit mais le pattern reste un signal de mauvaise pratique à corriger."
+  - "Si la variable provient exclusivement d'une constante applicative interne, ce n'est pas exploitable — reclasser en `info`."
+
+remediation_ref: rules/remediation/crlf-injection.md
+knowledge_ref: knowledge/injections/crlf-injection.md

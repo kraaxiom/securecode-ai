@@ -1,0 +1,30 @@
+id: rfi
+language: php
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction d'inclusion dynamique recevant une valeur pouvant contenir un schéma d'URL (http://, https://, ftp://), signe d'un risque de Remote File Inclusion.
+  patterns:
+    - "include($var)"
+    - "require($var)"
+    - "include_once($var)"
+    - "file_get_contents($var)"
+  exclude_if:
+    - "$var est filtrée par une whitelist fermée de noms de modules constants"
+    - "allow_url_include est explicitement désactivé ET $var est également validée côté application"
+
+message: >
+  Valeur potentiellement contrôlable par l'attaquant (schéma d'URL possible) atteignant une fonction d'inclusion dynamique — voir rules/remediation/rfi.md.
+
+false_positive_notes:
+  - "Si `allow_url_include=Off` est confirmé en configuration ET qu'une whitelist applicative existe, reclasser en `medium`/`info` selon le contexte."
+  - "Si $var ne peut structurellement pas contenir de séparateur de schéma (`://`), ce n'est pas exploitable en RFI (rester attentif au risque LFI résiduel)."
+
+remediation_ref: rules/remediation/rfi.md
+knowledge_ref: knowledge/file-inclusion/rfi.md

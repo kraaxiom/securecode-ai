@@ -1,0 +1,37 @@
+id: service-worker-abuse
+language: rust
+category: frontend
+cwe: CWE-494
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le backend Rust servant un script de service worker avec un
+    en-tête Service-Worker-Allowed trop large, ou dont le chemin/scope de
+    service worker est dérivé d'une entrée utilisateur plutôt que d'un
+    chemin statique.
+  patterns:
+    - "HttpResponse::Ok().insert_header((\"Service-Worker-Allowed\", \"/\"))"
+    - "NamedFile::open($userControlledPath)  # servant un fichier de service worker"
+    - "HttpResponse::Ok().insert_header((\"Service-Worker-Allowed\", $userInput))"
+  exclude_if:
+    - "Service-Worker-Allowed est restreint à un sous-chemin précis justifié fonctionnellement, pas la racine '/'"
+    - "le chemin du fichier servi est un chemin statique codé en dur, pas dérivé d'une entrée utilisateur"
+
+message: >
+  Le backend Rust sert un script de service worker avec un scope (en-tête
+  Service-Worker-Allowed) trop large ou un chemin dérivé d'une entrée
+  utilisateur — un service worker malveillant pourrait intercepter durablement
+  le trafic d'une large portion de l'application (voir
+  rules/remediation/service-worker-abuse.md).
+
+false_positive_notes:
+  - "Si Service-Worker-Allowed est restreint à un sous-répertoire précis avec justification métier, ce n'est pas un vrai positif à '/'."
+  - "Si le chemin du fichier servi est toujours une constante côté serveur (jamais une entrée utilisateur), le risque de scope détourné est écarté."
+  - "Croiser avec la présence d'une CSP worker-src 'self' qui limite déjà l'origine des service workers enregistrables côté client."
+
+remediation_ref: rules/remediation/service-worker-abuse.md
+knowledge_ref: knowledge/frontend/service-worker-abuse.md

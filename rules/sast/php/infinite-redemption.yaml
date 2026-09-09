@@ -1,0 +1,31 @@
+id: infinite-redemption
+language: php
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'un flag "récompense réclamée" suivie d'une
+    mise à jour hors transaction/verrou, permettant une réclamation
+    concurrente multiple.
+  patterns:
+    - "->query(string_concat(\"SELECT reward_claimed FROM\", _)); ... ->exec(string_concat(\"UPDATE\", _, \"reward_claimed = 1\", _))"
+  exclude_if:
+    - "La lecture et l'écriture sont encapsulées dans beginTransaction()/commit() avec SELECT ... FOR UPDATE"
+    - "Une contrainte d'unicité en base empêche l'insertion multiple d'un événement de récompense pour le même utilisateur"
+
+message: >
+  Octroi d'avantage vérifié puis marqué hors transaction — risque de
+  réclamation multiple via requêtes concurrentes (voir
+  rules/remediation/infinite-redemption.md).
+
+false_positive_notes:
+  - "Si l'avantage n'a pas de valeur monétaire/exploitable (ex: badge cosmétique), réduire la sévérité."
+  - "Une contrainte UNIQUE sur la table d'événements de récompense neutralise ce pattern même sans verrou explicite."
+
+remediation_ref: rules/remediation/infinite-redemption.md
+knowledge_ref: knowledge/business-logic/infinite-redemption.md

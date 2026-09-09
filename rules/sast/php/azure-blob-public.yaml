@@ -1,0 +1,36 @@
+id: azure-blob-public
+language: php
+category: cloud
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Vérification config/IaC : détecte un conteneur Azure Blob Storage avec
+    niveau d'accès public ("Blob"/"Container"), un compte de stockage avec
+    `allowBlobPublicAccess` activé, ou un SAS token généré sans expiration ni
+    permissions restreintes, dans les fichiers ARM/Bicep/Terraform ou le SDK
+    PHP (`azure-storage-blob`) d'un projet.
+  patterns:
+    - "arm/bicep/terraform: publicAccess = \"Blob\" OU \"Container\" (au lieu de \"None\"/\"Private\")"
+    - "terraform: allow_blob_public_access = true sur azurerm_storage_account"
+    - "sdk php: createContainer(...) ou setPublicAccess(...) avec PublicAccessType::CONTAINER_AND_BLOBS"
+    - "génération de SAS sans paramètre d'expiration (`se=`) ou avec permissions `rwdl` larges"
+  exclude_if:
+    - "le conteneur héberge explicitement du contenu statique public documenté (assets, images publiques sans donnée sensible)"
+    - "le SAS token est généré avec une expiration courte (<= 1h) et des permissions read-only scoped à un objet précis"
+
+message: >
+  Conteneur/compte de stockage Azure Blob potentiellement accessible
+  publiquement (accès anonyme ou SAS trop permissif) — restreindre l'accès et
+  désactiver `allowBlobPublicAccess` (voir rules/remediation/azure-blob-public.md).
+
+false_positive_notes:
+  - "Un conteneur destiné à du contenu statique public volontaire est légitime — vérifier l'absence de données sensibles avant de confirmer `high`."
+  - "Un SAS avec expiration courte et permissions minimales réduit fortement le risque — reclasser en `low` après vérification manuelle."
+
+remediation_ref: rules/remediation/azure-blob-public.md
+knowledge_ref: knowledge/cloud/azure-blob-public.md

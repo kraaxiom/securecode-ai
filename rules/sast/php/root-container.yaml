@@ -1,0 +1,33 @@
+id: root-container
+language: config
+category: docker
+cwe: CWE-250
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte l'absence d'instruction `USER` non-root dans un Dockerfile, ou
+    un `USER root` explicite, ainsi que l'absence de `runAsNonRoot`/`user:`
+    dans une configuration de déploiement.
+  patterns:
+    - "Dockerfile sans instruction USER après la dernière étape FROM"
+    - "USER root"
+    - "securityContext sans runAsNonRoot: true"
+  exclude_if:
+    - "image de base déjà configurée pour tourner en non-root et vérifiée (USER hérité d'une image parente durcie)"
+    - "processus nécessitant explicitement des privilèges root documentés et justifiés (ex: gestion de ports <1024 avec drop de capacité ultérieur)"
+
+message: >
+  Le conteneur exécute son processus principal en tant que root — surface
+  d'impact accrue en cas d'évasion de conteneur. Voir
+  rules/remediation/root-container.md.
+
+false_positive_notes:
+  - "Si l'image de base hérite déjà d'un `USER` non-root vérifié dans une couche parente, ne pas remonter."
+  - "Un `USER root` temporaire suivi d'un switch vers un utilisateur non privilégié avant le `CMD`/`ENTRYPOINT` final n'est pas vulnérable."
+
+remediation_ref: rules/remediation/root-container.md
+knowledge_ref: knowledge/docker/root-container.md

@@ -1,0 +1,18 @@
+id: reflected-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET
+  target: paramètre de requête ou en-tête HTTP reflété dans la réponse HTML
+  technique: boundary-value
+  indicators:
+    - "un marqueur unique inerte placé dans un paramètre de requête apparaît dans la réponse HTML sans encodage des caractères structurants (guillemets, chevrons), indiquant une réflexion en contexte HTML non neutralisé"
+    - "le même marqueur, placé dans un contexte d'attribut HTML (ex: value d'un champ pré-rempli), apparaît sans neutralisation du caractère de fermeture d'attribut, permettant de sortir du contexte prévu"
+false_positive_notes:
+  - "Une réflexion encodée (entités HTML) sur les caractères structurants n'est pas exploitable — vérifier précisément quels caractères restent non neutralisés."
+  - "Une Content Security Policy stricte peut atténuer l'impact sans supprimer le finding, qui reste une vulnérabilité de code à corriger."
+remediation_ref: rules/remediation/reflected-xss.md
+knowledge_ref: knowledge/xss/reflected-xss.md

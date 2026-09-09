@@ -1,0 +1,19 @@
+id: csv-injection
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: GET|POST
+  target: champ de formulaire ou champ JSON destiné à être inclus dans un export CSV/Excel
+  technique: boundary-value
+  indicators:
+    - Cellule exportée commençant par un caractère déclencheur de formule (=, +, -, @) sans préfixe d'échappement ni guillemet neutralisant, observable dans le fichier généré.
+    - Absence de neutralisation (apostrophe, tabulation) devant un caractère déclencheur lors de l'inspection du contenu brut du fichier exporté.
+    - Présence d'une fonction tableur potentiellement dangereuse (ex. appel HYPERLINK ou fonction d'exécution externe) conservée telle quelle dans la cellule exportée.
+false_positive_notes:
+  - Certains tableurs neutralisent nativement les formules à l'ouverture selon leur configuration de sécurité, sans que cela reflète une correction côté application.
+  - Champs numériques légitimes commençant par un signe (+33, -5) pouvant être confondus avec un déclencheur de formule.
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

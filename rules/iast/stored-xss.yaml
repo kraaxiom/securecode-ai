@@ -1,0 +1,19 @@
+id: stored-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "tous langages: point d'écriture en base de données/fichier/cache d'une donnée utilisateur comme source de persistance"
+    - "tous langages: point de lecture de cette même donnée persistée lors d'une requête ultérieure comme relais de source"
+    - "tous langages: fonction de rendu HTML (moteur de templates, dangerouslySetInnerHTML, innerHTML) comme sink"
+  taint_check: >
+    Trace une donnée utilisateur depuis son écriture en stockage persistant jusqu'à sa lecture et
+    son rendu HTML lors d'une requête ultérieure distincte, potentiellement pour un autre utilisateur.
+  trigger_condition: >
+    Donnée marquée non fiable au moment de l'écriture en stockage, relue et atteignant un sink de
+    rendu HTML sans passer par une fonction d'encodage contextuel ou de sanitisation HTML dédiée,
+    y compris lorsque l'échappement automatique du framework est explicitement désactivé.
+severity: critical
+remediation_ref: rules/remediation/stored-xss.md
+knowledge_ref: knowledge/xss/stored-xss.md

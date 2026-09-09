@@ -1,0 +1,35 @@
+id: des
+language: python
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de DES ou 3DES via le module PyCryptodome/PyCrypto
+    (Crypto.Cipher.DES, Crypto.Cipher.DES3) pour chiffrer des données.
+  patterns:
+    - "from Crypto.Cipher import DES"
+    - "from Crypto.Cipher import DES3"
+    - "Crypto.Cipher.DES.new(_)"
+    - "Crypto.Cipher.DES3.new(_)"
+    - "DES.new(_)"
+    - "DES3.new(_)"
+  exclude_if:
+    - "L'appel se trouve dans un fichier de test unitaire dédié à la compatibilité avec un format legacy explicitement documenté"
+    - "Le résultat n'est utilisé que pour déchiffrer des données tierces historiques, sans jamais rechiffrer"
+
+message: >
+  Utilisation de DES/3DES (clé effective 56 bits, vulnérable à Sweet32) —
+  remplacer par AES-256-GCM via Crypto.Cipher.AES ou cryptography.hazmat
+  (voir rules/remediation/des.md).
+
+false_positive_notes:
+  - "Si l'appel sert uniquement à déchiffrer un format tiers imposé (ex: interopérabilité avec un système legacy non modifiable), reclasser en `medium` et documenter la contrainte."
+  - "Si le module est importé mais jamais instancié (dead code), reclasser en `info`."
+
+remediation_ref: rules/remediation/des.md
+knowledge_ref: knowledge/crypto/des.md

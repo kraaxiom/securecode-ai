@@ -1,0 +1,31 @@
+id: batch-attack
+language: js
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de serveur GraphQL avec le batching activé
+    (`allowBatchedHttpRequests: true` ou équivalent Yoga/graphql-http) sans
+    limite de taille de batch configurée en amont.
+  patterns:
+    - "new ApolloServer({ ..., allowBatchedHttpRequests: true }) sans middleware vérifiant req.body.length"
+    - "createYoga({ batching: true }) sans limite de taille configurée"
+  exclude_if:
+    - "Un middleware vérifie Array.isArray(req.body) && req.body.length <= MAX_BATCH_SIZE avant traitement"
+    - "batching: { limit: N } est explicitement configuré"
+
+message: >
+  Batching GraphQL activé sans limite de taille — risque d'amplification et
+  de contournement du rate limiting (voir rules/remediation/batch-attack.md).
+
+false_positive_notes:
+  - "Si le nombre d'opérations est plafonné en amont par un reverse-proxy ou un middleware non visible ici, vérifier manuellement avant de remonter en `medium`."
+  - "Sur une API interne à faible trafic, le risque est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

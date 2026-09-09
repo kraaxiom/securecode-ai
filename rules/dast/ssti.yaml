@@ -1,0 +1,19 @@
+id: ssti
+category: injections
+cwe: CWE-1336
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: POST
+  target: champ de formulaire, paramètre de requête ou champ JSON réinjecté dans un template rendu côté serveur
+  technique: boundary-value
+  indicators:
+    - expression arithmétique de template neutre (ex. une multiplication simple) évaluée côté serveur et produisant un résultat numérique calculé dans la réponse, observée via une classe d'expression non destructive
+    - identifiant d'objet ou de classe interne du moteur de template exposé dans la réponse suite à une entrée contenant une syntaxe de template neutre
+    - message d'erreur du moteur de template (Jinja2, Twig, FreeMarker) révélé dans la réponse suite à une entrée syntaxiquement malformée
+false_positive_notes:
+  - vérifier que le résultat numérique observé correspond bien à une évaluation et non à un simple echo de l'entrée brute
+  - certains WAF/proxy réécrivent les caractères de délimitation, confirmer par variation de la classe d'expression testée
+remediation_ref: rules/remediation/ssti.md
+knowledge_ref: knowledge/injections/ssti.md

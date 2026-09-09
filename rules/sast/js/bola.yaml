@@ -1,0 +1,30 @@
+id: bola
+language: js
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler REST ou un resolver GraphQL récupérant un objet par
+    ID (findById/findOne({_id})) sans filtre d'appartenance dans la requête.
+  patterns:
+    - "Model.findById(req.params.id) dans une route protégée, sans filtre { ownerId: req.user.id } ni vérification équivalente"
+    - "resolver GraphQL: Model.findOne({ _id: id }) sans comparaison avec ctx.user.id"
+  exclude_if:
+    - "Le filtre ownerId/tenantId est inclus directement dans la requête (findOne({ _id, ownerId }))"
+    - "Une vérification explicite de propriété est effectuée juste après la récupération, avant tout retour de données"
+
+message: >
+  Objet API récupéré par ID sans vérification d'appartenance — un
+  utilisateur authentifié peut accéder aux ressources d'un autre (voir
+  rules/remediation/bola.md).
+
+false_positive_notes:
+  - "Si la vérification d'appartenance est effectuée après la requête (if (doc.ownerId !== req.user.id) return 403) plutôt que dans le filtre, ce n'est pas un faux négatif mais un point à documenter (fuite potentielle par timing/erreur, à vérifier)."
+
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

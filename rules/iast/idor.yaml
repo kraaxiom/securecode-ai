@@ -1,0 +1,15 @@
+id: idor
+category: authorization
+cwe: CWE-639
+type: iast
+instrumentation:
+  hook_points:
+    - "php: appel Eloquent/Doctrine (find/findOrFail/where) récupérant un enregistrement à partir d'un identifiant issu de la requête, sans clause portant sur le propriétaire courant"
+    - "js: requête ORM (Sequelize/Prisma/Mongoose) de type findById/findOne construite à partir d'un paramètre de route ou de query sans filtre sur l'utilisateur/tenant courant"
+    - "python: requête Django ORM/SQLAlchemy récupérant un objet par identifiant de requête sans filtre queryset.filter(owner=request.user) ou équivalent"
+    - "java: repository Spring Data appelé avec un identifiant de path variable sans vérification post-récupération que l'entité appartient au principal courant"
+  taint_check: "identifiant d'objet fourni par le client (source: paramètre de route/query/corps de requête) atteignant une requête de récupération de données (sink) sans qu'une contrainte d'appartenance (owner/tenant = identité de session) ne figure dans la même requête ni dans une vérification immédiatement postérieure"
+  trigger_condition: "l'objet est retourné au client alors que le chemin d'exécution observé ne compare jamais le champ propriétaire/tenant de l'objet chargé à l'identité du contexte d'authentification courant"
+severity: high
+remediation_ref: rules/remediation/idor.md
+knowledge_ref: knowledge/authorization/idor.md

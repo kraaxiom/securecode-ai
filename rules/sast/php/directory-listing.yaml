@@ -1,0 +1,33 @@
+id: directory-listing
+language: php
+category: server
+cwe: CWE-548
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Vérification config/infra : détecte une directive activant le listing
+    de répertoire sur un bloc servant du contenu applicatif ou statique
+    (Options +Indexes en Apache, autoindex on; en Nginx), en particulier
+    sur des répertoires sensibles (uploads, cache, logs, backups).
+  patterns:
+    - "directive_apache('Options +Indexes', dans <Directory> ou .htaccess)"
+    - "directive_nginx('autoindex on;', dans un bloc location)"
+  exclude_if:
+    - "le répertoire concerné ne contient que des ressources déjà publiques par design (ex: assets statiques versionnés sans donnée sensible)"
+    - "un fichier index.html/index.php vide est présent ET la directive Indexes n'a aucun effet réel"
+
+message: >
+  Listing de répertoire activé — désactiver `Options +Indexes`/`autoindex on;`
+  et placer les fichiers sensibles hors du webroot (voir
+  rules/remediation/directory-listing.md).
+
+false_positive_notes:
+  - "Si le répertoire ne sert que des assets publics non sensibles et sans risque de découverte d'autres fichiers, la sévérité peut être reclassée en `low`."
+  - "Vérifier qu'aucun fichier de sauvegarde, config ou log ne se trouve dans le même répertoire avant de conclure à un impact faible."
+
+remediation_ref: rules/remediation/directory-listing.md
+knowledge_ref: knowledge/server/directory-listing.md

@@ -1,0 +1,39 @@
+id: introspection-enabled
+language: java
+category: graphql
+cwe: CWE-200
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration graphql-java / Netflix DGS dans un profil de
+    production où l'introspection du schéma GraphQL reste activée par
+    défaut, exposant la structure complète de l'API (types, champs,
+    mutations internes) à tout client non authentifié.
+  patterns:
+    - "graphql.dgs.graphql-api.introspection.enabled=true // dans application-prod.yml ou application.yml sans profil"
+    - "GraphQL.newGraphQL($schema).build() // aucune Instrumentation de type DisableIntrospectionInstrumentation enregistrée"
+    - "spring.graphql.schema.introspection.enabled=true // profil de production Spring for GraphQL"
+  exclude_if:
+    - "DisableIntrospectionInstrumentation ou équivalent est enregistrée conditionnellement selon le profil actif (désactivée en prod)"
+    - "L'introspection est explicitement désactivée dans le profil de production (introspection.enabled=false)"
+
+message: >
+  L'introspection GraphQL reste activée en production, exposant la
+  structure complète du schéma (types, champs, mutations, arguments) à
+  n'importe quel client — cela facilite la reconnaissance pour un
+  attaquant (découverte de champs sensibles, de mutations
+  d'administration). Désactiver l'introspection en production via
+  `DisableIntrospectionInstrumentation` (graphql-java) ou
+  `spring.graphql.schema.introspection.enabled=false`, ou la réserver aux
+  environnements authentifiés/internes.
+
+false_positive_notes:
+  - "Si l'API GraphQL est publique par conception et documentée volontairement (API publique de type plateforme), ce n'est pas un défaut — reclasser en `info`."
+  - "Si l'introspection est désactivée uniquement pour les clients non authentifiés via un middleware, vérifier la couverture réelle avant de reclasser."
+
+remediation_ref: rules/remediation/introspection-enabled.md
+knowledge_ref: knowledge/graphql/introspection-enabled.md

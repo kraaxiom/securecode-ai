@@ -1,0 +1,3 @@
+## Memory Poisoning (CWE-349)
+
+Le code vulnérable extrait automatiquement des "faits" d'une réponse d'agent et les écrit en mémoire persistante sans confirmation de l'utilisateur ni cloisonnement vérifié, puis réinjecte cette mémoire comme contexte de confiance absolu dans les sessions futures, permettant à un contenu manipulé de compromettre durablement le comportement de l'agent. La correction exige une confirmation explicite de l'utilisateur avant toute écriture durable, isole la mémoire par une clé scopée au tenant/utilisateur, et marque le contenu réinjecté comme une donnée à revalider plutôt qu'une instruction prescriptive.

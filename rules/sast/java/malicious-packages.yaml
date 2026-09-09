@@ -1,0 +1,35 @@
+id: malicious-packages
+language: java
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte dans pom.xml/build.gradle des indicateurs de package malveillant
+    connu ou de comportement suspect: dépendance ajoutée récemment depuis un
+    dépôt non officiel, artefact avec un plugin de build exécutant du code
+    au moment de la résolution, ou publication provenant d'un mainteneur
+    sans historique.
+  patterns:
+    - "pom.xml: <repository><url> pointant vers un dépôt Maven tiers non whitelisté (ni Maven Central ni dépôt privé interne)"
+    - "build.gradle: repositories { maven { url 'http://...' } } en HTTP non chiffré pour la résolution de dépendances"
+    - "pom.xml: plugin <execution> exécutant un script shell/exec-maven-plugin au moment du build depuis une dépendance non maîtrisée"
+    - "build.gradle: dependency avec classifier/artefact binaire embarqué exécuté via un plugin `apply from:` chargé depuis une URL externe"
+
+message: >
+  Indicateur de package potentiellement malveillant: résolution depuis un
+  dépôt non fiable, en clair, ou exécution de code au moment du build depuis
+  une dépendance externe. Vérifier la provenance de l'artefact (signature
+  GPG, checksum SHA-256 publié par le mainteneur officiel) avant intégration,
+  et n'autoriser que des dépôts explicitement whitelistés.
+
+false_positive_notes:
+  - "Si le dépôt tiers est un miroir d'entreprise interne connu et documenté dans la politique de sécurité, reclasser en `info`."
+  - "Si le plugin d'exécution est utilisé uniquement en profil de développement local et exclu du build de production, vérifier la portée avant de conserver `critical`."
+
+remediation_ref: rules/remediation/malicious-packages.md
+knowledge_ref: knowledge/supply-chain/malicious-packages.md

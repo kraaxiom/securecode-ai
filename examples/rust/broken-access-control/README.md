@@ -1,0 +1,3 @@
+# Broken Access Control
+
+`vulnerable.rs` sert une facture en se contentant de vérifier l'authentification, sans aucun contrôle d'autorisation sur la ressource elle-même, un exemple direct de CWE-284 (Improper Access Control). `fixed.rs` introduit une fonction `can_view_invoice` centralisant la logique d'autorisation et appliquant le principe "deny by default" : l'accès n'est accordé que si l'utilisateur est propriétaire de la facture ou administrateur. Cette correction suit `rules/remediation/broken-access-control.md`, qui recommande de centraliser l'autorisation dans une couche unique plutôt que de la disperser ou de l'omettre.

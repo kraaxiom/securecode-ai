@@ -1,0 +1,37 @@
+id: missing-authentication
+language: rust
+category: websocket
+cwe: CWE-306
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler WebSocket qui accepte la connexion et traite des
+    messages sensibles (lecture/écriture de données, actions admin) sans
+    jamais vérifier une identité authentifiée — ni extraction/validation d'un
+    jeton de session dans la requête d'upgrade (tokio-tungstenite
+    `accept_async`), ni vérification d'un extracteur d'authentification
+    Actix (`req.extensions().get::<AuthenticatedUser>()`) avant `ws::start`.
+  patterns:
+    - "async fn handle_connection(stream: TcpStream) { let ws_stream = accept_async(stream).await.unwrap(); ... } sans extraction ni validation d'un jeton d'authentification depuis la requête HTTP d'upgrade"
+    - "async fn ws_route(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse> { ws::start(MyWs {}, &req, stream) } sans lecture de req.extensions() ou d'un extracteur d'authentification avant ws::start"
+    - "impl StreamHandler<...> for MyWs { fn handle(&mut self, item, ctx) { match text.as_str() { \"admin_delete\" => self.db.delete_all(), ... } } } sans champ authenticated ni vérification dans started()"
+  exclude_if:
+    - "un extracteur d'authentification Actix (ex: middleware personnalisé, extractor JWT) est vérifié dans le handler HTTP avant l'appel à ws::start, ou le champ authenticated est vérifié en tête de chaque bras de handle()"
+    - "accept_hdr_async valide un jeton de session dans les en-têtes de la requête d'upgrade et refuse la connexion (retourne Err) en son absence"
+
+message: >
+  Canal WebSocket traitant des messages sensibles sans vérification
+  d'authentification — n'importe quel client peut se connecter et interagir
+  avec des données ou actions protégées (voir
+  rules/remediation/missing-authentication.md).
+
+false_positive_notes:
+  - "Vérifier si un middleware Actix global (ex: `wrap(AuthMiddleware)`) applique déjà une vérification avant que la requête n'atteigne le handler ws::start."
+  - "Un canal strictement public en lecture seule (ex: flux de données publiques) peut légitimement ne pas exiger d'authentification — reclasser en `info` si confirmé."
+
+remediation_ref: rules/remediation/missing-authentication.md
+knowledge_ref: knowledge/websocket/missing-authentication.md

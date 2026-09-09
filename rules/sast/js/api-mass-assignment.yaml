@@ -1,0 +1,33 @@
+id: api-mass-assignment
+language: javascript
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le passage direct de req.body (objet complet, non filtré) à une
+    méthode de persistance ORM/ODM (Mongoose, Sequelize, Prisma) ou à
+    Object.assign sur une entité existante.
+  patterns:
+    - "$Model.create(req.body)"
+    - "$Model.findByIdAndUpdate($id, req.body, _)"
+    - "Object.assign($entity, req.body)"
+  exclude_if:
+    - "req.body est déstructuré au préalable en une liste explicite de champs autorisés"
+    - "Un schéma de validation (Joi, Zod, class-validator) filtre le body avant l'appel à la persistance"
+
+message: >
+  req.body est utilisé tel quel pour une opération de persistance — extraire
+  une liste blanche explicite de champs ou valider via un schéma dédié (voir
+  rules/remediation/api-mass-assignment.md).
+
+false_positive_notes:
+  - "Si un middleware de validation générique (Zod/Joi) rejette déjà toute clé inconnue avant ce point, le risque réel est réduit."
+  - "Vérifier que le modèle ne contient pas de champ sensible (role, isAdmin) avant de confirmer la sévérité `high`."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

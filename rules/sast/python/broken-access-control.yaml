@@ -1,0 +1,34 @@
+id: broken-access-control
+language: python
+category: authorization
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vue ou un endpoint traitant une ressource sensible sans
+    aucune vérification d'autorisation identifiable — absence de
+    @login_required, absence de vérification de rôle/permission, ou
+    dépendance uniquement sur l'obscurité de l'URL.
+  patterns:
+    - "def sensitive_view($request): ...  # sans @login_required ni vérification manuelle d'authentification/autorisation"
+    - "class SensitiveAPIView(APIView): ...  # permission_classes = [AllowAny] sur une ressource sensible"
+  exclude_if:
+    - "la vue est décorée avec @login_required et effectue une vérification de rôle/permission cohérente avec la sensibilité de la ressource"
+    - "la ressource est délibérément publique par conception (documentée comme telle)"
+
+message: >
+  Ressource sensible exposée sans contrôle d'accès identifiable — ni
+  authentification ni vérification d'autorisation appliquée. Ajouter un
+  contrôle d'accès explicite (authentification + autorisation) avant tout
+  traitement de données sensibles (voir
+  rules/remediation/broken-access-control.md).
+
+false_positive_notes:
+  - "Si le contrôle d'accès est appliqué globalement par un middleware ou une classe de base commune non visible localement, vérifier la configuration globale avant de conclure à une absence totale de protection."
+
+remediation_ref: rules/remediation/broken-access-control.md
+knowledge_ref: knowledge/authorization/broken-access-control.md

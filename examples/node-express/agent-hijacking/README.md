@@ -1,0 +1,3 @@
+## Agent Hijacking (CWE-1427)
+
+Le code vulnérable laisse un agent LLM exécuter directement tout appel d'outil issu de sa planification, y compris des outils à fort impact comme l'envoi de paiement ou la suppression de compte, sans aucune validation applicative ni confirmation humaine. Un contenu non fiable traité par l'agent (injection directe ou indirecte) peut ainsi déclencher des actions irréversibles dans des systèmes externes. La correction introduit une liste d'outils à fort impact nécessitant une confirmation humaine explicite avant exécution, une validation métier indépendante du modèle, et une journalisation systématique de chaque décision et appel d'outil pour permettre l'audit.

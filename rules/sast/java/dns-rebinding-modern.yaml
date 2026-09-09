@@ -1,0 +1,41 @@
+id: dns-rebinding-modern
+language: java
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel réseau sortant (`HttpClient`, `RestTemplate`,
+    `WebClient`, `URLConnection`) construit à partir d'une URL fournie par
+    l'utilisateur, où la validation de l'hôte (liste blanche/IP privée) est
+    effectuée une seule fois avant la requête sans épingler la résolution
+    DNS — un attaquant peut faire résoudre le même nom de domaine vers une
+    IP interne entre la validation et l'exécution réelle de la requête (DNS
+    rebinding).
+  patterns:
+    - "InetAddress.getByName($userUrl.getHost()) // validé une fois, puis $httpClient.execute($request) résout le DNS séparément"
+    - "restTemplate.getForObject($userUrl, $T.class) // aucune validation d'IP résolue, aucun DNS pinning"
+    - "WebClient.create().get().uri($userUrl) // URL utilisateur sans résolution DNS contrôlée ni redirection désactivée"
+  exclude_if:
+    - "La requête sortante réutilise l'adresse IP déjà résolue lors de la validation (ex: connexion établie directement sur l'IP validée, pas sur le hostname)"
+    - "Un proxy sortant filtrant dynamiquement les IP privées est utilisé pour toutes les requêtes vers des URL utilisateur"
+
+message: >
+  L'hôte d'une URL fournie par l'utilisateur est validé (liste blanche, non
+  IP privée) puis résolu à nouveau lors de l'exécution réelle de la
+  requête — un attaquant contrôlant son propre DNS peut faire pointer le
+  même nom de domaine vers une adresse interne entre les deux résolutions
+  (DNS rebinding), contournant le filtre SSRF. Résoudre l'hôte une seule
+  fois, valider l'IP résolue, puis se connecter directement à cette IP
+  (sans laisser le client HTTP réeffectuer la résolution DNS).
+
+false_positive_notes:
+  - "Si l'application n'effectue jamais de requêtes sortantes vers des URL fournies par l'utilisateur, cette règle ne s'applique pas."
+  - "Si toutes les requêtes sortantes passent par un proxy egress filtrant en continu les plages IP privées au niveau réseau, le risque applicatif est atténué — reclasser en `medium`."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

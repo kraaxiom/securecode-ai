@@ -1,0 +1,37 @@
+id: os-command-injection
+language: python
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Variante orientée système d'exploitation de l'injection de commande :
+    détecte l'utilisation de fonctions bas niveau du module os (os.system,
+    os.popen, os.spawn*, os.exec*) avec une chaîne de commande construite
+    par interpolation d'une variable non sanitisée.
+  patterns:
+    - "os.system(f\"{binary} {var}\")"
+    - "os.spawnl(os.P_WAIT, binary, var)"
+    - "os.popen(f\"cat {var}\")"
+    - "os.execvp(binary, [binary, var])"
+  exclude_if:
+    - "var est un littéral constant (pas une variable/paramètre)"
+    - "var passe par shlex.quote() ou une validation stricte de type/format (regex whitelist) avant utilisation"
+
+message: >
+  Commande système construite par interpolation d'une variable non
+  sanitisée via une fonction os.* de bas niveau — un attaquant peut injecter
+  des métacaractères shell ou des arguments supplémentaires. Préférer
+  subprocess.run() avec shell=False et une liste d'arguments, ou valider
+  strictement l'entrée (whitelist de valeurs/regex) avant tout usage.
+
+false_positive_notes:
+  - "os.execvp/os.spawnl avec liste d'arguments explicite (pas de shell) réduit le risque d'injection de métacaractères mais reste sensible à un chemin binaire non validé (path injection)."
+  - "Vérifier que var provient réellement d'une entrée externe avant de confirmer en `critical`."
+
+remediation_ref: rules/remediation/os-command-injection.md
+knowledge_ref: knowledge/injections/os-command-injection.md

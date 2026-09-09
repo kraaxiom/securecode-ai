@@ -1,0 +1,36 @@
+id: dangerous-stored-procedures
+language: csharp
+category: database
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel .NET (SqlCommand, Entity Framework) à une procédure
+    stockée ou fonction SQL dont les paramètres sont construits par
+    concaténation/interpolation de chaîne à partir d'une entrée non fiable,
+    au lieu d'utiliser CommandType.StoredProcedure avec SqlParameter.
+  patterns:
+    - "new SqlCommand($\"EXEC dbo.UpdateBalance {userInput}\", conn) — appel de procédure stockée par interpolation de chaîne au lieu de CommandType.StoredProcedure + Parameters.AddWithValue"
+    - "cmd.CommandText = \"EXEC \" + procName + \" '\" + value + \"'\" — nom de procédure ou paramètre construit par concaténation directe"
+    - "context.Database.ExecuteSqlRaw($\"EXEC dbo.sp_Search '{query}'\") (Entity Framework) au lieu de ExecuteSqlInterpolated ou de paramètres liés"
+  exclude_if:
+    - "l'appel utilise CommandType.StoredProcedure avec SqlParameter/AddWithValue, ou ExecuteSqlInterpolated avec liaison automatique, ou tous les paramètres proviennent de constantes internes non influençables par l'utilisateur"
+
+message: >
+  Appel de procédure stockée ou fonction SQL avec des paramètres construits
+  par concaténation/interpolation de chaîne — équivalent à une injection SQL
+  classique si un paramètre provient d'une entrée utilisateur. Utiliser
+  CommandType.StoredProcedure avec SqlParameter, ou ExecuteSqlInterpolated
+  côté Entity Framework, plutôt que d'interpoler les valeurs dans le texte de
+  la commande — voir rules/remediation/dangerous-stored-procedures.md.
+
+false_positive_notes:
+  - "Si tous les paramètres interpolés proviennent de constantes applicatives internes (jamais d'entrée utilisateur), non exploitable — reclasser en `info`."
+  - "Le nom de la procédure elle-même n'est généralement pas injectable via SqlParameter — s'il est dynamique, vérifier qu'il provient d'une allowlist fermée."
+
+remediation_ref: rules/remediation/dangerous-stored-procedures.md
+knowledge_ref: knowledge/database/dangerous-stored-procedures.md

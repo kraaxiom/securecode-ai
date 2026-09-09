@@ -1,0 +1,31 @@
+id: forced-browsing
+language: php
+category: authorization
+cwe: CWE-425
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route déclarée sans middleware d'authentification/
+    autorisation, ou des fichiers sensibles placés dans le répertoire
+    public/ servis statiquement.
+  patterns:
+    - "Route::get($path, $_) où $path matche /admin|internal|backup|report/i sans ->middleware('auth')"
+    - "Chemin de fichier contenant 'public/backups/' ou 'public/exports/' avec extension .sql|.zip|.log"
+  exclude_if:
+    - "Un middleware d'authentification/autorisation est chaîné sur la route"
+    - "Le fichier sensible est servi via un contrôleur qui vérifie l'autorisation, pas directement depuis public/"
+
+message: >
+  Route ou fichier potentiellement sensible accessible sans contrôle
+  d'authentification/autorisation propre — voir
+  rules/remediation/forced-browsing.md.
+
+false_positive_notes:
+  - "Le nommage de route/fichier est un indicateur heuristique, pas une preuve — confirmer manuellement la sensibilité réelle du contenu avant escalade."
+
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

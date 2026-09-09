@@ -1,0 +1,3 @@
+# Default Credentials (CWE-1392)
+
+La version vulnérable crée le compte administrateur avec un mot de passe fixe et documenté (`admin123`), sans jamais forcer son renouvellement. Un attaquant qui connaît cette valeur par défaut, publiquement documentée pour ce type de composant, peut s'authentifier directement en tant qu'administrateur sans avoir à deviner ou casser quoi que ce soit. La correction génère un mot de passe temporaire aléatoire à chaque provisioning via `RandomNumberGenerator`, le transmet uniquement par un canal hors-bande sécurisé et jamais en clair dans les logs, et pose un flag `MustChangePassword` qui bloque l'accès normal tant que ce mot de passe temporaire n'a pas été changé. Aucune valeur fixe ne subsiste ainsi dans le code ou en configuration.

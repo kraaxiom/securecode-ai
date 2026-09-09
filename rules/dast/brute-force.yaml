@@ -1,0 +1,19 @@
+id: brute-force
+category: auth
+cwe: CWE-307
+owasp: A07:2021-Identification and Authentication Failures
+severity: medium
+type: dast
+test:
+  method: POST
+  target: champ identifiant/mot de passe du formulaire ou de l'API d'authentification (login, réinitialisation, vérification OTP)
+  technique: differential-response
+  indicators:
+    - "Aucun code de statut de type verrouillage (429/423) ni ralentissement observé après une série contrôlée d'échecs consécutifs sur le même compte, alors qu'un baseline de tentatives légitimes espacées ne déclenche aucune restriction"
+    - "Absence d'en-tête de limitation de débit (Retry-After, X-RateLimit-*) dans les réponses successives à des échecs d'authentification rapprochés"
+    - "Temps de réponse et comportement identiques entre la première et la Nème tentative échouée consécutive, indiquant l'absence de compteur d'échecs persistant côté serveur"
+false_positive_notes:
+  - "Un rate limiting appliqué en amont (CDN/reverse proxy) peut masquer l'absence de contrôle applicatif — corréler avec les logs applicatifs avant conclusion, et documenter la couche où la limitation a réellement été observée."
+  - "Certains environnements de test désactivent volontairement le rate limiting (hors périmètre production) — vérifier le contexte de l'environnement testé."
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

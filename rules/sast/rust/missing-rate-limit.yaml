@@ -1,0 +1,34 @@
+id: missing-rate-limit
+language: rust
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route actix-web/axum sensible (login, reset-password)
+    enregistrée sans middleware de limitation de débit (ex: governor,
+    actix-governor, tower::limit::RateLimitLayer).
+  patterns:
+    - ".route(\"/login\", web::post().to($handler))"
+    - ".route(\"/reset-password\", post($handler))"
+    - "Router::new().route(\"/api/login\", post($handler))"
+  exclude_if:
+    - "la route est enveloppée d'un middleware de rate limiting (ex: .wrap(Governor::new(&$config)) ou .layer(RateLimitLayer::new(...))) appliqué explicitement ou globalement"
+    - "une passerelle API/reverse proxy en amont applique déjà un throttling documenté et vérifié"
+
+message: >
+  Route sensible enregistrée sans middleware de limitation de débit —
+  ajouter une couche de rate limiting (ex: crate governor / tower
+  RateLimitLayer) par IP/utilisateur pour prévenir le bourrage
+  d'identifiants (voir rules/remediation/missing-rate-limit.md).
+
+false_positive_notes:
+  - "Vérifier qu'une limitation de débit n'est pas déjà appliquée globalement au niveau du routeur ou du reverse proxy avant de remonter en `medium`."
+  - "Un endpoint interne accessible uniquement depuis un réseau de confiance restreint peut justifier une exception documentée."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

@@ -1,0 +1,35 @@
+id: deep-query
+language: rust
+category: graphql
+cwe: CWE-674
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma async-graphql exposant des types récursifs/imbriqués via
+    `#[derive(SimpleObject)]` ou `#[Object]` avec des champs auto-référents
+    (ex: `friends`, `children`, `replies`) sans limite de profondeur de
+    requête configurée sur le schéma (`.limit_depth(N)`).
+  patterns:
+    - "Schema::build(Query, Mutation, Subscription).finish() sans .limit_depth(N)"
+    - "#[derive(SimpleObject)] struct User { friends: Vec<User>, ... } exposé par un Schema construit sans .limit_depth(...)"
+    - "#[Object] impl Query { async fn user(&self) -> User { ... } } où User contient un champ auto-référent et le schéma n'a pas de limite de profondeur"
+  exclude_if:
+    - ".limit_depth(N) est appelé explicitement lors de la construction du Schema avec un maximum raisonnable (ex: <= 10)"
+    - "le schéma ne contient aucun type auto-référent ou relation cyclique exploitable en profondeur"
+
+message: >
+  Schéma async-graphql sans limite de profondeur de requête — une requête
+  imbriquée récursivement (ex: `user { friends { friends { ... } } }`) peut
+  provoquer un déni de service par consommation exponentielle de ressources
+  (voir rules/remediation/deep-query.md).
+
+false_positive_notes:
+  - "Si le schéma ne contient aucune relation auto-référente, le risque de profondeur exponentielle est nul même sans limite explicite."
+  - "Un timeout global d'exécution de requête (ex: middleware tower Timeout) atténue partiellement le risque sans le supprimer — signaler quand même."
+
+remediation_ref: rules/remediation/deep-query.md
+knowledge_ref: knowledge/graphql/deep-query.md

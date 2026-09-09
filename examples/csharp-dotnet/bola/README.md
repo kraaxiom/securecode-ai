@@ -1,0 +1,3 @@
+# Broken Object Level Authorization (CWE-639)
+
+La version vulnérable récupère la commande via `Orders.FirstOrDefault(o => o.Id == id)`, en se basant uniquement sur l'ID transmis par le client dans l'URL, sans jamais vérifier que la ressource appartient à l'utilisateur authentifié. Il suffit de faire varier l'identifiant pour lire les commandes de n'importe quel autre client, une fois authentifié. La correction ajoute une clause `o.OwnerId == currentUserId` directement dans la requête de base de données, où `currentUserId` provient du principal authentifié côté serveur et non d'une donnée fournie par le client, ce qui garantit que seul le propriétaire réel de l'objet peut y accéder.

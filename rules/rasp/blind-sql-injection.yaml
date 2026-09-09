@@ -1,0 +1,12 @@
+id: blind-sql-injection
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: exécution de requête SQL (PDOStatement::execute, cursor.execute, Statement.executeQuery)
+  block_condition: Requête SQL construite par concaténation contenant une valeur taintée non liée par un paramètre préparé, dans une clause conditionnelle.
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/blind-sql-injection.md
+knowledge_ref: knowledge/injections/blind-sql-injection.md

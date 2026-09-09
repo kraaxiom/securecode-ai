@@ -1,0 +1,3 @@
+# Credential Stuffing (CWE-307)
+
+La version vulnérable ne corrèle jamais les échecs de connexion entre eux : rien ne distingue un volume élevé de tentatives réparties sur des comptes différents depuis une même origine d'un trafic normal, et la MFA n'est jamais proposée. Un attaquant peut ainsi rejouer en masse des couples identifiant/mot de passe issus de fuites d'autres services, sachant qu'une fraction suffira à réussir. La correction ajoute un suivi de vélocité global par IP (`IVelocityTracker`) qui déclenche une alerte et un blocage au-delà d'un seuil anormal, en complément du contrôle par compte. Elle impose également un second facteur après authentification réussie, ce qui neutralise l'essentiel de l'impact même si le mot de passe volé est correct.

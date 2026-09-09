@@ -1,0 +1,33 @@
+id: missing-httponly
+language: rust
+category: sessions
+cwe: CWE-1004
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une construction de cookie (Cookie::build / CookieBuilder) ou une
+    configuration de SessionMiddleware sans appel explicite à .http_only(true).
+  patterns:
+    - "Cookie::build($name, $value)._finish()" # sans .http_only(true) dans la chaîne
+    - "Cookie::build($name, $value).http_only(false)._finish()"
+    - "SessionMiddleware::builder($store, $key)._build()" # sans .cookie_http_only(true)
+    - "SessionMiddleware::builder($store, $key).cookie_http_only(false)._build()"
+  exclude_if:
+    - ".http_only(true) ou .cookie_http_only(true) est présent dans la même chaîne d'appels"
+    - "le cookie est délibérément destiné à être lu en JavaScript et ne porte aucune donnée de session/authentification"
+
+message: >
+  Cookie construit sans .http_only(true) (ou avec http_only(false)) — un
+  script malveillant injecté via une faille XSS pourrait lire ce cookie de
+  session (voir rules/remediation/missing-httponly.md).
+
+false_positive_notes:
+  - "actix_web::cookie::CookieBuilder n'active pas HttpOnly par défaut : l'absence de l'appel dans la chaîne doit être traitée comme un vrai positif."
+  - "Si le cookie ne transporte aucune donnée de session ou d'authentification, le risque est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/missing-httponly.md
+knowledge_ref: knowledge/sessions/missing-httponly.md

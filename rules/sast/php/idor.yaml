@@ -1,0 +1,30 @@
+id: idor
+language: php
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte Model::findOrFail($id) ou Model::find($id) utilisé directement
+    à partir d'un paramètre de route/requête, sans clause where sur le
+    propriétaire de l'objet.
+  patterns:
+    - "Model::findOrFail($request->route('id')) sans ->where('user_id', auth()->id())"
+    - "Model::find($id) suivi d'un accès direct aux attributs sans vérification de propriétaire"
+  exclude_if:
+    - "Une clause where sur user_id/owner_id est chaînée dans la même requête"
+    - "Une vérification explicite ($model->user_id !== auth()->id() ? abort(403) : null) suit immédiatement la récupération"
+
+message: >
+  Objet récupéré par identifiant fourni par le client sans vérification
+  d'appartenance — voir rules/remediation/idor.md.
+
+false_positive_notes:
+  - "Si une vérification manuelle post-récupération est présente (if ($model->user_id !== auth()->id()) abort(403)), ce n'est pas un faux négatif mais une implémentation alternative valide."
+
+remediation_ref: rules/remediation/idor.md
+knowledge_ref: knowledge/authorization/idor.md

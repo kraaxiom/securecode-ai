@@ -1,0 +1,3 @@
+# Mass Assignment
+
+La version vulnérable relie directement `req.body` à la mise à jour du modèle utilisateur, ce qui permet à un attaquant d'injecter des champs sensibles non prévus comme `role` ou `isAdmin` et de les faire appliquer. La version corrigée extrait explicitement uniquement les champs autorisés (`name`, `email`) avant la mise à jour, agissant comme une liste blanche : les attributs sensibles ne peuvent jamais transiter par cette voie. Cela correspond à **CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes)**, catégorie OWASP A08:2021-Software and Data Integrity Failures.

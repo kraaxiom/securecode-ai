@@ -1,0 +1,34 @@
+id: debug-mode
+language: php
+category: server
+cwe: CWE-489
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la présence d'un flag de mode debug activé en contexte de
+    production : APP_DEBUG=true dans un fichier .env de déploiement,
+    display_errors=On dans un php.ini de production, ou un endpoint de
+    profiler/debugger de framework accessible sans authentification.
+  patterns:
+    - "env_var(APP_DEBUG, true) dans .env sans distinction d'environnement"
+    - "ini_setting(display_errors, On) en contexte production"
+    - "route/alias exposant /_profiler ou équivalent sans middleware d'authentification"
+  exclude_if:
+    - "la valeur debug est conditionnée par l'environnement (ex: APP_DEBUG=${APP_ENV} avec fallback false en production)"
+    - "l'endpoint de profiler est protégé par un middleware d'authentification ou une restriction IP"
+
+message: >
+  Mode debug activé (ou susceptible de l'être) en environnement de
+  production — désactiver display_errors/APP_DEBUG et bloquer les
+  consoles de debug (voir rules/remediation/debug-mode.md).
+
+false_positive_notes:
+  - "Si le fichier .env détecté est un `.env.example`/`.env.testing` non déployé en production, ce n'est pas exploitable."
+  - "Si `display_errors` est surchargé au niveau vhost pour l'environnement de dev uniquement, vérifier le fichier php.ini réellement chargé en production avant de conclure."
+
+remediation_ref: rules/remediation/debug-mode.md
+knowledge_ref: knowledge/server/debug-mode.md

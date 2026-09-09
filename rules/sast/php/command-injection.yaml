@@ -1,0 +1,35 @@
+id: command-injection
+language: php
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'appel à system(), exec(), shell_exec(), popen(), proc_open()
+    ou passthru() avec un argument construit par concaténation d'une variable
+    non constante.
+  patterns:
+    - "system(string_concat(_, $var, _))"
+    - "exec(string_concat(_, $var, _))"
+    - "shell_exec(string_concat(_, $var, _))"
+    - "passthru(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant (pas une variable/paramètre)"
+    - "$var est validée par une liste blanche stricte (ex: filter_var FILTER_VALIDATE_IP) avant l'appel"
+
+message: >
+  Concaténation d'une valeur utilisateur dans une commande shell exécutée via
+  system/exec/shell_exec/passthru — remplacer par un appel avec arguments
+  passés en tableau, sans interpréteur shell (voir
+  rules/remediation/command-injection.md).
+
+false_positive_notes:
+  - "Si la variable provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur), ce n'est pas exploitable — reclasser en `info`."
+  - "Si la valeur est strictement validée par une liste blanche (ex: format IP, nom de fichier avec regex ancrée) avant l'appel, le risque résiduel est faible — vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

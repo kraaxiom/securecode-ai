@@ -1,0 +1,31 @@
+id: cswsh
+language: php
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler de handshake WebSocket (onOpen de Ratchet/MessageComponentInterface,
+    ou équivalent) qui n'accède jamais à l'en-tête Origin de la requête avant
+    d'accepter la connexion.
+  patterns:
+    - "function onOpen(ConnectionInterface $conn) { ... } sans référence à getHeaderLine('Origin')"
+    - "$conn->httpRequest absent du corps de la méthode onOpen"
+  exclude_if:
+    - "La méthode onOpen valide explicitement $conn->httpRequest->getHeaderLine('Origin') contre une liste blanche"
+    - "Un jeton d'authentification distinct (hors cookie) est vérifié avant $this->clients->attach($conn)"
+
+message: >
+  Handshake WebSocket sans vérification d'Origin ni jeton dédié — risque de
+  Cross-Site WebSocket Hijacking (voir rules/remediation/cswsh.md).
+
+false_positive_notes:
+  - "Si la connexion est strictement interne (localhost, réseau privé non exposé), le risque est réduit — reclasser en `medium`."
+  - "Si un reverse-proxy en amont filtre déjà l'Origin de façon fiable et documentée, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

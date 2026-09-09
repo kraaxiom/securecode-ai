@@ -1,0 +1,35 @@
+id: workflow-bypass
+language: python
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint Python d'une étape avancée d'un workflow multi-étapes
+    (paiement, validation, publication) accessible sans vérification que les
+    étapes précédentes ont bien été complétées et persistées côté serveur.
+  patterns:
+    - "def confirm_order(request): order.status = 'confirmed'; order.save() — accessible directement sans vérifier order.status == 'payment_pending' ou l'existence d'un paiement validé en base"
+    - "def publish_article(request): article.status = 'published' — sans vérifier que article.status == 'reviewed'/'approved' au préalable"
+    - "machine à états implémentée par de simples if/elif sur un champ 'status' transmis par le client (request.POST['status']) au lieu d'être dérivé de l'état serveur précédent"
+  exclude_if:
+    - "chaque transition d'état vérifie explicitement l'état actuel persisté en base avant d'autoriser la transition suivante (machine à états stricte, ex: django-fsm ou vérification manuelle equivalente), indépendamment de toute valeur fournie par le client"
+
+message: >
+  Transition d'étape d'un workflow métier autorisée sans vérifier que les
+  étapes précédentes ont été complétées côté serveur — un attaquant peut
+  appeler directement une étape avancée (confirmation, publication) en
+  sautant les contrôles intermédiaires (paiement, validation). Vérifier
+  explicitement l'état persisté avant chaque transition, idéalement via une
+  machine à états stricte — voir rules/remediation/workflow-bypass.md.
+
+false_positive_notes:
+  - "Si l'endpoint est protégé par un contrôle d'autorisation qui de facto exige l'étape précédente (ex: token de confirmation généré uniquement après paiement), le contrôle peut être considéré équivalent — vérifier son caractère non contournable."
+  - "Les workflows à étape unique (pas de séquence obligatoire) ne sont pas concernés."
+
+remediation_ref: rules/remediation/workflow-bypass.md
+knowledge_ref: knowledge/business-logic/workflow-bypass.md

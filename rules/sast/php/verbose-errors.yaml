@@ -1,0 +1,35 @@
+id: verbose-errors
+language: php
+category: server
+cwe: CWE-209
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la propagation directe d'un message d'exception ou d'erreur de
+    bibliothèque/DB vers la réponse client (echo/print/response de
+    $e->getMessage(), affichage brut d'une erreur PDO/mysqli) sans passer
+    par un gestionnaire d'erreurs centralisé.
+  patterns:
+    - "echo/print($e->getMessage())"
+    - "response_json(contient 'error' => $e->getMessage())"
+    - "catch (PDOException|Exception $e) { echo $e->getMessage(); }"
+  exclude_if:
+    - "le message d'exception est uniquement écrit dans un log serveur (error_log, Log::error) et non retourné dans la réponse HTTP"
+    - "le code passe par un gestionnaire d'erreurs centralisé qui remplace le message par un texte générique avant l'envoi au client"
+
+message: >
+  Message d'exception ou d'erreur technique potentiellement renvoyé
+  directement au client — centraliser la gestion des erreurs et ne
+  journaliser les détails que côté serveur (voir
+  rules/remediation/verbose-errors.md).
+
+false_positive_notes:
+  - "Si l'affichage du message est explicitement limité à un environnement de développement (ex: if (app()->environment('local'))), ce n'est pas exploitable en production."
+  - "Un message générique et statique (ex: 'Erreur de connexion') ne constitue pas une fuite même s'il provient techniquement d'un bloc catch — vérifier le contenu réel avant de remonter."
+
+remediation_ref: rules/remediation/verbose-errors.md
+knowledge_ref: knowledge/server/verbose-errors.md

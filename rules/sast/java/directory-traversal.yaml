@@ -1,0 +1,37 @@
+id: directory-traversal
+language: java
+category: file-inclusion
+cwe: CWE-22
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un chemin de fichier via `java.io.File`, `java.nio.file.Paths`
+    ou `Files` à partir d'une entrée utilisateur (paramètre de requête Spring, en-tête, corps
+    JSON) sans normalisation ni vérification d'appartenance au répertoire racine autorisé.
+  patterns:
+    - "new File(_, $param)"
+    - "new File(string_concat(_, $param, _))"
+    - "Paths.get(_, $param)"
+    - "Paths.get(string_concat(_, $param, _))"
+    - "@RequestParam(...) String $param ... new File(..., $param, ...)"
+    - "@PathVariable(...) String $param ... Paths.get(..., $param, ...)"
+  exclude_if:
+    - "$param passe par Path.normalize() suivi d'une vérification startsWith(baseDir.normalize()) avant utilisation"
+    - "$param est validé contre une whitelist stricte d'identifiants (pas de chemin brut)"
+    - "$param est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Chemin de fichier construit à partir d'une entrée utilisateur non normalisée — résoudre le
+  chemin en canonique (`toRealPath()` ou `normalize()`) puis vérifier qu'il reste un sous-chemin
+  strict du répertoire racine autorisé avant tout accès (voir rules/remediation/directory-traversal.md).
+
+false_positive_notes:
+  - "Si $param provient exclusivement d'une constante applicative interne (pas d'entrée réseau), ce n'est pas exploitable — reclasser en `info`."
+  - "Si le framework applique déjà une whitelist d'identifiants mappés en interne vers un chemin fixe, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/directory-traversal.md
+knowledge_ref: knowledge/file-inclusion/directory-traversal.md

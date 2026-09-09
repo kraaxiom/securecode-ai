@@ -1,0 +1,17 @@
+id: mutation-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST
+  target: champ de contenu riche (éditeur WYSIWYG) soumis, sanitisé côté serveur, puis réinséré via innerHTML côté client
+  technique: differential-response
+  indicators:
+    - "une structure de balisage jugée neutre après un premier passage de sanitisation se retrouve, après un aller-retour de sérialisation/réinsertion DOM observable dans le rendu final, sous une forme structurellement différente de celle initialement validée — signe d'une renormalisation par le parseur du navigateur"
+    - "le contenu affiché après plusieurs cycles d'édition/sauvegarde d'un éditeur riche diverge structurellement du contenu initialement soumis et validé, sans qu'aucune modification volontaire n'ait été apportée"
+false_positive_notes:
+  - "Une différence purement cosmétique de formatage (espaces, ordre d'attributs non actifs) n'indique pas une mutation exploitable — vérifier qu'une structure active en résulte réellement."
+remediation_ref: rules/remediation/mutation-xss.md
+knowledge_ref: knowledge/xss/mutation-xss.md

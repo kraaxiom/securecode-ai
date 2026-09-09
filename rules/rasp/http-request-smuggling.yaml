@@ -1,0 +1,12 @@
+id: http-request-smuggling
+category: injections
+cwe: CWE-444
+type: rasp
+guard:
+  sink: parseur de requête HTTP entrante au niveau du serveur/proxy (traitement des en-têtes Content-Length et Transfer-Encoding)
+  block_condition: la requête contient simultanément Content-Length et Transfer-Encoding, ou plusieurs valeurs contradictoires pour l'un de ces en-têtes
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

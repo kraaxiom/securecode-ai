@@ -1,0 +1,36 @@
+id: formula-injection
+language: js
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte l'écriture d'une valeur utilisateur (req.body, req.query) dans
+    une ligne CSV construite manuellement ou via une bibliothèque de type
+    csv-stringify/exceljs, sans neutralisation préalable des caractères
+    déclencheurs de formule. Regex utilisée car la détection porte sur
+    l'absence d'un appel de neutralisation en amont de l'écriture, non
+    exprimable fiablement en ast-pattern générique.
+  patterns:
+    - "\\.join\\(','\\).*req\\.(body|query)"
+    - "getCell\\s*\\(\\s*[\"'][A-Z]+\\d+[\"']\\s*\\)\\.value\\s*=\\s*req\\.(body|query)"
+    - "stringify\\s*\\(\\s*\\[.*req\\.(body|query)"
+  exclude_if:
+    - "La valeur passe par une fonction de neutralisation des caractères =, +, -, @ avant l'écriture CSV/XLSX"
+    - "La valeur est strictement numérique ou validée par un format contrôlé avant export"
+
+message: >
+  Écriture d'une valeur utilisateur non neutralisée dans un export CSV/XLSX —
+  préfixer les valeurs commençant par =, +, -, @ d'une apostrophe avant
+  écriture (voir rules/remediation/formula-injection.md).
+
+false_positive_notes:
+  - "Si la bibliothèque d'export (ex: exceljs récent) applique une neutralisation native des formules, reclasser en `info` après vérification de la configuration."
+  - "Si la colonne exportée provient exclusivement de données générées par le serveur (jamais saisies par un utilisateur), ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/formula-injection.md
+knowledge_ref: knowledge/injections/formula-injection.md

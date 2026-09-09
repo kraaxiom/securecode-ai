@@ -1,0 +1,33 @@
+id: metadata-aws
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête sortante dont la destination est contrôlée par l'utilisateur, dans
+    un chemin de code exécuté sur une infrastructure AWS (EC2/ECS/Lambda), sans filtrage
+    explicite de la plage link-local `169.254.0.0/16` (incluant l'adresse IMDS
+    `169.254.169.254`).
+  patterns:
+    - "restTemplate.getForObject($url, ...)  # $url non filtré contre 169.254.0.0/16"
+    - "HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create($url))..., ...)  # même absence de filtrage"
+  exclude_if:
+    - "une validation explicite rejette les adresses de la plage 169.254.0.0/16 avant l'émission de la requête"
+    - "IMDSv2 est imposé côté infrastructure (jeton de session requis, rendant une simple requête GET SSRF insuffisante)"
+
+message: >
+  Requête sortante vers une destination contrôlée par l'utilisateur sans filtrage explicite
+  de la plage link-local `169.254.0.0/16` — filtrer ces adresses côté application et migrer
+  l'infrastructure vers IMDSv2 (voir rules/remediation/metadata-aws.md).
+
+false_positive_notes:
+  - "Si l'application ne s'exécute jamais sur une instance EC2/ECS/Lambda avec rôle IAM attaché, l'impact critique ne s'applique pas — reclasser selon le contexte de déploiement réel."
+  - "IMDSv2 déjà imposé au niveau infrastructure réduit fortement l'exploitabilité même en l'absence de filtrage applicatif."
+
+remediation_ref: rules/remediation/metadata-aws.md
+knowledge_ref: knowledge/ssrf/metadata-aws.md

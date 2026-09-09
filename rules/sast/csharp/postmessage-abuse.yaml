@@ -1,0 +1,36 @@
+id: postmessage-abuse
+language: csharp
+category: frontend
+cwe: CWE-346
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    L'API postMessage est intrinsèquement côté navigateur. Ce contrôle
+    couvre le cas où un backend ASP.NET Core génère dynamiquement du code
+    JavaScript (via Html.Raw ou une vue) contenant un appel postMessage avec
+    un targetOrigin construit à partir d'une entrée serveur ou fixé à "*".
+  patterns:
+    - "Html.Raw(string_concat(\"window.opener.postMessage(\", _, \", '*')\"))"
+    - "<script>@Html.Raw(string_concat(\"parent.postMessage(\", $data, \", '*')\"))</script>"
+    - "return Content(string_concat(\"<script>postMessage(\", $data, \", '*')</script>\"), \"text/html\")"
+  exclude_if:
+    - "le targetOrigin généré est une constante d'origine explicite (pas '*') calculée côté serveur à partir d'une configuration de confiance"
+    - "le script généré ne contient aucun appel à postMessage"
+
+message: >
+  Le backend génère du JavaScript contenant un appel postMessage avec un
+  targetOrigin générique ('*') — préférer une origine cible explicite calculée
+  côté serveur pour éviter la fuite de données vers une origine non prévue
+  (voir rules/remediation/postmessage-abuse.md).
+
+false_positive_notes:
+  - "Ce pattern est rare côté backend — vérifier qu'il ne s'agit pas d'un faux positif sur du code JS statique embarqué tel quel."
+  - "Si le targetOrigin est calculé dynamiquement à partir d'une configuration serveur de confiance (pas '*'), ce n'est pas un vrai positif."
+  - "L'essentiel de la logique postMessage doit être revu côté frontend (JS), ce contrôle backend est un signal complémentaire."
+
+remediation_ref: rules/remediation/postmessage-abuse.md
+knowledge_ref: knowledge/frontend/postmessage-abuse.md

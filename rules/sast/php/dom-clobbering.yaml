@@ -1,0 +1,31 @@
+id: dom-clobbering
+language: php
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'affichage direct de HTML utilisateur côté serveur (rendu de
+    commentaires, contenu riche) sans restriction des attributs `id`/`name`
+    via une bibliothèque de sanitisation (HTMLPurifier ou équivalent).
+  patterns:
+    - "echo $userHtml"           # HTML utilisateur affiché sans purification
+    - "print $comment['body']"   # contenu riche stocké affiché tel quel
+  exclude_if:
+    - "le contenu passe par HTMLPurifier ou équivalent avec HTML.ForbiddenAttributes incluant id/name"
+    - "le contenu est échappé intégralement (htmlspecialchars) et ne permet donc aucune balise HTML"
+
+message: >
+  HTML utilisateur affiché sans restriction des attributs id/name — risque de
+  DOM clobbering côté client (voir rules/remediation/dom-clobbering.md).
+
+false_positive_notes:
+  - "Si le contenu est systématiquement échappé (pas de HTML riche autorisé), le DOM clobbering n'est pas possible — reclasser en `info`."
+  - "Application n'exposant aucun script JS dépendant de window.X/document.getElementById pour de la configuration : risque réduit, à vérifier manuellement côté front."
+
+remediation_ref: rules/remediation/dom-clobbering.md
+knowledge_ref: knowledge/frontend/dom-clobbering.md

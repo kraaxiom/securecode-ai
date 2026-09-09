@@ -1,0 +1,37 @@
+id: command-injection
+language: java
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'exécution d'une commande système via Runtime.getRuntime().exec()
+    avec une chaîne unique concaténée (interprétée par un shell) ou via
+    ProcessBuilder avec "sh -c"/"cmd /c" et une entrée non validée.
+  patterns:
+    - "Runtime.getRuntime().exec(string_concat(_, $var, _))"
+    - "Runtime.getRuntime().exec($var)"
+    - "new ProcessBuilder(\"sh\", \"-c\", string_concat(_, $var, _))"
+    - "new ProcessBuilder(\"cmd\", \"/c\", string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var est validé par whitelist stricte (enum fermé de valeurs autorisées) avant utilisation"
+
+message: >
+  Exécution d'une commande système construite avec une entrée non fiable —
+  un attaquant peut injecter des métacaractères shell (`;`, `|`, `&&`,
+  backticks) pour exécuter des commandes arbitraires ; utiliser
+  ProcessBuilder avec un tableau d'arguments explicite (jamais de shell
+  interprétant une chaîne unique) et valider par whitelist
+  (voir rules/remediation/command-injection.md).
+
+false_positive_notes:
+  - "ProcessBuilder(String... args) avec chaque argument passé séparément (pas de shell -c) neutralise l'injection de métacaractères shell, même si un argument contient une entrée utilisateur non validée — mais reste à valider métier."
+  - "Si $var ne provient d'aucune entrée externe, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

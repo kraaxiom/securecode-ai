@@ -1,0 +1,12 @@
+id: regex-dos
+category: injections
+cwe: CWE-1333
+type: rasp
+guard:
+  sink: appel d'évaluation d'expression régulière (Pattern.matcher, RegExp.test, re.match, preg_match) sur une entrée dont l'origine est une requête utilisateur
+  block_condition: le temps d'exécution de l'évaluation regex en cours dépasse un délai maximal configuré (watchdog de temporisation) pour une entrée traçable à une source utilisateur, indiquant un comportement de complexité anormale
+  action: block
+  fail_mode: fail-open
+severity: medium
+remediation_ref: rules/remediation/regex-dos.md
+knowledge_ref: knowledge/injections/regex-dos.md

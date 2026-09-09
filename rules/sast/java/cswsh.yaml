@@ -1,0 +1,39 @@
+id: cswsh
+language: java
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handshake WebSocket (Spring `WebSocketHandler` / STOMP
+    `ChannelInterceptor` / `HandshakeInterceptor`) qui ne vérifie pas l'en-tête
+    `Origin` avant d'accepter la connexion, permettant à une page tierce
+    d'ouvrir une session WebSocket authentifiée via les cookies du navigateur
+    (Cross-Site WebSocket Hijacking).
+  patterns:
+    - "class $C implements HandshakeInterceptor { ... beforeHandshake($req, $resp, $handler, $attrs) { ... return true; ... } }"
+    - "@Override boolean beforeHandshake(ServerHttpRequest $req, ...) { ... } // sans lecture de $req.getHeaders().getOrigin()"
+    - "registry.addHandler($handler, $path).setAllowedOrigins(\"*\")"
+    - "@CrossOrigin(origins = \"*\") // sur un @Controller exposant un endpoint STOMP/WebSocket"
+  exclude_if:
+    - "beforeHandshake() appelle une méthode de validation d'origine contre une liste blanche (ex: allowedOrigins.contains(origin))"
+    - "setAllowedOriginPatterns(...) est restreint à des domaines explicites (pas de wildcard \"*\")"
+    - "L'authentification WebSocket repose sur un jeton signé transmis en query/sub-protocol plutôt que sur les cookies de session"
+
+message: >
+  Le handshake WebSocket accepte toute origine sans vérification — une page
+  malveillante peut ouvrir une connexion WebSocket authentifiée par les
+  cookies de la victime (CSWSH). Restreindre `setAllowedOrigins` /
+  `setAllowedOriginPatterns` à une liste blanche explicite et valider
+  l'en-tête `Origin` dans `beforeHandshake()` avant d'accepter la connexion.
+
+false_positive_notes:
+  - "Si le WebSocket n'accepte que des jetons applicatifs indépendants des cookies (pas de session basée cookie), le risque CSWSH est réduit — reclasser en `medium`."
+  - "Si `setAllowedOriginPatterns` est utilisé avec des motifs strictement limités au domaine applicatif, ce n'est pas vulnérable."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

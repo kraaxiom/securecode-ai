@@ -1,0 +1,32 @@
+id: business-rule-bypass
+language: js
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler de route qui persiste un champ sensible (role, price,
+    status, isAdmin) directement depuis req.body sans revalidation.
+  patterns:
+    - "db.update(_, { role: req.body.role })"
+    - "db.update(_, { price: req.body.price })"
+    - "user.isAdmin = req.body.isAdmin"
+    - "order.status = req.body.status"
+  exclude_if:
+    - "La valeur passe par une whitelist explicite (ALLOWED_ROLES.includes(...)) avant utilisation"
+    - "Le handler est protégé par un middleware d'autorisation strict validant ce changement précis"
+
+message: >
+  Champ sensible (rôle, prix, statut) persisté directement depuis req.body
+  sans revalidation serveur — voir rules/remediation/business-rule-bypass.md.
+
+false_positive_notes:
+  - "Un middleware de validation de schéma (Joi/Zod) appliqué en amont avec whitelist stricte neutralise ce pattern."
+  - "Vérifier si le endpoint est interne uniquement (non exposé publiquement) avant de remonter en `high`."
+
+remediation_ref: rules/remediation/business-rule-bypass.md
+knowledge_ref: knowledge/business-logic/business-rule-bypass.md

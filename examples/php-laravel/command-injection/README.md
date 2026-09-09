@@ -1,0 +1,3 @@
+# Command Injection
+
+La version vulnérable concatène le paramètre `host` dans une commande shell exécutée via `system()`, permettant à un attaquant d'injecter des métacaractères shell pour exécuter des commandes arbitraires (CWE-78, Improper Neutralization of Special Elements used in an OS Command). La version corrigée valide d'abord que `host` est une adresse IP légitime via `filter_var(..., FILTER_VALIDATE_IP)`, puis exécute la commande avec Symfony `Process` en passant les arguments sous forme de tableau distinct, sans jamais passer par un shell. Ainsi, aucun métacaractère ne peut être interprété comme du contrôle.

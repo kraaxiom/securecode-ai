@@ -1,0 +1,15 @@
+id: xpath-injection
+category: injections
+cwe: CWE-643
+type: iast
+instrumentation:
+  hook_points:
+    - "java: XPath.evaluate() appelé avec une expression construite par concaténation de chaînes incluant une entrée utilisateur"
+    - "php: DOMXPath::query() avec une expression bâtie par concaténation à partir de $_POST/$_GET"
+    - "python: lxml.etree._Element.xpath() appelé avec une chaîne formatée depuis une entrée de requête HTTP"
+    - "csharp: XPathNavigator.Evaluate/Select avec une expression concaténée depuis Request.Form"
+  taint_check: trace la donnée depuis une entrée HTTP jusqu'à sa concaténation directe dans une chaîne d'expression XPath évaluée, sans passer par un mécanisme de paramétrage (XPathExpression avec variables liées)
+  trigger_condition: une donnée taintée atteint un appel d'évaluation XPath via concaténation de chaîne plutôt que via une variable liée paramétrée
+severity: high
+remediation_ref: rules/remediation/xpath-injection.md
+knowledge_ref: knowledge/injections/xpath-injection.md

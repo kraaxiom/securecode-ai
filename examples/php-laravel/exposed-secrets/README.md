@@ -1,0 +1,3 @@
+# Secrets exposés dans le code
+
+La version vulnérable instancie le client Stripe avec une clé secrète codée en dur dans le code source, qui se retrouve ainsi versionnée dans Git (y compris dans son historique) et visible par toute personne ayant accès au dépôt, permettant potentiellement des opérations de paiement frauduleuses (CWE-798, Use of Hard-coded Credentials). La version corrigée retire totalement le secret du code : la clé est lue via `config('services.stripe.secret')`, elle-même alimentée par une variable d'environnement injectée au démarrage depuis un gestionnaire de secrets dédié, avec une vérification explicite en cas d'absence de valeur.

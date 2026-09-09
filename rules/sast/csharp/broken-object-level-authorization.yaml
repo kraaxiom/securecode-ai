@@ -1,0 +1,34 @@
+id: broken-object-level-authorization
+language: csharp
+category: api
+cwe: CWE-639
+owasp: API1:2023-Broken Object Level Authorization
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une action de contrôleur ASP.NET Core qui récupère une entité à
+    partir d'un identifiant de route ou de requête sans vérifier que
+    l'utilisateur authentifié courant en est bien propriétaire ou autorisé.
+  patterns:
+    - "public IActionResult $Action(int id) { return Ok(_context.$Set.Find(id)); }"
+    - "_context.$Set.FirstOrDefault(x => x.Id == id)"
+    - "[HttpGet(\"{id}\")] public IActionResult $Action(int id) { var $entity = _repository.GetById(id); return Ok($entity); }"
+  exclude_if:
+    - "la requête inclut une clause de filtrage sur l'utilisateur courant (ex: Where(x => x.Id == id && x.UserId == currentUserId))"
+    - "l'action est décorée d'un [Authorize] avec policy de type resource-based (IAuthorizationService.AuthorizeAsync) vérifiée avant retour"
+
+message: >
+  Récupération d'une ressource par identifiant sans vérification que
+  l'utilisateur authentifié courant en est propriétaire ou autorisé —
+  ajouter un contrôle d'autorisation au niveau objet (resource-based
+  authorization) (voir rules/remediation/broken-object-level-authorization.md).
+
+false_positive_notes:
+  - "Si l'action est réservée à un rôle Admin vérifié via [Authorize(Roles = \"Admin\")] et destinée à un accès global légitime, reclasser en `info`."
+  - "Vérifier que le service/repository sous-jacent n'applique pas déjà un filtre implicite par utilisateur avant de remonter en `high`."
+
+remediation_ref: rules/remediation/broken-object-level-authorization.md
+knowledge_ref: knowledge/api/broken-object-level-authorization.md

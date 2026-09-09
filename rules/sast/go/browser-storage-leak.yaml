@@ -1,0 +1,38 @@
+id: browser-storage-leak
+language: go
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée sensible (token, secret, mot de passe, clé d'API)
+    encodée par le backend Go dans une réponse JSON ou un cookie non protégé,
+    typiquement destinée à être stockée côté navigateur (localStorage/
+    sessionStorage) par le frontend.
+  patterns:
+    - "json.NewEncoder(w).Encode(map[string]interface{}{_, \"token\": $secret, _})"
+    - "json.Marshal(struct{ Token string }{Token: $secret})"
+    - "http.SetCookie(w, &http.Cookie{Name: _, Value: $secret})  # sans HttpOnly: true"
+    - "w.Write([]byte(string_concat(_, $secret, _)))"
+  exclude_if:
+    - "la valeur exposée est un identifiant public non sensible (userId, displayName)"
+    - "le cookie est créé avec HttpOnly: true, Secure: true et SameSite défini"
+    - "le token est de très courte durée de vie et explicitement prévu pour un usage client unique (CSRF token)"
+
+message: >
+  Une donnée sensible semble encodée par le backend Go dans une réponse JSON
+  ou un cookie sans protection HttpOnly, susceptible d'être stockée côté
+  navigateur (localStorage/sessionStorage) — préférer un cookie
+  HttpOnly/Secure/SameSite (voir rules/remediation/browser-storage-leak.md).
+
+false_positive_notes:
+  - "Si http.Cookie précise déjà HttpOnly: true, Secure: true et SameSite, ce n'est pas un vrai positif."
+  - "Si la réponse JSON ne contient que des données publiques, il n'y a pas de fuite exploitable."
+  - "Un jeton CSRF de courte durée destiné explicitement au client n'est pas concerné par ce contrôle."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

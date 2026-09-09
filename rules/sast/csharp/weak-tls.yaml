@@ -1,0 +1,32 @@
+id: weak-tls
+language: csharp
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration TLS qui reste faible malgré une version de
+    protocole correcte : validation de certificat désactivée, cipher suites
+    CBC non-AEAD imposées, ou absence de HSTS sur une réponse HTTP.
+  patterns:
+    - "ServerCertificateCustomValidationCallback = (_, _, _, _) => true"
+    - "ServicePointManager.ServerCertificateValidationCallback += (_, _, _, _) => true"
+    - "absence d'en-tête Strict-Transport-Security dans les réponses d'un endpoint HTTPS"
+  exclude_if:
+    - "le callback de validation permissif est actif uniquement dans un environnement de développement clairement isolé (variable d'environnement DEV/Test vérifiée dans la condition)"
+
+message: >
+  Configuration TLS affaiblie (validation de certificat désactivée ou absence
+  de HSTS) — restaurer la validation de certificat par défaut et ajouter
+  l'en-tête Strict-Transport-Security avec includeSubDomains.
+
+false_positive_notes:
+  - "Si la validation permissive est strictement conditionnée à un environnement non-production vérifiable, reclasser en `low`."
+  - "Vérifier que le callback ne s'applique pas aussi au trafic sortant vers des services tiers sensibles."
+
+remediation_ref: rules/remediation/weak-tls.md
+knowledge_ref: knowledge/crypto/weak-tls.md

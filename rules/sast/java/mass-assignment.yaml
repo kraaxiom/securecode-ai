@@ -1,0 +1,32 @@
+id: mass-assignment
+language: java
+category: authorization
+cwe: CWE-915
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la liaison directe du corps de requête à une entité JPA complète via
+    `@RequestBody` sur le modèle interne lui-même (contenant des champs sensibles comme
+    `role`/`isAdmin`/`balance`), au lieu d'un DTO dédié avec liste blanche de champs.
+  patterns:
+    - "@PostMapping(\"/users\") public User create(@RequestBody User user) { return repository.save(user); }  # entité complète bindée directement"
+    - "BeanUtils.copyProperties($requestBody, $entity)  # sans exclusion explicite des champs sensibles"
+  exclude_if:
+    - "l'entrée utilise un DTO dédié distinct de l'entité interne, sans champs sensibles (role, isAdmin, balance)"
+    - "les champs sensibles de l'entité sont explicitement marqués non assignables (ex. absents du DTO, ou @JsonIgnore en écriture)"
+
+message: >
+  Corps de requête lié directement à l'entité interne complète sans liste blanche de champs —
+  utiliser un DTO dédié à l'entrée utilisateur, distinct du modèle de données interne, et
+  exclure explicitement les attributs sensibles (voir rules/remediation/mass-assignment.md).
+
+false_positive_notes:
+  - "Si l'entité ne contient aucun champ sensible (rôle, statut, solde, drapeaux internes), le risque est réduit même en cas de binding direct."
+  - "BeanUtils.copyProperties avec une liste explicite de propriétés ignorées incluant les champs sensibles neutralise ce risque."
+
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

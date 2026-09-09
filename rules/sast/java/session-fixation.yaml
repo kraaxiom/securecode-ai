@@ -1,0 +1,34 @@
+id: session-fixation
+language: java
+category: sessions
+cwe: CWE-384
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une authentification réussie sans régénération de l'identifiant de
+    session — que ce soit en Servlet brut (HttpSession) ou en configuration
+    Spring Security désactivant explicitement la protection.
+  patterns:
+    - "request.getSession(true) réutilisé après authentification réussie sans appel à session.changeSessionId() / request.changeSessionId()"
+    - "HttpSecurity.sessionManagement().sessionFixation().none() dans une SecurityFilterChain Spring Security"
+    - "authentification manuelle (SecurityContextHolder.getContext().setAuthentication(...)) sans invalidation de la session précédente"
+  exclude_if:
+    - "sessionFixation().migrateSession() ou .newSession() est configuré (comportement par défaut de Spring Security)"
+    - "request.changeSessionId() est appelé juste après l'authentification réussie"
+
+message: >
+  L'identifiant de session n'est pas régénéré après authentification — un
+  attaquant qui a fixé un ID de session avant login peut détourner la session
+  de la victime. Utiliser sessionFixation().migrateSession() (Spring Security)
+  ou appeler request.changeSessionId() après login.
+
+false_positive_notes:
+  - "Spring Security applique migrateSession() par défaut — seule une désactivation explicite via sessionFixation().none() est réellement vulnérable."
+  - "Les API stateless (JWT sans HttpSession) ne sont pas concernées par ce pattern."
+
+remediation_ref: rules/remediation/session-fixation.md
+knowledge_ref: knowledge/sessions/session-fixation.md

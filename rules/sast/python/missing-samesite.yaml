@@ -1,0 +1,31 @@
+id: missing-samesite
+language: python
+category: sessions
+cwe: CWE-1275
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence de l'attribut SameSite sur un cookie de session Flask,
+    Django ou FastAPI, ou une valeur SameSite=None sans justification CSRF.
+  patterns:
+    - "response.set_cookie($_, $_, ...) sans paramètre samesite (Flask/FastAPI)"
+    - "SESSION_COOKIE_SAMESITE = None (settings.py Django) sans CSRF_COOKIE_SECURE=True"
+    - "CSRF_COOKIE_SAMESITE non défini alors que le site intègre des flux cross-site"
+  exclude_if:
+    - "samesite='Lax' ou 'Strict' est explicitement défini"
+    - "SameSite=None est justifié par un besoin d'intégration cross-site documenté et Secure=True est actif"
+
+message: >
+  Cookie de session sans attribut SameSite (ou SameSite=None non justifié) —
+  expose à des attaques CSRF où le navigateur envoie automatiquement le cookie
+  lors de requêtes cross-site. Définir samesite='Lax' (ou 'Strict') par défaut.
+
+false_positive_notes:
+  - "Les navigateurs modernes appliquent Lax par défaut si l'attribut est absent — le risque réel dépend de la version minimale de navigateur supportée par l'application ; ne pas descendre sous `medium`."
+
+remediation_ref: rules/remediation/missing-samesite.md
+knowledge_ref: knowledge/sessions/missing-samesite.md

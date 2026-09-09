@@ -1,0 +1,36 @@
+id: xpath-injection
+language: python
+category: injections
+cwe: CWE-643
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une expression XPath par interpolation d'une
+    variable non échappée, utilisée avec lxml.etree.xpath(),
+    ElementTree.find()/findall() ou xml.dom.minidom, sans validation ni
+    échappement des caractères spéciaux XPath.
+  patterns:
+    - "tree.xpath(f\"//user[login='{var}']\")"
+    - "root.findall(\".//user[@name='\" + var + \"']\")"
+    - "doc.xpath(\"//*[contains(text(),'%s')]\" % var)"
+  exclude_if:
+    - "var est un littéral constant (pas une variable/paramètre)"
+    - "var est validé par une liste blanche stricte avant insertion"
+
+message: >
+  Expression XPath construite par interpolation directe d'une variable —
+  un attaquant peut injecter des méta-caractères XPath (', or, //) pour
+  contourner des contrôles d'accès ou extraire des nœuds arbitraires du
+  document XML. Utiliser des requêtes paramétrées (XPath variables via
+  lxml.etree.XPath avec bindings) ou échapper strictement les guillemets.
+
+false_positive_notes:
+  - "Si la variable est un identifiant numérique casté en int() avant insertion, le risque est neutralisé."
+  - "Distinguer un XPath statique (aucune variable interpolée) d'une construction dynamique."
+
+remediation_ref: rules/remediation/xpath-injection.md
+knowledge_ref: knowledge/injections/xpath-injection.md

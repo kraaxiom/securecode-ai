@@ -1,0 +1,3 @@
+# XPath Injection (CWE-643)
+
+Le code vulnérable construit l'expression XPath d'authentification par concaténation directe des paramètres `username` et `password`, ce qui permet à un attaquant d'injecter une syntaxe XPath pour contourner l'authentification. La version corrigée utilise un `XPathVariableResolver` pour lier les valeurs via des variables (`$user`, `$pass`) plutôt que de les concaténer dans le texte de l'expression, ce qui empêche toute modification de la structure de la requête ; il est également recommandé de ne pas utiliser XPath comme mécanisme d'authentification et de privilégier une base de données avec mots de passe hachés.

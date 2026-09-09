@@ -1,0 +1,38 @@
+id: markdown-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le rendu de Markdown fourni par l'utilisateur (module markdown,
+    mistune, markdown2) avec le HTML brut autorisé (safe_mode absent,
+    extensions permissives) et le résultat marqué |safe/mark_safe sans
+    sanitisation HTML complémentaire après conversion.
+  patterns:
+    - "markdown.markdown(user_input)"
+    - "mistune.html(user_input)"
+    - "{{ rendered_markdown|safe }}"
+    - "mark_safe(markdown.markdown(comment))"
+  exclude_if:
+    - "le HTML résultant du rendu Markdown est passé par bleach.clean() (whitelist stricte) avant d'être marqué safe"
+    - "la bibliothèque Markdown est configurée pour échapper le HTML brut (ex: extension non permissive, pas d'extension 'markdown.extensions.extra' avec raw HTML)"
+
+message: >
+  Markdown fourni par l'utilisateur converti en HTML puis rendu sans
+  sanitisation complémentaire (mark_safe/|safe direct) — la plupart des
+  moteurs Markdown laissent passer le HTML brut par défaut, permettant
+  l'injection de <script>/gestionnaires d'événements. Toujours passer le
+  HTML généré par le rendu Markdown dans un nettoyeur dédié (bleach.clean
+  avec whitelist stricte) avant de le marquer comme sûr.
+
+false_positive_notes:
+  - "Si bleach.clean() (ou équivalent) est appliqué après la conversion Markdown et avant le marquage safe, le risque est neutralisé."
+  - "Certaines bibliothèques Markdown proposent un mode qui échappe automatiquement le HTML brut — vérifier la configuration précise avant de confirmer en `medium`."
+
+remediation_ref: rules/remediation/markdown-xss.md
+knowledge_ref: knowledge/xss/markdown-xss.md

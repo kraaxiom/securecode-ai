@@ -1,0 +1,32 @@
+id: missing-httponly
+language: java
+category: sessions
+cwe: CWE-1004
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un cookie de session créé sans l'attribut HttpOnly, en Servlet brut
+    ou via la configuration Spring Session / server.servlet.session.cookie.
+  patterns:
+    - "new Cookie($_, $_) sans appel à setHttpOnly(true)"
+    - "server.servlet.session.cookie.http-only=false dans application.properties/yml"
+    - "ResponseCookie.from($_, $_).httpOnly(false) (Spring WebFlux)"
+  exclude_if:
+    - "setHttpOnly(true) est appelé explicitement sur l'objet Cookie avant l'ajout à la réponse"
+    - "server.servlet.session.cookie.http-only n'est pas défini (Spring Boot l'active par défaut à true)"
+
+message: >
+  Cookie créé sans l'attribut HttpOnly — un script malveillant (XSS) peut lire
+  ce cookie via document.cookie. Appeler cookie.setHttpOnly(true) ou laisser
+  la valeur par défaut sécurisée de Spring Boot.
+
+false_positive_notes:
+  - "Spring Boot active HttpOnly par défaut pour le cookie de session — seule une désactivation explicite ou un Cookie Servlet manuel est réellement vulnérable."
+  - "Si le cookie ne contient aucune donnée sensible ni jeton, reclasser en `low`."
+
+remediation_ref: rules/remediation/missing-httponly.md
+knowledge_ref: knowledge/sessions/missing-httponly.md

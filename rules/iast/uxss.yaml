@@ -1,0 +1,19 @@
+id: uxss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "js: création de balise <script src=...> ou <iframe src=...> vers une origine tierce comme source"
+    - "js: réponse HTTP (en-têtes Content-Security-Policy, Permissions-Policy) comme relais de contexte"
+    - "js: exécution de code chargé depuis une origine tierce dans le contexte de la page comme sink"
+  taint_check: >
+    Trace l'inclusion d'un composant tiers (script, iframe, SDK) depuis sa déclaration dans le
+    document jusqu'à son exécution effective dans le contexte d'origine de l'application.
+  trigger_condition: >
+    Un script ou une iframe tierce s'exécute dans le contexte de la page sans attribut integrity
+    (script) ni sandbox restrictif (iframe), et sans qu'une Content Security Policy ou
+    Permissions-Policy n'ait été détectée en amont dans la chaîne de réponse.
+severity: critical
+remediation_ref: rules/remediation/uxss.md
+knowledge_ref: knowledge/xss/uxss.md

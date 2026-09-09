@@ -1,0 +1,38 @@
+id: crlf-injection
+language: python
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'insertion d'une variable non filtrée (pouvant contenir \r\n)
+    dans un en-tête HTTP défini manuellement (response.headers[...] = var,
+    make_response avec en-tête construit par f-string) sans que le framework
+    n'applique de validation stricte contre les retours à la ligne.
+  patterns:
+    - "response.headers[\"X-Custom\"] = var"
+    - "response.headers.add(\"Location\", f\"...{var}\")"
+    - "print(f\"Set-Cookie: {var}\")"
+    - "wfile.write(f\"HTTP/1.1 200 OK\\r\\n{header_name}: {var}\\r\\n\".encode())"
+  exclude_if:
+    - "var passe par une validation/suppression explicite des caractères \\r et \\n avant assignation"
+    - "var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Valeur d'en-tête HTTP construite à partir d'une entrée utilisateur non
+  filtrée contre les retours chariot/saut de ligne (\\r\\n) — un attaquant
+  peut injecter des en-têtes supplémentaires ou scinder la réponse. Filtrer
+  ou rejeter toute valeur contenant \\r ou \\n avant de l'assigner à un
+  en-tête (la plupart des frameworks WSGI modernes lèvent déjà une exception
+  sur ces caractères — vérifier la version utilisée).
+
+false_positive_notes:
+  - "Les frameworks WSGI récents (Werkzeug/Flask, Django) rejettent nativement les caractères \\r\\n dans les en-têtes depuis plusieurs versions — vérifier la version avant de confirmer en `medium`."
+  - "Un serveur bas niveau (socket brut, BaseHTTPServer) sans cette protection reste pleinement exploitable."
+
+remediation_ref: rules/remediation/crlf-injection.md
+knowledge_ref: knowledge/injections/crlf-injection.md

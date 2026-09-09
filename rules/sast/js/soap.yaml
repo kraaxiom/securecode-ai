@@ -1,0 +1,32 @@
+id: soap
+language: js
+category: api
+cwe: CWE-611
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'un client/serveur SOAP Node.js (`soap`,
+    `libxmljs`, `xml2js`) traitant une entrée externe sans option de
+    neutralisation des entités externes/DTD.
+  patterns:
+    - "soap.listen(_, _, _, _)"      # serveur SOAP sans validation de schéma XSD stricte configurée
+    - "libxmljs.parseXml(_)"         # sans { noent: false, dtdload: false }
+    - "xml2js.parseString(_, _)"     # sur une entrée XML externe non fiable sans validation préalable
+  exclude_if:
+    - "libxmljs.parseXml est appelé avec { noent: false, noblanks: true, nonet: true, dtdload: false }"
+    - "l'entrée XML est validée contre un schéma XSD strict avant tout parsing"
+
+message: >
+  Traitement XML/SOAP sans neutralisation explicite des entités externes —
+  risque d'injection XXE (voir rules/remediation/soap.md).
+
+false_positive_notes:
+  - "Si la bibliothèque XML utilisée désactive nativement et par défaut la résolution DTD (à vérifier par version), reclasser en `low`."
+  - "Entrée XML générée uniquement en interne, jamais issue d'un tiers non fiable : reclasser en `info`."
+
+remediation_ref: rules/remediation/soap.md
+knowledge_ref: knowledge/api/soap.md

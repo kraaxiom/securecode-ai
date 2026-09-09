@@ -1,0 +1,33 @@
+id: http2-rapid-reset
+language: php
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: config-pattern
+  description: >
+    Détecte, dans une configuration serveur exposée au dépôt (php-fpm derrière
+    Nginx/Apache avec HTTP/2), l'absence de limite sur le nombre de flux
+    HTTP/2 concurrents ou réinitialisés par connexion.
+  patterns:
+    - "nginx.conf: listen ... http2 without http2_max_concurrent_streams directive"
+    - "apache config enabling mod_http2 without H2MaxSessionStreams or H2StreamMaxMemSize set"
+    - "no rate-limiting directive (limit_conn/limit_req) associated with the http2 server block"
+  exclude_if:
+    - "une directive de limite de flux concurrents est présente dans le même bloc serveur"
+    - "un reverse proxy/WAF externe (non versionné dans ce dépôt) applique déjà cette limite"
+
+message: >
+  Configuration HTTP/2 sans limite de flux concurrents/annulés par connexion —
+  exposée au déni de service HTTP/2 Rapid Reset (CVE-2023-44487), voir
+  rules/remediation/http2-rapid-reset.md.
+
+false_positive_notes:
+  - "Si la limite est appliquée au niveau d'un WAF/CDN managé externe non présent dans ce dépôt, vérifier manuellement avant de remonter."
+  - "Applications ne servant jamais HTTP/2 directement (uniquement HTTP/1.1 derrière un LB géré) : non applicable."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

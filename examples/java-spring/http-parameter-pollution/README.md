@@ -1,0 +1,3 @@
+# HTTP Parameter Pollution (CWE-235)
+
+Le code vulnérable utilise `@RequestParam String role` qui binde silencieusement une seule valeur même si le paramètre `role` est fourni plusieurs fois dans la requête, sans jamais signaler ni rejeter cette duplication — un proxy ou WAF en amont pouvant interpréter une autre occurrence, ce qui crée une divergence exploitable pour contourner un contrôle d'autorisation. La version corrigée lit explicitement `request.getParameterValues("role")` afin de détecter toute duplication et rejette la requête avec un code 400 si plusieurs valeurs sont présentes, garantissant un comportement déterministe et cohérent entre toutes les couches de la chaîne.

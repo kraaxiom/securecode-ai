@@ -1,0 +1,36 @@
+id: rag-poisoning
+language: java
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code de pipeline RAG (LangChain4j EmbeddingStoreIngestor,
+    Spring AI VectorStore), l'ingestion de documents provenant de sources
+    modifiables par des utilisateurs non fiables (uploads publics, wikis
+    collaboratifs, pages web) sans contrôle de provenance ni de fréquence de
+    ré-indexation, permettant d'empoisonner le corpus consulté par le
+    modèle.
+  patterns:
+    - "EmbeddingStoreIngestor.ingest(_) sur un DocumentLoader pointant vers un répertoire d'upload public sans validation de contenu ni de source"
+    - "VectorStore.add(_) (Spring AI) alimenté périodiquement par un crawler web sans liste blanche de domaines de confiance"
+    - "absence de métadonnées de provenance/confiance (source, auteur, date) associées aux chunks indexés, empêchant tout filtrage a posteriori"
+    - "retriever configuré pour renvoyer les documents les plus similaires sans pondération par fiabilité de la source ni détection de contenu dupliqué/suspect"
+
+message: >
+  Corpus RAG alimenté par des sources non fiables sans contrôle de
+  provenance — un attaquant peut injecter des documents empoisonnés dans
+  l'index vectoriel pour influencer les réponses générées (RAG poisoning).
+  Restreindre les sources d'ingestion, associer des métadonnées de
+  confiance, et filtrer/valider le contenu avant indexation.
+
+false_positive_notes:
+  - "Si l'ingestion est limitée à des sources internes validées manuellement, reclasser en `low`."
+  - "Si un score de confiance par source est déjà utilisé pour pondérer le retrieval, reclasser en `medium`."
+
+remediation_ref: rules/remediation/rag-poisoning.md
+knowledge_ref: knowledge/llm/rag-poisoning.md

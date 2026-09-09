@@ -1,0 +1,3 @@
+# Model Inversion
+
+La version vulnérable expose, en plus de la classe prédite, des scores de confiance détaillés par classe et l'embedding brut d'un modèle fine-tuné sur des données clients sensibles, sans aucune limite sur le volume de requêtes, ce qui permet à un attaquant d'interroger le modèle de façon répétée et méthodique pour reconstruire progressivement des informations mémorisées de son jeu d'entraînement (CWE-200, Exposure of Sensitive Information to an Unauthorized Actor). La version corrigée minimise la sortie renvoyée à la seule classe prédite, applique une limitation de débit stricte par clé API et détecte les patterns de requêtes révélateurs d'une tentative de reconstruction progressive, avec journalisation et blocage automatique.

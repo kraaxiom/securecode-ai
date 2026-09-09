@@ -1,0 +1,36 @@
+id: tool-injection
+language: java
+category: llm
+cwe: CWE-1427
+owasp: LLM06:2025-Excessive-Agency
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code LangChain4j/Spring AI exposant des outils (@Tool)
+    à un agent, l'exécution de paramètres générés par le modèle directement
+    dans des opérations sensibles (commande système, requête SQL, appel
+    HTTP) sans validation ni échappement — le modèle devient un vecteur
+    d'injection vers les systèmes back-end via l'outil.
+  patterns:
+    - "@Tool public String run(String cmd) { ProcessBuilder(cmd).start() } exécutant directement l'argument généré par le LLM comme commande système"
+    - "@Tool public List<X> query(String filter) { jdbcTemplate.queryForList(\"SELECT * FROM t WHERE \" + filter) } concaténant le paramètre généré par le modèle dans une requête SQL"
+    - "@Tool effectuant un appel HTTP (RestTemplate/WebClient) vers une URL entièrement construite à partir de l'argument fourni par le modèle, sans liste blanche de domaines"
+    - "AiServices.builder(_).tools(_) exposant des outils avec des permissions larges (accès fichier, exécution) sans validation de schéma stricte des paramètres (type, plage, regex)"
+
+message: >
+  Outil (@Tool) exécutant un paramètre généré par le modèle dans une
+  opération sensible (commande système, SQL, HTTP) sans validation —
+  l'agent peut être manipulé pour injecter des commandes vers les systèmes
+  back-end (tool injection). Valider strictement le schéma des paramètres
+  d'outil, utiliser des requêtes préparées, une liste blanche de commandes/
+  domaines, et appliquer le principe du moindre privilège sur chaque outil.
+
+false_positive_notes:
+  - "Si le paramètre passe par une validation de schéma stricte (type énuméré, regex, liste blanche) avant exécution, reclasser en `medium`."
+  - "Les outils en lecture seule sur des données non sensibles présentent un risque réduit par rapport aux outils à effet de bord."
+
+remediation_ref: rules/remediation/tool-injection.md
+knowledge_ref: knowledge/llm/tool-injection.md

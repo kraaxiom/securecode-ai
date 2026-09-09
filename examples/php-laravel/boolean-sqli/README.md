@@ -1,0 +1,3 @@
+# Boolean-based SQL Injection
+
+La version vulnérable insère le paramètre `name` par concaténation de chaîne dans une clause `WHERE` SQL brute, permettant à un attaquant de modifier la valeur de vérité de la condition et d'observer une différence binaire dans les résultats retournés (CWE-89, Improper Neutralization of Special Elements used in an SQL Command). La version corrigée remplace la requête brute par le query builder Eloquent (`Product::where('name', $name)`), qui lie le paramètre de façon sûre au lieu de l'interpoler dans le SQL. Cela empêche toute altération de la logique de la requête tout en conservant le comportement métier légitime.

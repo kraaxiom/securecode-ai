@@ -1,0 +1,17 @@
+id: jwt-none
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+type: dast
+test:
+  method: GET
+  target: en-tête d'autorisation portant un jeton JWT (Authorization: Bearer)
+  technique: differential-response
+  indicators:
+    - "Absence de rejet observée lorsqu'un jeton dont l'en-tête annonce l'algorithme `none` (avec signature vide) est présenté au vérificateur, l'application se comportant comme si le jeton était valide plutôt que de retourner une erreur d'authentification"
+    - "Comportement de rejet incohérent entre différents endpoints exposant une vérification JWT, suggérant l'usage de vérificateurs différents dont un au moins n'exclut pas explicitement `none`"
+false_positive_notes:
+  - "Le test observe uniquement la réaction du vérificateur à un en-tête annonçant `none`, sans jamais construire de jeton falsifié porteur de claims privilégiés fonctionnels."
+remediation_ref: rules/remediation/jwt-none.md
+knowledge_ref: knowledge/auth/jwt-none.md

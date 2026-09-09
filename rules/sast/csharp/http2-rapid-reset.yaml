@@ -1,0 +1,36 @@
+id: http2-rapid-reset
+language: csharp
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration Kestrel exposant HTTP/2 sans limite configurée
+    sur le nombre de flux concurrents par connexion (`Http2.MaxStreamsPerConnection`)
+    ni de limite de débit sur les nouvelles connexions/flux, laissant le
+    serveur applicatif vulnérable à une rafale de RST_STREAM (HTTP/2 Rapid
+    Reset).
+  patterns:
+    - "webBuilder.ConfigureKestrel(options => { options.Limits.Http2.MaxStreamsPerConnection = int.MaxValue; }) ou valeur par défaut non réduite"
+    - "ConfigureKestrel sans options.Limits.Http2.MaxStreamsPerConnection ni options.Limits.MinRequestBodyDataRate configurés explicitement"
+    - "serveur Kestrel exposé directement en HTTP/2 sans reverse proxy (nginx/Envoy/IIS) limitant le taux de RST_STREAM en amont"
+  exclude_if:
+    - "un reverse proxy en amont (nginx, Envoy, Azure Front Door) limite explicitement le taux de RST_STREAM ou de nouvelles requêtes par connexion HTTP/2"
+    - "options.Limits.Http2.MaxStreamsPerConnection est explicitement plafonné à une valeur basse et surveillée dans ConfigureKestrel"
+
+message: >
+  Serveur Kestrel HTTP/2 sans limite de flux concurrents/réinitialisés par
+  connexion — vulnérable à une attaque de déni de service par HTTP/2 Rapid
+  Reset (rafale de RST_STREAM) (voir
+  rules/remediation/http2-rapid-reset.md).
+
+false_positive_notes:
+  - "Cette faiblesse dépend fortement de la configuration d'infrastructure (reverse proxy, CDN) qui échappe souvent au code source seul — confirmer via revue de configuration serveur."
+  - "Si le service n'est jamais exposé directement en HTTP/2 côté client (uniquement HTTP/1.1 en interne, terminaison TLS/HTTP2 en amont avec protections dédiées), le risque ne s'applique pas directement au code applicatif."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

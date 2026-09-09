@@ -1,0 +1,14 @@
+id: ssi
+category: injections
+cwe: CWE-97
+type: iast
+instrumentation:
+  hook_points:
+    - "php: echo/print de contenu utilisateur dans un fichier .shtml servi par Apache mod_include"
+    - "php: fwrite/file_put_contents écrivant une entrée utilisateur dans un fichier interprété comme SSI"
+    - "apache: configuration Options +Includes appliquée à un répertoire recevant du contenu utilisateur"
+  taint_check: trace la donnée depuis une entrée HTTP (paramètre, en-tête, corps) jusqu'à son écriture dans un contenu HTML servi avec interprétation SSI activée, sans passage par une fonction d'échappement des séquences "<!--#"
+  trigger_condition: une donnée taintée atteint un sink d'écriture de page SSI sans avoir traversé une fonction d'encodage HTML/SSI reconnue
+severity: high
+remediation_ref: rules/remediation/ssi.md
+knowledge_ref: knowledge/injections/ssi.md

@@ -1,0 +1,28 @@
+id: ssi
+language: go
+category: injections
+cwe: CWE-97
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un usage non sécurisé d'une entrée utilisateur pouvant conduire à injection ssi (server-side includes).
+  patterns:
+    - "Server-Side Includes non natif à net/http — signaler si un handler personnalisé interprète des directives #include depuis une entrée utilisateur"
+  exclude_if:
+    - "la valeur est validée par liste blanche ou échappée via la fonction dédiée de la stdlib/du framework avant usage"
+    - "$var provient d'une constante interne (pas d'entrée utilisateur), non exploitable"
+
+message: >
+  Injection SSI (Server-Side Includes) détectée — valider/échapper strictement toute entrée utilisateur avant usage dans ce contexte (voir rules/remediation/ssi.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une liste blanche stricte ou échappée via l'API dédiée du framework avant usage, ce n'est pas exploitable."
+  - "Si $var provient d'une constante interne (pas d'entrée utilisateur), reclasser en `info`."
+  - "SSI est une fonctionnalité serveur web historique (Apache/Nginx), rarement native en Go — cette règle couvre le cas d'un moteur de template maison exécutant des directives d'inclusion depuis une entrée utilisateur."
+
+remediation_ref: rules/remediation/ssi.md
+knowledge_ref: knowledge/injections/ssi.md

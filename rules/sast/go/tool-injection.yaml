@@ -1,0 +1,37 @@
+id: tool-injection
+language: go
+category: llm
+cwe: CWE-1427
+owasp: LLM06:2025-Excessive-Agency
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel d'outil LangChainGo ou OpenAI Go SDK (function calling)
+    dont les arguments proviennent directement d'un texte généré par le
+    modèle ou de la sortie d'un outil précédent, sans validation de schéma
+    strict avant exécution.
+  patterns:
+    - "tool.Call(ctx, toolCall.Function.Arguments)"
+    - "json.Unmarshal([]byte(toolCall.Function.Arguments), &args); exec.Command(args.Cmd)"
+    - "agent.RegisterTool(loadToolsFromURL(externalRegistryURL))"
+    - "chain.Call(ctx, map[string]any{\"input\": previousToolOutput})"
+  exclude_if:
+    - "les arguments passent par une validation de schéma explicite (ex: jsonschema.Validate) avant l'exécution de l'outil"
+    - "la liste des outils est statique, définie en dur dans le code, sans chargement dynamique externe"
+
+message: >
+  Arguments d'appel d'outil transmis depuis une sortie du modèle ou une
+  source externe sans validation de schéma stricte — valider chaque
+  paramètre contre un schéma typé et appliquer une liste blanche d'outils
+  autorisés avant exécution (voir rules/remediation/tool-injection.md).
+
+false_positive_notes:
+  - "Si les arguments sont désérialisés dans une struct typée puis validés champ par champ avant l'exécution, reclasser en `low`."
+  - "Si toolCall.Function.Arguments est journalisé uniquement à des fins d'audit sans être exécuté, reclasser en `info`."
+  - "Si le registre d'outils dynamique provient d'une source interne signée et vérifiée (pas d'un registre tiers), reclasser en `medium`."
+
+remediation_ref: rules/remediation/tool-injection.md
+knowledge_ref: knowledge/llm/tool-injection.md

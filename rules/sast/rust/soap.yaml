@@ -1,0 +1,36 @@
+id: soap
+language: rust
+category: api
+cwe: CWE-611
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Le SOAP est rare en Rust natif et apparaît surtout via des services XML
+    legacy (crates comme quick-xml, roxmltree pour parser des messages
+    entrants). Détecte un parseur XML traitant un message entrant sans
+    restriction sur les entités externes, et un handler de service legacy
+    exposé sans vérification d'authentification.
+  patterns:
+    - "quick_xml::Reader::from_str($body)"
+    - "async fn $handler(body: String) -> impl Responder { $parser::parse(&body) }"
+    - ".route(\"/soap\", post($handler))"
+  exclude_if:
+    - "le parseur XML n'accepte que des documents internes de confiance, jamais de source externe non fiable"
+    - "le handler vérifie explicitement un jeton/en-tête d'authentification avant tout traitement du message XML"
+
+message: >
+  Traitement d'un message XML/SOAP entrant sans restriction explicite sur
+  les entités externes, ou service SOAP legacy sans vérification
+  d'authentification — valider le schéma XSD en amont et ajouter une
+  vérification d'authentification systématique (voir rules/remediation/soap.md).
+
+false_positive_notes:
+  - "Les crates XML Rust courantes (quick-xml, roxmltree) ne résolvent pas les entités externes par défaut, ce qui réduit le risque XXE strict — vérifier la crate réellement utilisée avant de remonter en `high`."
+  - "Si le service ne traite que des messages internes fiables, reclasser en `medium`."
+
+remediation_ref: rules/remediation/soap.md
+knowledge_ref: knowledge/api/soap.md

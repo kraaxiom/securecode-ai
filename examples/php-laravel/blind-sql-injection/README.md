@@ -1,0 +1,3 @@
+# Blind SQL Injection
+
+La version vulnérable concatène directement le paramètre `username` dans une requête SQL brute (`DB::select` avec chaîne interpolée), permettant à un attaquant d'injecter des conditions SQL et d'en déduire des informations via les variations de la réponse booléenne, sans jamais voir de message d'erreur (CWE-89, Improper Neutralization of Special Elements used in an SQL Command). La version corrigée utilise une requête préparée avec paramètre lié (`:username`), ce qui empêche toute interprétation de l'entrée comme du code SQL. Ce correctif s'applique même si le résultat de la requête n'est pas affiché, car une injection aveugle reste exploitable via l'observation du comportement applicatif.

@@ -1,0 +1,34 @@
+id: data-poisoning
+language: java
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code d'entraînement/fine-tuning ou d'ingestion de
+    données applicatives (Spring AI DocumentReader, pipelines de dataset
+    custom), l'absence de validation d'origine ou d'intégrité des données
+    ajoutées à un jeu d'entraînement ou de fine-tuning avant utilisation.
+  patterns:
+    - "DocumentReader/ETL personnalisé chargeant des fichiers d'un répertoire uploadé par des utilisateurs et les ajoutant directement à un dataset d'entraînement/fine-tuning sans revue"
+    - "appel d'API de fine-tuning (OpenAiApi.createFineTuningJob équivalent) avec un fichier constitué à partir de données utilisateur non validées"
+    - "absence de vérification de checksum/signature sur les jeux de données tiers téléchargés avant intégration à un pipeline d'entraînement"
+    - "boucle d'apprentissage en ligne (online learning) mettant à jour un modèle à partir de retours utilisateurs non filtrés (feedback loop)"
+
+message: >
+  Données d'entraînement/fine-tuning intégrées sans validation d'origine ni
+  contrôle d'intégrité — un attaquant peut empoisonner le jeu de données
+  (data poisoning) pour biaiser ou compromettre le comportement du modèle.
+  Valider la provenance, appliquer une revue/filtrage et un contrôle
+  d'intégrité (checksum, quarantaine) avant intégration.
+
+false_positive_notes:
+  - "Si le pipeline applique déjà une étape de nettoyage/filtrage automatisé (détection d'anomalies statistiques) avant intégration, reclasser en `medium`."
+  - "Les données provenant exclusivement de sources internes vérifiées (pas d'upload public) présentent un risque réduit."
+
+remediation_ref: rules/remediation/data-poisoning.md
+knowledge_ref: knowledge/llm/data-poisoning.md

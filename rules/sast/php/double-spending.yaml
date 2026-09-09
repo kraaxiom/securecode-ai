@@ -1,0 +1,32 @@
+id: double-spending
+language: php
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une lecture de solde suivie d'une mise à jour arithmétique sans
+    transaction ni verrou (FOR UPDATE), ou l'absence de vérification
+    d'idempotence dans un traitement de webhook de paiement.
+  patterns:
+    - "->query(string_concat(\"SELECT balance FROM\", _)); ... ->exec(string_concat(\"UPDATE\", _, \"balance = balance -\", _))"
+    - "function handleWebhook($request) { ... }"
+  exclude_if:
+    - "La lecture et l'écriture sont encapsulées dans beginTransaction()/commit() avec SELECT ... FOR UPDATE"
+    - "Le webhook vérifie un identifiant d'idempotence en base avant traitement"
+
+message: >
+  Vérification et débit de solde non atomiques, ou webhook de paiement sans
+  vérification d'idempotence — risque de double dépense (voir
+  rules/remediation/double-spending.md).
+
+false_positive_notes:
+  - "Si l'opération cible un solde non financier (ex: compteur d'affichage), la sévérité doit être réduite."
+  - "Une contrainte CHECK (balance >= 0) en base atténue partiellement le risque mais ne remplace pas le verrouillage transactionnel."
+
+remediation_ref: rules/remediation/double-spending.md
+knowledge_ref: knowledge/business-logic/double-spending.md

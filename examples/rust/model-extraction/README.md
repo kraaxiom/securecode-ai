@@ -1,0 +1,3 @@
+# Model Extraction (CWE-200)
+
+Le code vulnérable expose un endpoint d'inférence sans limite de débit ni quota par client, et renvoie les logits bruts et probabilités complètes du modèle, permettant à un attaquant d'interroger massivement l'API pour reconstituer un modèle de substitution par distillation. La correction applique un quota strict par clé API (`LimiteurDebit`, 60 requêtes/minute) avant tout appel au modèle, et ne renvoie plus que la classe prédite, sans exposer les informations internes non nécessaires au cas d'usage métier. Élimine la classe de vulnérabilité CWE-200 (Exposure of Sensitive Information to an Unauthorized Actor).

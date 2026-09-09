@@ -1,0 +1,12 @@
+id: idor
+category: authorization
+cwe: CWE-639
+type: rasp
+guard:
+  sink: "fonction de récupération/modification d'un objet unique identifié par une clé fournie par le client (lecture, mise à jour, suppression d'une ressource par ID)"
+  block_condition: "l'objet chargé porte un attribut de propriétaire/tenant qui ne correspond pas à l'identité du contexte d'authentification de la requête, alors qu'aucune vérification d'appartenance n'a intercepté l'appel en amont"
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/idor.md
+knowledge_ref: knowledge/authorization/idor.md

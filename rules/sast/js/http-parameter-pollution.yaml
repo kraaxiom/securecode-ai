@@ -1,0 +1,34 @@
+id: http-parameter-pollution
+language: js
+category: injections
+cwe: CWE-235
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: regex
+  description: >
+    Détecte l'utilisation directe d'un paramètre sensible depuis req.query
+    ou req.body sans vérification préalable qu'il ne s'agit pas d'un
+    tableau (signe de duplication du paramètre côté requête). Regex utilisée
+    car la vulnérabilité dépend de l'absence d'un contrôle Array.isArray
+    difficile à exprimer en ast-pattern structurel fiable.
+  patterns:
+    - "req\\.(query|body)\\.(role|amount|price|admin|userId|user_id)\\b(?!.*Array\\.isArray)"
+  exclude_if:
+    - "L'accès est précédé ou suivi immédiatement d'un contrôle Array.isArray sur la même valeur"
+    - "Le query parser de l'application est explicitement configuré pour rejeter les paramètres dupliqués (ex: express avec extended: false et validation de type stricte via un schéma)"
+
+message: >
+  Lecture d'un paramètre HTTP sensible sans vérifier qu'il n'a pas été
+  dupliqué (le query parser peut renvoyer un tableau) — valider
+  explicitement le type avant usage (voir
+  rules/remediation/http-parameter-pollution.md).
+
+false_positive_notes:
+  - "Si une validation de schéma (Joi, zod, express-validator) rejette déjà les tableaux inattendus sur ce champ, reclasser en `info`."
+  - "Si le paramètre concerné n'a aucun impact sur une décision d'autorisation ou une valeur financière, reclasser en `info`."
+
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

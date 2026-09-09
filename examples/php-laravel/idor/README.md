@@ -1,0 +1,3 @@
+# IDOR — Insecure Direct Object Reference
+
+Le code vulnérable récupère une facture uniquement par son ID (`findOrFail`), sans vérifier que l'utilisateur connecté en est le propriétaire, ce qui permet d'accéder aux factures d'autres comptes en changeant simplement l'identifiant dans l'URL. La version corrigée ajoute une clause `where('user_id', auth()->id())` directement dans la requête de base de données, garantissant que seul le propriétaire peut accéder à sa ressource. Cette faille correspond à CWE-639 (Authorization Bypass Through User-Controlled Key), tel qu'indiqué dans `knowledge/authorization/idor.md`.

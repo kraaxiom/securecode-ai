@@ -1,0 +1,34 @@
+id: jsp-upload
+language: javascript
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Généralise la classe de vulnérabilité "upload de fichier exécutable"
+    (illustrée ici pour les conteneurs servlet Java/Tomcat) au contexte
+    Node.js/Express: middleware multer écrivant un fichier téléversé dans un
+    répertoire potentiellement déployé/servi, sans fileFilter restrictif ni
+    renommage.
+  patterns:
+    - "multer({ dest: _ }) // sans fileFilter"
+    - "multer.diskStorage({ destination: _, filename: (req, file, cb) => cb(null, file.originalname) })"
+  exclude_if:
+    - "fileFilter valide une liste blanche de mimetypes détectés"
+    - "filename génère un nom aléatoire indépendant du nom original"
+    - "le répertoire de destination n'est jamais exposé par le serveur web"
+
+message: >
+  Upload sans filtrage strict ni renommage côté serveur — voir
+  rules/remediation/jsp-upload.md pour la correction.
+
+false_positive_notes:
+  - "Cette règle JS généralise un pattern documenté à l'origine pour JSP/Tomcat ; elle s'applique au risque équivalent en Node.js, pas à du code Java."
+  - "Si un middleware de validation externe est appliqué avant multer, vérifier son comportement avant de confirmer."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

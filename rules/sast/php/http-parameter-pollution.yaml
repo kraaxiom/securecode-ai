@@ -1,0 +1,34 @@
+id: http-parameter-pollution
+language: php
+category: injections
+cwe: CWE-235
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: regex
+  description: >
+    Détecte l'utilisation directe de $_GET/$_POST/$_REQUEST sur un paramètre
+    sensible (rôle, montant, identifiant) réinjecté dans une fonction
+    métier sensible, sans vérification préalable du nombre d'occurrences via
+    QUERY_STRING ou parse_str. Regex utilisée car la vulnérabilité dépend de
+    l'absence d'une vérification de cardinalité difficile à exprimer en
+    ast-pattern structurel fiable.
+  patterns:
+    - "\\$_(GET|POST|REQUEST)\\[['\"](role|amount|price|admin|user_id)['\"]\\]"
+  exclude_if:
+    - "Le paramètre est validé via substr_count($_SERVER['QUERY_STRING'], ...) ou une vérification équivalente du nombre d'occurrences avant usage"
+    - "Le paramètre est un identifiant non sensible sans impact sur l'autorisation ou la logique financière"
+
+message: >
+  Lecture d'un paramètre HTTP sensible sans vérification de cardinalité —
+  un paramètre dupliqué peut être interprété différemment selon les couches
+  d'infrastructure (voir rules/remediation/http-parameter-pollution.md).
+
+false_positive_notes:
+  - "Ce pattern est un indicateur de risque architectural, pas une preuve d'exploitabilité directe — la sévérité réelle dépend de la présence d'un proxy/WAF en amont avec un parsing divergent."
+  - "Si le paramètre concerné n'a aucun impact sur une décision d'autorisation ou une valeur financière, reclasser en `info`."
+
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

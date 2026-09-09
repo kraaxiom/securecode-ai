@@ -1,0 +1,15 @@
+id: http-request-smuggling
+category: injections
+cwe: CWE-444
+type: iast
+instrumentation:
+  hook_points:
+    - "java: org.apache.http.impl.io.ChunkedInputStream / en-têtes Content-Length et Transfer-Encoding comme source lors du parsing de la requête entrante"
+    - "js: http.IncomingMessage (Node.js) lecture combinée de content-length et transfer-encoding comme source"
+    - "python: wsgiref.headers / gunicorn parsing des en-têtes Content-Length et Transfer-Encoding comme source"
+    - "go: net/http.ReadRequest parsing des en-têtes ambigus comme source"
+  taint_check: trace la présence simultanée ou la construction incohérente des en-têtes Content-Length et Transfer-Encoding dans une requête reçue par un composant en amont d'une chaîne proxy/backend
+  trigger_condition: une requête entrante contient à la fois Content-Length et Transfer-Encoding, ou plusieurs valeurs contradictoires pour l'un de ces en-têtes, sans rejet explicite par le parseur
+severity: high
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

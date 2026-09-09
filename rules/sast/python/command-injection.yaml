@@ -1,0 +1,38 @@
+id: command-injection
+language: python
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'exécution d'une commande shell construite par interpolation
+    d'une variable via subprocess avec shell=True, os.system(), os.popen(),
+    ou subprocess.run/Popen avec une chaîne unique (non liste d'arguments)
+    contenant une variable non sanitisée.
+  patterns:
+    - "os.system(f\"... {var} ...\")"
+    - "os.popen(\"...\" + var)"
+    - "subprocess.run(f\"... {var}\", shell=True)"
+    - "subprocess.Popen(\"cmd \" + var, shell=True)"
+    - "subprocess.call(cmd_string, shell=True)"
+  exclude_if:
+    - "var est un littéral constant (pas une variable/paramètre)"
+    - "subprocess est appelé avec shell=False et une liste d'arguments (ex: subprocess.run(['cmd', var]))"
+
+message: >
+  Commande shell construite par interpolation d'une variable avec
+  shell=True (ou équivalent os.system/os.popen) — un attaquant peut injecter
+  des métacaractères shell (;, |, &&, $()) pour exécuter des commandes
+  arbitraires. Utiliser subprocess.run() avec shell=False et une liste
+  d'arguments, sans interpolation dans la commande elle-même.
+
+false_positive_notes:
+  - "Si var passe par shlex.quote() avant insertion dans la commande shell=True, le risque est fortement réduit — vérifier manuellement avant de déclasser."
+  - "Un appel subprocess avec shell=False et liste d'arguments statique/validée n'est pas vulnérable, même si un argument contient une entrée utilisateur (pas d'interprétation shell)."
+
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

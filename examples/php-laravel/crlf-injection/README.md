@@ -1,0 +1,3 @@
+# CRLF Injection
+
+La version vulnérable place le paramètre `next` directement dans l'en-tête `Location` via l'API bas niveau du `Response`, sans neutraliser les caractères de contrôle, permettant à un attaquant d'injecter des séquences `\r\n` pour ajouter des en-têtes ou fractionner la réponse (CWE-93, Improper Neutralization of CRLF Sequences). La version corrigée rejette toute entrée contenant `\r` ou `\n` et exige un chemin relatif commençant par `/`, avant de déléguer à l'helper `redirect()` de Laravel. Le comportement légitime de redirection interne reste inchangé, tandis que toute tentative d'injection CRLF retombe sur une redirection par défaut sûre.

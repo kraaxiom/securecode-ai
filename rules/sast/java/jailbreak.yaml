@@ -1,0 +1,37 @@
+id: jailbreak
+language: java
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code applicatif LangChain4j/Spring AI, l'absence de
+    garde-fous structurels contre le contournement des instructions système
+    (jailbreak): pas de modération de sortie, pas de séparation stricte
+    entre instructions système et entrée utilisateur, pas de détection de
+    tentative de contournement. Cette règle ne détecte aucune formulation
+    de contournement — uniquement l'absence des contrôles défensifs attendus.
+  patterns:
+    - "ChatClient.builder(_) sans configuration de moderation/guardrails (Spring AI ModerationClient ou équivalent) avant l'appel au modèle"
+    - "AiServices.builder(_) exposant un endpoint conversationnel public sans limite de rôle système (systemMessageProvider) ré-affirmée à chaque appel"
+    - "concaténation de l'entrée utilisateur directement après le system prompt dans une seule chaîne, sans séparation de rôles structurée (SystemMessage/UserMessage distincts de l'API)"
+    - "absence de couche de post-traitement vérifiant que la réponse du modèle respecte les contraintes métier (allow-list de sujets/actions) avant restitution à l'utilisateur"
+
+message: >
+  Absence de garde-fous structurels (séparation de rôles, modération de
+  sortie, réaffirmation du system prompt) contre les tentatives de
+  contournement des instructions système. Utiliser les objets de rôle
+  typés de l'API (SystemMessage/UserMessage) plutôt que la concaténation de
+  chaînes, ajouter une couche de modération de sortie et surveiller les
+  tentatives répétées de contournement (rate limiting, alerting).
+
+false_positive_notes:
+  - "Si une couche de modération/guardrails est déjà appliquée en amont via une passerelle API commune (API Gateway avec filtrage de contenu), reclasser en `low`."
+  - "Les usages internes sans exposition à des utilisateurs non fiables présentent un risque réduit."
+
+remediation_ref: rules/remediation/jailbreak.md
+knowledge_ref: knowledge/llm/jailbreak.md

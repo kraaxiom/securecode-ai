@@ -1,0 +1,34 @@
+id: xs-leaks
+language: php
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence des en-têtes Cross-Origin-Opener-Policy/
+    Cross-Origin-Resource-Policy sur une réponse sensible, ou un cookie de
+    session créé sans attribut SameSite.
+  patterns:
+    - "setcookie($name, $value, $options) where $options lacks 'samesite'"
+    - "session_start() without prior session_set_cookie_params(['samesite' => 'Strict'|'Lax', ...])"
+    - "authenticated response without header('Cross-Origin-Resource-Policy: same-origin')"
+  exclude_if:
+    - "'samesite' est défini explicitement dans les options du cookie"
+    - "les en-têtes Cross-Origin-Opener-Policy/Cross-Origin-Resource-Policy sont émis par un middleware global"
+
+message: >
+  Cookie de session ou réponse sensible sans protections cross-origin
+  (SameSite, Cross-Origin-Resource-Policy) — expose l'application aux
+  techniques XS-Leaks d'inférence d'état (voir
+  rules/remediation/xs-leaks.md).
+
+false_positive_notes:
+  - "Si un middleware/proxy applique déjà ces en-têtes globalement en amont, ne pas remonter."
+  - "Cookies non liés à l'authentification (préférences UI publiques) : risque réduit, reclasser en `info`."
+
+remediation_ref: rules/remediation/xs-leaks.md
+knowledge_ref: knowledge/modern/xs-leaks.md

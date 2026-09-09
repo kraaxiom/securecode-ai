@@ -1,0 +1,36 @@
+id: weak-encryption
+language: rust
+category: database
+cwe: CWE-326
+owasp: A02:2021-Cryptographic-Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le chiffrement de données sensibles avant stockage en base avec
+    un algorithme/mode faible ou une gestion de clé défaillante en Rust
+    (des crate, RC4, ECB via aes::Aes256 sans mode authentifié), ou l'absence
+    totale de chiffrement pour des colonnes de données sensibles (PII, secrets).
+  patterns:
+    - "des::Des::new(key) / rc4::Rc4::new(key) — algorithme obsolète (DES, RC4) utilisé pour chiffrer une colonne avant écriture en base"
+    - "ecb::Encryptor::<aes::Aes256>::new(key.into()) — mode ECB (fuite de motifs) utilisé pour chiffrer des données stockées"
+    - "clé de chiffrement en dur dans le code (const KEY: [u8; 32] = [0x01, 0x02, ...]) utilisée pour chiffrer une colonne sensible, au lieu d'être chargée depuis un gestionnaire de secrets/KMS"
+    - "colonne base de données stockant SSN/carte bancaire/mot de passe en clair (champ String inséré directement via sqlx::query!/diesel sans passage par une fonction de chiffrement)"
+  exclude_if:
+    - "le chiffrement utilise un algorithme moderne (aes-gcm, chacha20poly1305) avec nonce unique par opération et clé chargée depuis un KMS/vault, jamais en dur dans le code"
+
+message: >
+  Chiffrement de données sensibles avant stockage utilisant un algorithme
+  obsolète, un mode non authentifié (ECB), ou une clé en dur — ou absence
+  totale de chiffrement pour des données sensibles. Utiliser aes-gcm (ou
+  chacha20poly1305) avec nonce unique et une clé gérée par un KMS/vault
+  externe au code — voir rules/remediation/weak-encryption.md.
+
+false_positive_notes:
+  - "Les mots de passe utilisateurs doivent être hachés (argon2 crate, argon2id), pas chiffrés — vérifier qu'il s'agit bien de données nécessitant un chiffrement réversible avant de signaler."
+  - "Une clé chargée depuis une variable d'environnement (pas en dur) mais avec un algorithme encore faible reste `high` — les deux critères sont évalués indépendamment."
+
+remediation_ref: rules/remediation/weak-encryption.md
+knowledge_ref: knowledge/database/weak-encryption.md

@@ -1,0 +1,35 @@
+id: jwt-none
+language: java
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'un décodeur JWT sans vérification de signature activée
+    (`Jwts.parser()` legacy sans clé, `JWT.decode()` d'Auth0 utilisé pour une décision
+    d'authentification/autorisation au lieu de `JWT.require(...).build().verify()`), ou une
+    configuration de vérificateur n'excluant pas explicitement `alg: none`.
+  patterns:
+    - "JWT.decode($token)  # décodage sans vérification de signature, utilisé pour une décision d'accès"
+    - "Jwts.parser().parse($token)  # ancienne API sans setSigningKey, signature non vérifiée"
+    - "SignedJWT.parse($token).getJWTClaimsSet()  # sans appel à .verify(verifier) au préalable"
+  exclude_if:
+    - "la vérification de signature est explicitement effectuée (JWT.require(...).build().verify($token) ou équivalent) avant toute lecture des claims"
+    - "la liste d'algorithmes acceptés est configurée explicitement et exclut none"
+
+message: >
+  Décodage JWT utilisé pour une décision d'authentification/autorisation sans vérification de
+  signature activée — configurer explicitement une liste fermée d'algorithmes forts en
+  excluant `none`, et ne jamais utiliser un simple décodage pour une décision de sécurité
+  (voir rules/remediation/jwt-none.md).
+
+false_positive_notes:
+  - "Si le décodage sans vérification n'est utilisé qu'à des fins de logging/debug (jamais pour une décision d'accès), ce n'est pas exploitable — reclasser en `info`."
+  - "Vérifier qu'aucun chemin de code ultérieur ne s'appuie sur les claims obtenus sans vérification de signature."
+
+remediation_ref: rules/remediation/jwt-none.md
+knowledge_ref: knowledge/auth/jwt-none.md

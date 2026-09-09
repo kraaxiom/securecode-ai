@@ -1,0 +1,37 @@
+id: xs-search
+language: csharp
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint de recherche/filtrage ASP.NET Core authentifié dont
+    la taille ou le temps de réponse varie de façon observable selon le
+    nombre de résultats trouvés (pagination visible dans la taille de
+    réponse JSON/HTML), et qui ne fixe pas d'en-tête interdisant son
+    inclusion cross-origin (`Cross-Origin-Resource-Policy`), permettant une
+    mesure indirecte depuis un site tiers.
+  patterns:
+    - "[HttpGet(\"search\")] public IActionResult Search(string q) => Ok(results); sans Response.Headers[\"Cross-Origin-Resource-Policy\"] ni limitation de la variation de taille de réponse"
+    - "action de recherche Razor dont le rendu HTML varie significativement en taille selon le nombre de résultats, accessible sans vérification de Request.Headers[\"Sec-Fetch-Site\"]"
+  exclude_if:
+    - "l'en-tête Cross-Origin-Resource-Policy: same-origin (ou same-site) est fixé sur l'endpoint de recherche"
+    - "l'action vérifie Request.Headers[\"Sec-Fetch-Site\"] et rejette les requêtes cross-site sur les endpoints de recherche sensibles"
+
+message: >
+  Endpoint de recherche authentifié sans en-tête d'isolation cross-origin ni
+  vérification de Sec-Fetch-Site — un site malveillant peut mesurer des
+  différences observables (taille, temps de réponse) pour déduire terme par
+  terme le contenu des résultats de recherche de la victime (voir
+  rules/remediation/xs-search.md).
+
+false_positive_notes:
+  - "Si un middleware global applique Cross-Origin-Resource-Policy à toutes les réponses authentifiées, reclasser en `low`."
+  - "La confirmation de l'exploitabilité réelle nécessite une mesure dynamique (timing/taille) ; la revue statique signale l'absence de contrôle préventif."
+
+remediation_ref: rules/remediation/xs-search.md
+knowledge_ref: knowledge/modern/xs-search.md

@@ -1,0 +1,33 @@
+id: model-extraction
+language: javascript
+category: llm
+cwe: CWE-200
+owasp: LLM10:2025-Unbounded-Consumption
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint d'inférence Express/Node exposé sans middleware de
+    limitation de débit par clé API/utilisateur, ou renvoyant des métadonnées
+    internes du modèle (logits, probabilités brutes) au-delà de la sortie
+    textuelle nécessaire.
+  patterns:
+    - "app.post('/v1/infer', async (req, res) => {...}) sans middleware rateLimit() appliqué"
+    - "res.json({ logits: result.logits }) exposant des scores bruts du modèle"
+  exclude_if:
+    - "Un middleware rateLimit()/quota par clé API est appliqué sur la route"
+    - "Aucune donnée de logits/probabilités brutes n'est incluse dans la réponse"
+
+message: >
+  Endpoint d'inférence sans limitation de débit ou exposant des métadonnées
+  internes du modèle — risque d'extraction de modèle par requêtes massives
+  (voir rules/remediation/model-extraction.md).
+
+false_positive_notes:
+  - "Si l'endpoint n'est accessible qu'en interne avec authentification forte et volumétrie limitée par design réseau, le risque est réduit."
+  - "L'exposition de logits peut être un besoin métier légitime (recherche/debug) si strictement réservée à un usage interne documenté."
+
+remediation_ref: rules/remediation/model-extraction.md
+knowledge_ref: knowledge/llm/model-extraction.md

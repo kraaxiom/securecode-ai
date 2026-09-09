@@ -1,0 +1,33 @@
+id: xs-search
+language: php
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint de recherche/filtrage accessible en GET sur des
+    données sensibles, sans vérification d'origine ni jeton, et sans
+    Cross-Origin-Resource-Policy, le rendant chargeable via une balise
+    cross-origin passive.
+  patterns:
+    - "$_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['q'|'search'|'query']) branch calling a search function without an Origin/Referer check"
+    - "search endpoint response without header('Cross-Origin-Resource-Policy: same-origin')"
+  exclude_if:
+    - "la méthode requise est POST avec vérification d'origine ou de jeton anti-CSRF"
+    - "header('Cross-Origin-Resource-Policy: same-origin') est présent sur la réponse"
+
+message: >
+  Endpoint de recherche accessible en GET sans vérification d'origine —
+  exploitable via des requêtes cross-origin passives pour inférer le contenu
+  des résultats (XS-Search), voir rules/remediation/xs-search.md.
+
+false_positive_notes:
+  - "Si les résultats de recherche ne contiennent aucune donnée sensible/privée par utilisateur, reclasser en `low`."
+  - "Si le temps/la taille de réponse sont déjà normalisés indépendamment du nombre de résultats, le risque d'inférence est réduit."
+
+remediation_ref: rules/remediation/xs-search.md
+knowledge_ref: knowledge/modern/xs-search.md

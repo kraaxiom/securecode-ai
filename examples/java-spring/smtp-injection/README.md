@@ -1,0 +1,3 @@
+# Injection SMTP / d'en-têtes email (CWE-93)
+
+Le code vulnérable construit l'en-tête `Reply-To` par concaténation directe du champ `name` fourni par l'utilisateur dans un `SimpleMailMessage`, ce qui permet à un attaquant d'insérer un saut de ligne (`\r\n`) pour ajouter des en-têtes arbitraires (`Cc`, `Bcc`) ou un second corps de message et transformer le formulaire en relais de spam. La version corrigée supprime tout caractère de contrôle (`\r`, `\n`) des champs libres et utilise `MimeMessageHelper`, qui construit et échappe correctement les en-têtes MIME via l'API JavaMail plutôt qu'une concaténation manuelle.

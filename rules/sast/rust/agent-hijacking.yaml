@@ -1,0 +1,40 @@
+id: agent-hijacking
+language: rust
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un agent basé sur async-openai (ou crate équivalent) disposant
+    de function-calling avec des outils à fort impact (exécution
+    shell/fichier/réseau/paiement) invoqués sans validation applicative
+    séparée de la décision du modèle, permettant à une source non fiable de
+    détourner l'agent vers une action non prévue.
+  patterns:
+    - "match tool_call.function.name.as_str() { \"run_shell\" => Command::new(\"sh\").arg(\"-c\").arg(args).spawn(), ... } sans allowlist ni confirmation"
+    - "let args: Value = serde_json::from_str(&tool_call.function.arguments)?; puis exécution directe de la commande/requête sans validation de schéma"
+    - "async_openai Client::new().chat().create(request) avec tools exposant subprocess/std::process::Command à un agent recevant du contenu externe non fiable"
+  exclude_if:
+    - "chaque outil à fort impact impose une validation applicative indépendante du LLM (allowlist stricte de commandes, confirmation humaine, sandboxing) avant exécution"
+    - "l'agent ne reçoit aucun contenu externe non fiable (entrée intégralement contrôlée côté serveur)"
+
+message: >
+  Agent async-openai disposant d'outils à fort impact sans couche de
+  validation applicative indépendante — un contenu externe non fiable
+  (indirect prompt injection) peut détourner l'agent pour déclencher des
+  actions non prévues (exécution de commandes, exfiltration, transactions).
+  Imposer une allowlist stricte d'actions, valider chaque appel d'outil côté
+  application (jamais faire confiance à la décision du modèle seule), et
+  isoler les outils à fort impact (sandbox, confirmation) — voir
+  rules/remediation/agent-hijacking.md.
+
+false_positive_notes:
+  - "Un agent en environnement de test isolé sans accès réseau/production réduit la sévérité à `medium`."
+  - "La présence d'un human-in-the-loop obligatoire avant toute exécution d'outil sensible réduit fortement le risque — vérifier son caractère réellement bloquant."
+
+remediation_ref: rules/remediation/agent-hijacking.md
+knowledge_ref: knowledge/llm/agent-hijacking.md

@@ -1,0 +1,3 @@
+## Bucket S3 public (CWE-284)
+
+Le code vulnérable uploade les objets avec l'ACL `public-read` puis retourne directement l'URL publique permanente du fichier, ce qui rend chaque objet accessible à quiconque connaît ou devine cette URL, sans aucune authentification. Cette pratique contourne le principe du moindre privilège et expose potentiellement des données sensibles à Internet. La correction supprime l'ACL publique lors de l'upload et remplace l'exposition directe par une URL pré-signée générée à la demande via `getSignedUrl`, avec une expiration courte (15 minutes). Ainsi, le bucket reste privé (protégé par le Block Public Access côté infrastructure) et chaque accès en lecture est temporaire, traçable et limité dans le temps.

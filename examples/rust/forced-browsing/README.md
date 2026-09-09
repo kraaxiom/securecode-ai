@@ -1,0 +1,3 @@
+# Forced Browsing
+
+`vulnerable.rs` expose une route de rapports internes qui n'est jamais liée dans l'interface mais reste totalement accessible, sans authentification ni vérification de rôle : la sécurité repose uniquement sur l'obscurité de l'URL, ce qui correspond à CWE-425 (Direct Request / Forced Browsing). `fixed.rs` ajoute un contrôle d'authentification et de rôle explicite (`analyst` ou `admin`) appliqué côté serveur, indépendamment de la visibilité de la route dans l'UI. Cette correction suit `rules/remediation/forced-browsing.md` : toute route sensible doit être protégée par un contrôle réel, jamais par sa simple non-découvrabilité.

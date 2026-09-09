@@ -1,0 +1,31 @@
+id: weak-random
+language: csharp
+category: crypto
+cwe: CWE-338
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage de System.Random pour générer un token, une clé, un
+    identifiant de session, un sel ou un code OTP, au lieu de
+    RandomNumberGenerator (System.Security.Cryptography).
+  patterns:
+    - "new Random().Next(...) utilisé pour générer un token/clé/session/OTP"
+    - "new Random().NextBytes(_) affecté à une clé ou un sel cryptographique"
+  exclude_if:
+    - "l'usage de Random sert à une fonctionnalité non sécuritaire (ex: mélange d'une liste d'affichage, tirage de jeu sans enjeu financier)"
+
+message: >
+  System.Random est un PRNG non cryptographique et prévisible — pour tout
+  token, clé, sel ou identifiant de session, utiliser
+  RandomNumberGenerator.GetBytes() ou RandomNumberGenerator.Fill().
+
+false_positive_notes:
+  - "Si la valeur générée n'a aucun rôle de sécurité (UI, jeu non compétitif), reclasser en `info`."
+  - "Vérifier le sink final de la valeur (token de reset de mot de passe, clé API) avant de conclure sur la sévérité."
+
+remediation_ref: rules/remediation/weak-random.md
+knowledge_ref: knowledge/crypto/weak-random.md

@@ -1,0 +1,31 @@
+id: missing-authentication
+language: php
+category: websocket
+cwe: CWE-306
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler onOpen qui attache directement la connexion sans
+    vérification d'identité, ou un handler onMessage qui exécute une action
+    métier sensible sans référence à un objet utilisateur authentifié.
+  patterns:
+    - "function onOpen(ConnectionInterface $conn) { $this->clients->attach($conn); } sans vérification de token/session"
+    - "function onMessage($from, $msg) { ... ->delete(...) / ->update(...) / ->execute(...) ... } sans référence à $from->user ou équivalent"
+  exclude_if:
+    - "onOpen vérifie un token signé ou une session valide avant d'attacher la connexion"
+    - "onMessage vérifie l'autorisation (ex: isset($from->user)) avant d'exécuter une action sensible"
+
+message: >
+  Canal WebSocket acceptant des connexions ou exécutant des actions sensibles
+  sans authentification vérifiée (voir rules/remediation/missing-authentication.md).
+
+false_positive_notes:
+  - "Si le canal ne diffuse que des données publiques en lecture seule sans action d'écriture, reclasser en `medium` voire `low`."
+  - "Si l'authentification est appliquée par un middleware de framework non visible dans ce fichier, vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/missing-authentication.md
+knowledge_ref: knowledge/websocket/missing-authentication.md

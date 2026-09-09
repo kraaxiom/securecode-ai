@@ -1,0 +1,33 @@
+id: magic-byte-bypass
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé limitée à la lecture des
+    premiers octets (fread sur une petite longueur, comparaison à une
+    signature binaire) sans décodage structurel complet via une bibliothèque
+    d'image, permettant un contournement par falsification des magic bytes.
+  patterns:
+    - "bin2hex(fread($_, small_int_length)) === string_literal_hex"
+    - "substr(file_get_contents($_FILES[_]['tmp_name']), 0, small_int_length) === _"
+  exclude_if:
+    - "getimagesize() ou imagecreatefromstring() est appelé et son résultat vérifié avant acceptation du fichier"
+    - "le fichier est systématiquement ré-encodé (imagejpeg/imagepng sur une ressource GD/Imagick) avant stockage"
+
+message: >
+  Validation basée uniquement sur les premiers octets du fichier — contournable
+  en préfixant un contenu malveillant avec une signature valide, voir
+  rules/remediation/magic-byte-bypass.md.
+
+false_positive_notes:
+  - "Si cette vérification de signature est suivie d'un décodage complet et d'un ré-encodage de l'image plus loin dans le même flux, le risque est neutralisé — vérifier le flux complet avant de confirmer."
+  - "Un usage en pré-filtre rapide avant une validation complète plus loin n'est pas vulnérable en soi."
+
+remediation_ref: rules/remediation/magic-byte-bypass.md
+knowledge_ref: knowledge/upload/magic-byte-bypass.md

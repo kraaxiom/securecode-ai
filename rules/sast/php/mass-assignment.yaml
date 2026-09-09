@@ -1,0 +1,32 @@
+id: mass-assignment
+language: php
+category: authorization
+cwe: CWE-915
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de $request->all() directement passé à
+    Model::create()/update() sans validation ni liste blanche de champs,
+    ou un modèle Eloquent sans $fillable/$guarded restrictif.
+  patterns:
+    - "Model::create($request->all())"
+    - "$model->update($request->all())"
+    - "class Model extends Model { protected $guarded = []; }"
+  exclude_if:
+    - "Le tableau passé provient de $request->validate([...]) avec une liste de champs explicite"
+    - "$fillable définit une liste restrictive n'incluant pas de champs sensibles (role, is_admin, balance)"
+
+message: >
+  Liaison directe du corps de requête à un modèle sans liste blanche de
+  champs — un attaquant peut injecter des attributs sensibles (voir
+  rules/remediation/mass-assignment.md).
+
+false_positive_notes:
+  - "Si le modèle définit un $fillable strict n'incluant aucun champ sensible, l'appel à create($request->all()) est protégé au niveau ORM — vérifier le modèle avant de confirmer la sévérité."
+
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

@@ -1,0 +1,32 @@
+id: token-leakage
+language: javascript
+category: llm
+cwe: CWE-522
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé d'API de fournisseur LLM codée en dur dans du code
+    potentiellement bundlé côté navigateur, ou journalisée en clair dans les
+    logs applicatifs (en-têtes d'autorisation).
+  patterns:
+    - "new AnthropicClient({ apiKey: \"sk-ant-...\" }) ou équivalent avec littéral de clé en dur dans un fichier frontend"
+    - "logger.info(req.headers) ou console.log(response.headers) incluant authorization/x-api-key sans redaction"
+  exclude_if:
+    - "La clé est résolue via process.env côté serveur uniquement (jamais dans un bundle client)"
+    - "Les logs passent par un middleware de redaction (redactHeaders) avant écriture"
+
+message: >
+  Clé d'API LLM codée en dur ou journalisée en clair — révoquer la clé
+  exposée et proxifier les appels via un backend dédié (voir
+  rules/remediation/token-leakage.md).
+
+false_positive_notes:
+  - "Une clé placeholder explicite dans un fichier .env.example ou de documentation n'est pas une fuite réelle."
+  - "Si le code concerné n'est jamais bundlé côté client (strictement backend), vérifier la journalisation avant de confirmer le risque."
+
+remediation_ref: rules/remediation/token-leakage.md
+knowledge_ref: knowledge/llm/token-leakage.md

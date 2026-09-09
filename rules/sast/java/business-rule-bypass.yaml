@@ -1,0 +1,35 @@
+id: business-rule-bypass
+language: java
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java, une règle métier (limite, plafond,
+    validation de séquence) appliquée uniquement côté client ou dans une
+    couche contournable (validation présente sur un endpoint mais absente
+    sur un autre exposant la même opération), permettant de la contourner.
+  patterns:
+    - "deux endpoints (ex: /order/checkout et /order/checkout/admin ou /api/v1 vs /api/v2) exposant la même opération métier avec une validation présente sur l'un et absente sur l'autre"
+    - "validation de règle métier (ex: montant maximum, quantité minimale) effectuée uniquement dans le DTO/@Valid côté contrôleur, sans re-vérification dans la couche service appelée aussi ailleurs (job batch, autre contrôleur)"
+    - "paramètre de requête ou champ caché (ex: @RequestParam boolean skipValidation) permettant de désactiver une vérification métier sans contrôle d'autorisation"
+    - "logique métier critique dépendant uniquement de l'état envoyé par le client (DTO status field) sans revalidation de la transition d'état côté serveur"
+
+message: >
+  Règle métier appliquée de façon incohérente entre plusieurs points
+  d'entrée ou reposant sur des données contrôlées par le client — permet un
+  contournement (business rule bypass). Centraliser la validation dans la
+  couche service (jamais uniquement au contrôleur), revalider côté serveur
+  toute transition d'état, et supprimer les mécanismes de contournement non
+  protégés par autorisation.
+
+false_positive_notes:
+  - "Si la validation est centralisée dans un service unique appelé par tous les points d'entrée, ce n'est pas un cas positif."
+  - "Un paramètre de bypass réservé à un rôle admin avec vérification d'autorisation stricte présente un risque réduit — reclasser en `medium`."
+
+remediation_ref: rules/remediation/business-rule-bypass.md
+knowledge_ref: knowledge/business-logic/business-rule-bypass.md

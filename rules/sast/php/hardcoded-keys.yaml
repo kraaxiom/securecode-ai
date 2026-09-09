@@ -1,0 +1,36 @@
+id: hardcoded-keys
+language: php
+category: crypto
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé/secret cryptographique assigné à une constante ou variable
+    sous forme de littéral de chaîne, utilisé ensuite dans une fonction de
+    chiffrement, de signature ou de configuration JWT/session.
+  patterns:
+    - "define(\"*_KEY\", string_literal)"
+    - "define(\"*_SECRET\", string_literal)"
+    - "$*_key = string_literal"
+    - "$*_secret = string_literal"
+    - "openssl_encrypt(_, _, string_literal)"
+    - "hash_hmac(_, _, string_literal)"
+  exclude_if:
+    - "la valeur littérale provient d'une lecture explicite de variable d'environnement (getenv, $_ENV) réassignée ensuite, et non d'un secret en dur"
+    - "la constante est un identifiant public non secret (ex: nom d'algorithme, IV public documenté)"
+
+message: >
+  Secret/clé cryptographique codé en dur dans le code source — déplacer vers
+  un coffre-fort de secrets ou une variable d'environnement injectée à
+  l'exécution (voir rules/remediation/hardcoded-keys.md).
+
+false_positive_notes:
+  - "Une valeur d'exemple clairement marquée dans un fichier `.env.example` ou de documentation n'est pas un finding exploitable."
+  - "Vérifier que la chaîne littérale a une entropie suffisante pour être un vrai secret et non un simple label ou nom de champ."
+
+remediation_ref: rules/remediation/hardcoded-keys.md
+knowledge_ref: knowledge/crypto/hardcoded-keys.md

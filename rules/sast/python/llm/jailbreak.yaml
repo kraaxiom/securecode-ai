@@ -1,0 +1,41 @@
+id: jailbreak
+language: python
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'ABSENCE de garde-fous applicatifs autour d'un appel LLM exposé à
+    des utilisateurs finaux : pas de prompt système de cadrage, pas de
+    filtrage de sortie, pas de limite de rôle — conditions qui facilitent le
+    contournement des instructions du modèle (jailbreak). Ne décrit et ne
+    recherche AUCUN payload de contournement précis : uniquement l'absence
+    de contrôles défensifs autour de l'appel.
+  patterns:
+    - "openai.ChatCompletion.create(...) / client.chat.completions.create(...) exposé sur un endpoint public sans message 'system' définissant un périmètre strict de comportement"
+    - "Endpoint Flask/FastAPI transmettant du texte utilisateur brut vers un LLM sans étape de modération de sortie (ex: pas d'appel à une API de modération avant de renvoyer la réponse au client)"
+    - "Absence de limitation de rôle système applicative (aucune vérification côté serveur des actions/sorties autorisées après la génération)"
+  exclude_if:
+    - "un prompt système de cadrage explicite est présent ET une étape de modération/validation de sortie est appliquée avant de renvoyer la réponse à l'utilisateur"
+    - "l'appel LLM est interne, sans exposition à une entrée utilisateur non fiable"
+
+message: >
+  Appel LLM exposé sans garde-fous de cadrage (prompt système explicite,
+  modération de sortie, validation applicative) — le modèle est plus
+  susceptible d'être détourné de ses règles d'usage prévues par un
+  utilisateur malveillant. Ajouter un prompt système de périmètre strict,
+  une couche de modération sur la sortie, et ne jamais laisser la sortie du
+  modèle déclencher une action sensible sans validation applicative — voir
+  rules/remediation/jailbreak.md. Cette règle ne fournit et ne recherche
+  aucun exemple de contournement exploitable.
+
+false_positive_notes:
+  - "Un usage LLM strictement interne, sans exposition publique et sans donnée sensible en jeu, peut être reclassé en `low`."
+  - "La présence d'un système de modération tiers déjà en place en amont (proxy applicatif) peut ne pas être visible dans le code scanné — vérifier l'architecture avant de confirmer en `medium`."
+
+remediation_ref: rules/remediation/jailbreak.md
+knowledge_ref: knowledge/llm/jailbreak.md

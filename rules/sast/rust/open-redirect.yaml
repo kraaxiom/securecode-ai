@@ -1,0 +1,37 @@
+id: open-redirect
+language: rust
+category: frontend
+cwe: CWE-601
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse de redirection actix-web/axum construite avec une
+    URL provenant directement d'une entrée utilisateur (query string,
+    formulaire), sans validation contre une liste blanche de destinations
+    autorisées.
+  patterns:
+    - "HttpResponse::Found().insert_header((\"Location\", $userInput)).finish()"
+    - "Redirect::to($userInput)  # axum, $userInput dérivé de Query<_> ou Form<_>"
+    - "web::Redirect::to($userInput)"
+  exclude_if:
+    - "$userInput est validé par une fonction locale vérifiant qu'il s'agit d'un chemin relatif strict (préfixe '/' et absence de '//')"
+    - "$userInput est comparé contre une liste blanche statique de chemins/domaines autorisés"
+    - "$userInput est un identifiant interne mappé côté serveur vers une URL fixe (pas l'URL elle-même)"
+
+message: >
+  L'URL de redirection provient directement d'une entrée utilisateur sans
+  validation stricte — un attaquant peut construire un lien vers ce domaine de
+  confiance redirigeant ensuite vers un site malveillant (voir
+  rules/remediation/open-redirect.md).
+
+false_positive_notes:
+  - "Si une validation complète (chemin relatif strict, rejet des URL protocol-relative //) est appliquée avant la redirection, ce n'est pas un vrai positif."
+  - "Si la valeur est un identifiant opaque résolu côté serveur (pas une URL brute), il n'y a pas de redirection ouverte."
+  - "Une simple vérification de préfixe '/' sans exclure '//' reste contournable — signaler malgré tout."
+
+remediation_ref: rules/remediation/open-redirect.md
+knowledge_ref: knowledge/frontend/open-redirect.md

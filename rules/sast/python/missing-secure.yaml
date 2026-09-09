@@ -1,0 +1,31 @@
+id: missing-secure
+language: python
+category: sessions
+cwe: CWE-614
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un cookie de session émis sans l'attribut Secure, ce qui autorise
+    sa transmission en clair sur HTTP.
+  patterns:
+    - "response.set_cookie($_, $_, ...) sans secure=True (Flask/FastAPI)"
+    - "SESSION_COOKIE_SECURE = False (settings.py Django)"
+    - "CSRF_COOKIE_SECURE = False (settings.py Django)"
+  exclude_if:
+    - "secure=True est explicitement présent"
+    - "L'application ne tourne qu'en environnement de développement local documenté (ne pas remonter en prod)"
+
+message: >
+  Cookie de session sans attribut Secure — le cookie peut être intercepté en
+  clair sur une connexion HTTP non chiffrée (réseau Wi-Fi ouvert, MITM).
+  Définir secure=True / SESSION_COOKIE_SECURE = True en production.
+
+false_positive_notes:
+  - "Sur un environnement de développement local en HTTP, ce n'est pas exploitable — vérifier ENV/DEBUG avant de remonter en `medium` pour la prod."
+
+remediation_ref: rules/remediation/missing-secure.md
+knowledge_ref: knowledge/sessions/missing-secure.md

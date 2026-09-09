@@ -1,0 +1,37 @@
+id: tool-injection
+language: rust
+category: llm
+cwe: CWE-1427
+owasp: LLM06:2025-Excessive-Agency
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel d'outil via un crate LLM Rust (async-openai function
+    calling) dont les arguments proviennent directement d'un texte généré
+    par le modèle ou de la sortie d'un outil précédent, sans validation de
+    schéma strict avant exécution.
+  patterns:
+    - "let args: Value = serde_json::from_str(&tool_call.function.arguments)?; execute_tool(args)"
+    - "Command::new(&tool_call.function.name).args(parsed_args).spawn()"
+    - "registry.load_tools_from_url(external_registry_url)"
+    - "run_tool(previous_tool_output.as_str())"
+  exclude_if:
+    - "les arguments sont désérialisés dans une struct typée avec #[serde(deny_unknown_fields)] et validés avant exécution"
+    - "la liste des outils est statique, définie en dur dans le code, sans chargement dynamique externe"
+
+message: >
+  Arguments d'appel d'outil transmis depuis une sortie du modèle ou une
+  source externe sans validation de schéma stricte — désérialiser dans une
+  struct typée validée et appliquer une liste blanche d'outils autorisés
+  avant exécution (voir rules/remediation/tool-injection.md).
+
+false_positive_notes:
+  - "Si les arguments passent par une struct typée avec validation explicite (ex: crate validator) avant execute_tool, reclasser en `low`."
+  - "Si tool_call.function.arguments est journalisé uniquement à des fins d'audit sans être exécuté, reclasser en `info`."
+  - "Si le registre d'outils dynamique provient d'une source interne signée et vérifiée (pas d'un registre tiers), reclasser en `medium`."
+
+remediation_ref: rules/remediation/tool-injection.md
+knowledge_ref: knowledge/llm/tool-injection.md

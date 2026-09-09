@@ -1,0 +1,36 @@
+id: origin-bypass
+language: python
+category: websocket
+cwe: CWE-346
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'origine WebSocket trop permissive : comparaison
+    partielle (`in`, `.endswith()`, `startswith()`) ou expression régulière mal
+    ancrée sur l'en-tête `Origin`, ou `check_origin` de Tornado retournant
+    inconditionnellement `True`.
+  patterns:
+    - "if 'trusted-domain.com' in origin: accept() # comparaison partielle au lieu d'égalité stricte"
+    - "if origin.endswith('.trusted-domain.com'): accept() # ne vérifie pas l'absence de préfixe malveillant type trusted-domain.com.evil.com"
+    - "re.match(r'trusted-domain\\.com', origin) # regex non ancrée avec ^...$"
+    - "def check_origin(self, origin): return True # Tornado, désactive la protection SOP native"
+  exclude_if:
+    - "la comparaison utilise une égalité stricte contre une allowlist explicite d'origines complètes (scheme+host+port)"
+    - "l'expression régulière est correctement ancrée avec ^ et $ et échappe les points du domaine"
+
+message: >
+  Vérification de l'en-tête Origin trop permissive (comparaison partielle,
+  regex non ancrée, ou validation désactivée) — un attaquant peut héberger un
+  domaine satisfaisant accidentellement la condition et réaliser un
+  Cross-Site WebSocket Hijacking (voir rules/remediation/origin-bypass.md).
+
+false_positive_notes:
+  - "Si la liste des origines de confiance est fixe et ne contient aucun sous-domaine ambigu, le risque de bypass par sous-domaine reste théorique — évaluer au cas par cas."
+  - "Une regex ancrée mais sans échappement du point (`.`) reste exploitable via un domaine contenant un caractère quelconque à cette position — signaler quand même."
+
+remediation_ref: rules/remediation/origin-bypass.md
+knowledge_ref: knowledge/websocket/origin-bypass.md

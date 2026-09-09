@@ -1,0 +1,3 @@
+## Tool Injection (CWE-1427)
+
+Le code vulnérable transmet directement à l'exécution les arguments d'appel d'outil générés par le modèle, sans validation de schéma ni liste blanche contextuelle, ce qui permet à un contenu non fiable ayant manipulé la sélection ou les paramètres d'un outil de détourner un appel API ou de forcer une opération non prévue. La correction valide chaque appel contre un schéma typé strict indépendant du texte généré, applique une liste blanche d'outils autorisés selon le niveau de confiance du contenu en cours de traitement, et journalise chaque exécution avec ses arguments réels pour permettre l'audit après incident.

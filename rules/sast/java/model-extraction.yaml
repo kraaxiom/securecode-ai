@@ -1,0 +1,36 @@
+id: model-extraction
+language: java
+category: llm
+cwe: CWE-200
+owasp: LLM10:2025-Unbounded-Consumption
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code exposant un endpoint LLM (Spring AI ChatClient/
+    AiServices via un @RestController), l'absence de limitation de débit ou
+    de quota par utilisateur permettant à un attaquant d'interroger le
+    modèle massivement pour en extraire le comportement ou reconstituer un
+    modèle équivalent (model extraction).
+  patterns:
+    - "@RestController exposant un endpoint appelant ChatClient/AiServices sans annotation ou filtre de rate limiting (Bucket4j, Resilience4j RateLimiter)"
+    - "endpoint permettant des requêtes en masse avec des paramètres de température/logprobs/top-k exposés directement au client sans restriction"
+    - "absence de limite sur la longueur ou le nombre de requêtes par clé API/utilisateur dans la configuration Spring AI"
+    - "endpoint retournant des métadonnées internes du modèle (logprobs, scores bruts) directement dans la réponse HTTP sans filtrage"
+
+message: >
+  Endpoint exposant un modèle LLM sans limitation de débit ni de quota —
+  un attaquant peut interroger massivement le service pour extraire son
+  comportement ou reconstituer un modèle de substitution (model
+  extraction). Appliquer un rate limiting par utilisateur/clé API, limiter
+  l'exposition des métadonnées de génération (logprobs) et surveiller les
+  volumes de requêtes anormaux.
+
+false_positive_notes:
+  - "Si un rate limiting est appliqué en amont au niveau de la passerelle API (API Gateway, WAF), reclasser en `low`."
+  - "Les endpoints internes non exposés à des utilisateurs externes présentent un risque réduit."
+
+remediation_ref: rules/remediation/model-extraction.md
+knowledge_ref: knowledge/llm/model-extraction.md

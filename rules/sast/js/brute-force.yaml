@@ -1,0 +1,31 @@
+id: brute-force
+language: js
+category: auth
+cwe: CWE-307
+owasp: A07:2021-Identification and Authentication Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Express/Fastify de connexion (POST /login, /auth/*)
+    n'ayant pas de middleware de rate limiting (express-rate-limit ou
+    équivalent) attaché à la route.
+  patterns:
+    - "app.post('/login'|'/auth/login', handler) sans middleware rateLimit dans la chaîne de middlewares"
+    - "router.post(/login/i, handler) sans appel préalable à un limiter (express-rate-limit, rate-limiter-flexible)"
+  exclude_if:
+    - "Un middleware de rate limiting est appliqué globalement via app.use() en amont de la route"
+    - "Un compteur d'échecs persistant par compte est visible dans le handler (recordFailedAttempt, incrementFailedLogin)"
+
+message: >
+  Route de connexion sans limitation de débit détectée — ajouter un
+  rate limiting par compte et par IP (voir rules/remediation/brute-force.md).
+
+false_positive_notes:
+  - "Vérifier si un middleware global (app.use(rateLimit(...))) est déclaré ailleurs dans le fichier d'entrée avant de confirmer."
+  - "Une passerelle API (API Gateway, Cloudflare) peut gérer le rate limiting en amont — à valider avec l'infrastructure."
+
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

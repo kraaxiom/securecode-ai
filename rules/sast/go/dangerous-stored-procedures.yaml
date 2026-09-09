@@ -1,0 +1,36 @@
+id: dangerous-stored-procedures
+language: go
+category: database
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel Go (database/sql, gorm) à une procédure stockée ou
+    fonction SQL dont les paramètres sont construits par concaténation/
+    fmt.Sprintf à partir d'une entrée non fiable, au lieu d'utiliser les
+    placeholders paramétrés natifs.
+  patterns:
+    - "db.Exec(fmt.Sprintf(\"CALL update_balance(%s)\", userInput)) — appel de procédure stockée par formatage de chaîne au lieu de db.Exec(\"CALL update_balance(?)\", userInput)"
+    - "db.Query(\"CALL \" + procName + \"('\" + value + \"')\") — nom de procédure ou paramètre construit par concaténation directe"
+    - "db.Raw(fmt.Sprintf(\"EXEC dbo.sp_Search '%s'\", query)) (gorm) au lieu de db.Raw(\"EXEC dbo.sp_Search ?\", query)"
+  exclude_if:
+    - "l'appel utilise des placeholders paramétrés (?, $1) avec les arguments passés séparément à Exec/Query/Raw, ou tous les paramètres proviennent de constantes internes non influençables par l'utilisateur"
+
+message: >
+  Appel de procédure stockée ou fonction SQL avec des paramètres construits
+  par concaténation/formatage de chaîne — équivalent à une injection SQL
+  classique si un paramètre provient d'une entrée utilisateur. Utiliser les
+  placeholders paramétrés natifs de database/sql (? ou $1) ou de gorm plutôt
+  que fmt.Sprintf pour construire la requête — voir
+  rules/remediation/dangerous-stored-procedures.md.
+
+false_positive_notes:
+  - "Si tous les paramètres interpolés proviennent de constantes applicatives internes (jamais d'entrée utilisateur), non exploitable — reclasser en `info`."
+  - "Le nom de la procédure elle-même n'est généralement pas injectable via placeholder — s'il est dynamique, vérifier qu'il provient d'une allowlist fermée."
+
+remediation_ref: rules/remediation/dangerous-stored-procedures.md
+knowledge_ref: knowledge/database/dangerous-stored-procedures.md

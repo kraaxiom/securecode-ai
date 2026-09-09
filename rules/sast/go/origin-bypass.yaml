@@ -1,0 +1,37 @@
+id: origin-bypass
+language: go
+category: websocket
+cwe: CWE-346
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une implémentation `CheckOrigin` de gorilla/websocket trop
+    permissive : comparaison partielle (`strings.Contains`,
+    `strings.HasSuffix`) ou expression régulière mal ancrée sur l'en-tête
+    `Origin`, ou fonction retournant inconditionnellement `true`.
+  patterns:
+    - "CheckOrigin: func(r *http.Request) bool { return true } // désactive totalement la protection SOP native"
+    - "CheckOrigin: func(r *http.Request) bool { return strings.Contains(r.Header.Get(\"Origin\"), \"trusted-domain.com\") } // comparaison partielle au lieu d'égalité stricte"
+    - "CheckOrigin: func(r *http.Request) bool { return strings.HasSuffix(r.Header.Get(\"Origin\"), \".trusted-domain.com\") } // ne vérifie pas l'absence de préfixe malveillant type trusted-domain.com.evil.com"
+    - "regexp.MustCompile(`trusted-domain\\.com`).MatchString(origin) // regex non ancrée avec ^...$"
+  exclude_if:
+    - "CheckOrigin compare l'origine par égalité stricte (==) contre une allowlist explicite d'origines complètes (scheme+host+port)"
+    - "l'expression régulière est correctement ancrée avec ^ et $ et échappe les points du domaine"
+
+message: >
+  Implémentation CheckOrigin de gorilla/websocket trop permissive
+  (comparaison partielle, regex non ancrée, ou validation désactivée en
+  retournant true) — un attaquant peut héberger un domaine satisfaisant
+  accidentellement la condition et réaliser un Cross-Site WebSocket
+  Hijacking (voir rules/remediation/origin-bypass.md).
+
+false_positive_notes:
+  - "Si la liste des origines de confiance est fixe et ne contient aucun sous-domaine ambigu, le risque de bypass par sous-domaine reste théorique — évaluer au cas par cas."
+  - "Une regex ancrée mais sans échappement du point (`.`) reste exploitable via un domaine contenant un caractère quelconque à cette position — signaler quand même."
+
+remediation_ref: rules/remediation/origin-bypass.md
+knowledge_ref: knowledge/websocket/origin-bypass.md

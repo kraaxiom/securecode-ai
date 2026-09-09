@@ -1,0 +1,12 @@
+id: sqli-union
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: appel d'exécution de requête SQL (Statement.execute, mysqli_query, cursor.execute, pg.query) recevant une chaîne construite dynamiquement
+  block_condition: la requête évaluée à l'exécution contient le mot-clé UNION SELECT dans un fragment directement traçable à une entrée utilisateur de la requête courante, ET l'appel n'utilise pas de requête préparée/paramétrée
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md

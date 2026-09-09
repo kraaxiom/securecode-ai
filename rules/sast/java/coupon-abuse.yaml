@@ -1,0 +1,36 @@
+id: coupon-abuse
+language: java
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java de gestion de coupons/codes promo,
+    l'absence de contrôle d'unicité d'utilisation par utilisateur (pas de
+    vérification qu'un coupon n'a pas déjà été appliqué au compte) ou de
+    vérification atomique du nombre d'usages restants, permettant une
+    réutilisation abusive.
+  patterns:
+    - "applyCoupon(String code, Long userId) vérifiant uniquement coupon.isValid() sans requête vérifiant l'historique d'utilisation par cet userId (CouponUsageRepository)"
+    - "logique de décrément couponRepository.findByCode(code) puis coupon.setUsesLeft(uses-1); couponRepository.save(coupon) sans verrou pessimiste ni contrainte UNIQUE en base entre lecture et écriture"
+    - "génération de code promo prévisible (incrémental, basé sur timestamp) permettant de deviner des codes valides sans les avoir reçus"
+    - "absence de contrainte d'unicité en base de données (UNIQUE(user_id, coupon_id)) empêchant la double application d'un même coupon au même compte"
+
+message: >
+  Application de coupon sans vérification d'unicité par utilisateur ni
+  décrément atomique du stock restant — permet une réutilisation abusive
+  (coupon abuse) via replay ou requêtes concurrentes. Ajouter une contrainte
+  d'unicité en base (user_id, coupon_id), utiliser une transaction avec
+  verrou (SELECT ... FOR UPDATE) pour le décrément, et générer des codes non
+  prévisibles.
+
+false_positive_notes:
+  - "Si une contrainte UNIQUE en base empêche la double insertion d'utilisation par utilisateur, ce n'est pas un cas positif même sans verrou explicite."
+  - "Les coupons à usage illimité par design (codes marketing génériques) ne sont pas concernés par le contrôle d'unicité par utilisateur."
+
+remediation_ref: rules/remediation/coupon-abuse.md
+knowledge_ref: knowledge/business-logic/coupon-abuse.md

@@ -1,0 +1,15 @@
+id: error-sqli
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "php: PDO::query / mysqli_query (avec affichage d'erreur)"
+    - "python: cursor.execute (psycopg2, sqlite3) et propagation d'exception vers la réponse HTTP"
+    - "java: Statement.executeQuery et exposition de SQLException dans la réponse"
+    - "csharp: SqlCommand.ExecuteReader et exposition de SqlException"
+  taint_check: Suivi de la donnée depuis une source HTTP jusqu'au sink d'exécution SQL, et suivi secondaire de l'exception SQL générée jusqu'à son affichage dans la réponse HTTP.
+  trigger_condition: Une valeur taintée provoque une exception SQL dont le message est renvoyé, en tout ou partie, dans la réponse HTTP au client.
+severity: high
+remediation_ref: rules/remediation/error-sqli.md
+knowledge_ref: knowledge/injections/error-sqli.md

@@ -1,0 +1,39 @@
+id: race-condition
+language: csharp
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pattern lire-vérifier-écrire (check-then-act) non atomique sur
+    une ressource partagée (solde, stock, quota) en C# — lecture d'une entité
+    via Entity Framework Core suivie d'une condition puis d'un SaveChanges(),
+    sans transaction, verrou de ligne ou concurrence optimiste, exploitable
+    par des requêtes concurrentes.
+  patterns:
+    - "var item = await _context.Products.FindAsync(id); if (item.Stock > 0) { item.Stock--; await _context.SaveChangesAsync(); } — lecture puis écriture non atomiques sans transaction ni verrou"
+    - "var account = _db.Accounts.Single(a => a.Id == id); if (account.Balance >= amount) { account.Balance -= amount; _db.SaveChanges(); } — sans BeginTransaction()/IsolationLevel.Serializable ni concurrency token ([ConcurrencyCheck]/RowVersion)"
+    - "SELECT stock FROM Products WHERE Id=@id puis UPDATE Products SET Stock=@newStock WHERE Id=@id via SqlCommand séparées, sans transaction explicite ni clause WHERE conditionnelle garantissant l'atomicité"
+  exclude_if:
+    - "la lecture et l'écriture sont enveloppées dans une transaction explicite (TransactionScope, DbContext.Database.BeginTransaction) avec verrou approprié, ou protégées par un jeton de concurrence optimiste (RowVersion/[ConcurrencyCheck]) avec gestion de DbUpdateConcurrencyException"
+    - "la mise à jour utilise une requête SQL atomique conditionnelle (UPDATE ... SET Stock = Stock - 1 WHERE Stock >= @qty) vérifiée via le nombre de lignes affectées"
+
+message: >
+  Vérification et mise à jour d'une ressource partagée effectuées en deux
+  opérations séparées non atomiques — des requêtes concurrentes peuvent
+  toutes deux passer la vérification avant l'écriture (double dépense,
+  survente de stock). Utiliser une transaction explicite avec le niveau
+  d'isolation adapté, un jeton de concurrence optimiste (RowVersion), ou une
+  mise à jour SQL conditionnelle atomique — voir
+  rules/remediation/race-condition.md.
+
+false_positive_notes:
+  - "Si la ressource n'est jamais accédée en concurrence (traitement strictement séquentiel, ex: worker unique planifié) le risque est nul."
+  - "Entity Framework Core applique par défaut le suivi de concurrence optimiste si un RowVersion est défini sur l'entité — vérifier la présence de ce champ avant de confirmer l'absence de protection."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

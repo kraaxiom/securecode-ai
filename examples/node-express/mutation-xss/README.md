@@ -1,0 +1,3 @@
+# XSS par mutation (mXSS)
+
+`vulnerable.js` implémente une sanitisation maison par simple aller-retour `innerHTML` (string vers DOM puis re-sérialisation), un procédé connu pour être contournable par les quirks de parsing du navigateur qui peuvent « muter » un markup jugé sûr après vérification. `fixed.js` remplace ce mécanisme par DOMPurify, une bibliothèque activement maintenue tenant compte de ces vecteurs de mutation, et applique une nouvelle passe de sanitisation à chaque étape de stockage et d'affichage. Cette vulnérabilité relève de CWE-79 (Improper Neutralization of Input During Web Page Generation), la variante mXSS ciblant spécifiquement les décalages entre sanitisation et interprétation finale par le moteur de rendu.

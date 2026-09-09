@@ -1,0 +1,39 @@
+id: imagetragick
+language: rust
+category: upload
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le traitement d'une image téléversée via un binding vers
+    ImageMagick (ex: crate magick_rust) ou un appel de processus externe
+    "convert"/"mogrify", sans policy restrictive ni isolation, exposant à
+    la classe de vulnérabilités ImageTragick.
+  patterns:
+    - "MagickWand::new()"
+    - "$wand.read_image_blob(_)"
+    - "$wand.read_image(_)"
+    - "Command::new(\"convert\")"
+  exclude_if:
+    - "une policy.xml restrictive désactivant les coders/delegates non nécessaires est chargée avant tout traitement d'image"
+    - "le traitement d'image s'exécute dans un conteneur isolé sans accès réseau ni fichier sensible"
+    - "les formats d'entrée acceptés sont restreints à une liste blanche raster (JPEG, PNG) validée avant appel à la bibliothèque native"
+
+message: >
+  Traitement d'une image téléversée via un binding ImageMagick ou un
+  appel de processus externe "convert" sans policy restrictive ni
+  isolation — expose à la classe de vulnérabilités ImageTragick
+  (exécution de commande via delegates externes). Restreindre les
+  coders/delegates et isoler le traitement (voir
+  rules/remediation/imagetragick.md).
+
+false_positive_notes:
+  - "Si Command::new(\"convert\") n'inclut jamais de données contrôlées par l'utilisateur dans ses arguments, l'injection directe de commande est écartée, mais le risque delegate lié au contenu du fichier lui-même reste à vérifier."
+  - "Si la bibliothèque native est à jour et la policy restrictive confirmée en dehors du code source, reclasser en `info` après vérification manuelle."
+
+remediation_ref: rules/remediation/imagetragick.md
+knowledge_ref: knowledge/upload/imagetragick.md

@@ -1,0 +1,35 @@
+id: magic-byte-bypass
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'upload qui s'appuie uniquement sur l'extension ou
+    le Content-Type déclaré par le client, sans vérifier les octets magiques
+    réels du fichier (signature binaire), permettant de faire passer un
+    exécutable ou script renommé pour une image.
+  patterns:
+    - "validation d'upload basée uniquement sur MultipartFile.getContentType() ou l'extension, sans lecture des premiers octets du flux"
+    - "absence d'appel à une détection de type par contenu (Apache Tika Tika.detect(InputStream), javax.activation, ou vérification manuelle de signature)"
+  exclude_if:
+    - "org.apache.tika.Tika ou une vérification manuelle des magic bytes (ex: comparaison des 4 premiers octets à la signature PNG/JPEG attendue) est effectuée sur le contenu réel"
+    - "le fichier est ensuite re-encodé via une bibliothèque d'image (ImageIO.read + write), ce qui neutralise de facto un contenu non-image"
+
+message: >
+  La validation d'upload ne vérifie pas les octets magiques réels du fichier —
+  un attaquant peut renommer un exécutable/script avec une extension et un
+  Content-Type d'image pour contourner le filtre. Utiliser Apache Tika
+  (Tika.detect) ou une vérification de signature binaire, en complément d'un
+  ré-encodage de l'image via ImageIO.
+
+false_positive_notes:
+  - "Si le fichier est systématiquement ré-encodé (decode/encode) via ImageIO après upload, le contenu non-image est neutralisé même sans vérification préalable des magic bytes — reclasser en `medium`."
+  - "Un Content-Type imposé côté proxy/CDN en amont ne garantit rien côté application — ne pas exclure sur ce seul critère."
+
+remediation_ref: rules/remediation/magic-byte-bypass.md
+knowledge_ref: knowledge/upload/magic-byte-bypass.md

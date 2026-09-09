@@ -1,0 +1,36 @@
+id: cors-misconfiguration
+language: go
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une politique CORS Go (rs/cors ou en-têtes manuels) combinant une
+    origine trop permissive (AllowAllOrigins ou reflet de l'en-tête Origin)
+    avec l'autorisation des identifiants (AllowCredentials).
+  patterns:
+    - "cors.New(cors.Options{AllowedOrigins: []string{\"*\"}, AllowCredentials: true})"
+    - "cors.Options{AllowOriginFunc: func(origin string) bool { return true }, AllowCredentials: true}"
+    - "w.Header().Set(\"Access-Control-Allow-Origin\", r.Header.Get(\"Origin\"))  # combiné à w.Header().Set(\"Access-Control-Allow-Credentials\", \"true\")"
+  exclude_if:
+    - "AllowedOrigins contient une liste blanche statique explicite (pas de joker '*')"
+    - "AllowCredentials n'est pas activé (false ou absent) sur cette même configuration"
+    - "l'endpoint concerné est une API publique sans authentification par cookie/session"
+
+message: >
+  La politique CORS Go autorise une origine arbitraire (AllowedOrigins: \"*\"
+  ou reflet dynamique de l'en-tête Origin) tout en autorisant les identifiants
+  (AllowCredentials: true) — un site tiers malveillant peut lire des réponses
+  authentifiées de la victime (voir rules/remediation/cors-misconfiguration.md).
+
+false_positive_notes:
+  - "Si AllowCredentials est false ou absent sur cette configuration, la combinaison n'est pas exploitable pour voler des données authentifiées."
+  - "Si l'API n'utilise pas de cookies/sessions pour l'authentification (uniquement Bearer token en header), l'impact est réduit."
+  - "Vérifier qu'AllowOriginFunc ne réimplémente pas un reflet déguisé (ex: retourne toujours true) sous couvert d'une liste blanche."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

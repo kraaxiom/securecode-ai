@@ -1,0 +1,33 @@
+id: weak-privileges
+language: php
+category: database
+cwe: CWE-269
+owasp: A01:2021-Broken-Access-Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une connexion applicative utilisant un compte disposant
+    potentiellement de privilèges d'administration complets (root, postgres,
+    sa) plutôt qu'un rôle applicatif dédié.
+  patterns:
+    - "new PDO(_, \"root\", _)"
+    - "new PDO(_, \"postgres\", _)"
+    - "new PDO(_, \"sa\", _)"
+  exclude_if:
+    - "L'identifiant est utilisé exclusivement dans un script de migration/déploiement distinct du code applicatif runtime"
+    - "Le compte est démontré comme un rôle restreint malgré son nom (à documenter manuellement)"
+
+message: >
+  Connexion applicative utilisant potentiellement un compte à privilèges
+  élevés — créer un rôle applicatif dédié limité au CRUD nécessaire (voir
+  rules/remediation/weak-privileges.md).
+
+false_positive_notes:
+  - "Le nom du compte ('root', 'postgres') ne garantit pas des privilèges élevés si le rôle a été explicitement restreint (REVOKE) — à vérifier en base."
+  - "Un usage dans un script de migration ponctuel exécuté en CI/CD est attendu et ne doit pas être confondu avec le compte runtime applicatif."
+
+remediation_ref: rules/remediation/weak-privileges.md
+knowledge_ref: knowledge/database/weak-privileges.md

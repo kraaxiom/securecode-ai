@@ -1,0 +1,39 @@
+id: dom-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, côté backend Python générant du JavaScript embarqué (rendu de
+    template injectant une variable dans un bloc <script>), l'insertion
+    d'une entrée utilisateur non échappée dans un contexte JS qui sera
+    ensuite manipulé via des puits DOM dangereux (innerHTML, document.write)
+    — le backend fournit la donnée non neutralisée qui alimentera un DOM
+    XSS côté client.
+  patterns:
+    - "render_template_string(f\"<script>var data = '{request.args.get('q')}';</script>\")"
+    - "return f\"<script>document.write('{var}')</script>\""
+    - "html = f\"<script>el.innerHTML = '{var}';</script>\""
+  exclude_if:
+    - "la variable est sérialisée via json.dumps() avant insertion dans le bloc <script> (échappement correct des guillemets/</script>)"
+    - "la variable n'est jamais utilisée dans un contexte JavaScript (uniquement dans du HTML avec autoescape)"
+
+message: >
+  Entrée utilisateur insérée sans échappement dans un contexte JavaScript
+  généré côté serveur (bloc <script>), qui alimentera ensuite un puits DOM
+  dangereux côté client (innerHTML, document.write) — un attaquant peut
+  provoquer l'exécution de JavaScript arbitraire (DOM XSS). Sérialiser
+  toute donnée injectée dans un contexte JS avec json.dumps() et éviter les
+  puits DOM dangereux côté client (privilégier textContent/innerText).
+
+false_positive_notes:
+  - "json.dumps() échappe correctement guillemets et balises fermantes potentiellement dangereuses — son usage neutralise le risque d'échappement du contexte JS."
+  - "Si la variable n'atteint jamais un puits DOM dangereux côté client (uniquement affichée en texte), le risque réel dépend du code JS, non visible côté backend Python."
+
+remediation_ref: rules/remediation/dom-xss.md
+knowledge_ref: knowledge/xss/dom-xss.md

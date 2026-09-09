@@ -1,0 +1,31 @@
+id: privileged-container
+language: config
+category: docker
+cwe: CWE-250
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: config-pattern
+  description: >
+    Détecte l'activation du mode privilégié sur un conteneur Docker, dans
+    une commande `docker run` ou un fichier `docker-compose.yml`.
+  patterns:
+    - "--privileged"
+    - "privileged: true"
+  exclude_if:
+    - "cap_drop: ALL combiné à une liste cap_add strictement scoped, sans usage réel de --privileged"
+    - "justification technique documentée et isolation réseau/hôte dédiée (nœud sacrifiable)"
+
+message: >
+  Le conteneur s'exécute en mode privilégié, désactivant l'isolation kernel
+  (capabilities, seccomp, AppArmor) — risque élevé d'évasion vers l'hôte.
+  Voir rules/remediation/privileged-container.md.
+
+false_positive_notes:
+  - "Si `privileged: true` est défini mais commenté ou dans un exemple/documentation non déployé, ne pas remonter."
+  - "Environnements de virtualisation imbriquée strictement isolés peuvent légitimement nécessiter ce mode — vérifier manuellement le contexte réseau."
+
+remediation_ref: rules/remediation/privileged-container.md
+knowledge_ref: knowledge/docker/privileged-container.md

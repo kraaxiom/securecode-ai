@@ -1,0 +1,35 @@
+id: rbac-weakness
+language: config
+category: kubernetes
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte des règles RBAC trop permissives (wildcards) ou des bindings
+    accordant `cluster-admin` à des comptes de service applicatifs.
+  patterns:
+    - "rules: ... verbs: [\"*\"]"
+    - "rules: ... resources: [\"*\"]"
+    - "rules: ... apiGroups: [\"*\"]"
+    - "ClusterRoleBinding ... roleRef: cluster-admin ... subjects: ... kind: ServiceAccount"
+    - "verbs: [\"impersonate\"|\"escalate\"]"
+  exclude_if:
+    - "wildcard scoped à un ClusterRole système reconnu (ex: cluster-admin lui-même défini par Kubernetes), pas une définition applicative custom"
+    - "binding cluster-admin réservé à un compte humain d'administration documenté, pas un ServiceAccount applicatif"
+
+message: >
+  Une règle RBAC ou un binding accorde des permissions trop larges
+  (wildcard verbs/resources/apiGroups, ou cluster-admin à un ServiceAccount
+  applicatif) — viole le moindre privilège. Voir
+  rules/remediation/rbac-weakness.md.
+
+false_positive_notes:
+  - "Un `ClusterRole` custom avec wildcard limité à un `apiGroups` spécifique (pas `*` sur tout) est moins critique — vérifier la portée exacte."
+  - "Un `RoleBinding` (namespacé) est moins critique qu'un `ClusterRoleBinding` équivalent — ajuster la sévérité selon la portée."
+
+remediation_ref: rules/remediation/rbac-weakness.md
+knowledge_ref: knowledge/kubernetes/rbac-weakness.md

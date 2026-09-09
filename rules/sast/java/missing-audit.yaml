@@ -1,0 +1,35 @@
+id: missing-audit
+language: java
+category: database
+cwe: CWE-778
+owasp: A09:2021-Security-Logging-and-Monitoring-Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java, des opérations sensibles sur les données
+    (suppression, modification de données financières/PII, changement de
+    rôle) réalisées sans écriture d'une entrée d'audit associée (qui, quoi,
+    quand), empêchant toute traçabilité.
+  patterns:
+    - "userRepository.delete(user) ou @Modifying @Query(\"DELETE FROM ...\") sur une entité sensible sans appel à un service/entité AuditLog enregistrant l'action"
+    - "méthode updateRole(Long userId, Role newRole) modifiant les privilèges d'un compte sans journalisation de l'ancien/nouveau rôle et de l'acteur ayant effectué le changement"
+    - "entité JPA sensible (Account, Payment, Order) sans annotation d'audit (@EntityListeners(AuditingEntityListener.class), Envers @Audited) ni mécanisme équivalent"
+    - "opération CRUD critique exposée via un repository Spring Data générique (JpaRepository.save/delete) directement depuis le contrôleur sans passer par une couche service journalisant l'action"
+
+message: >
+  Opération sensible sur des données critiques réalisée sans journalisation
+  d'audit associée — empêche toute traçabilité en cas d'incident (missing
+  audit). Journaliser systématiquement les opérations sensibles (acteur,
+  action, horodatage, avant/après) via un mécanisme dédié (Hibernate Envers,
+  AuditingEntityListener, table d'audit applicative) pour toute entité
+  sensible.
+
+false_positive_notes:
+  - "Si l'entité est déjà couverte par un mécanisme d'audit centralisé (Envers, listener JPA) appliqué au niveau de la classe, ce n'est pas un cas positif."
+  - "Les opérations sur des données non sensibles (contenu public, cache) ne justifient pas systématiquement un audit."
+
+remediation_ref: rules/remediation/missing-audit.md
+knowledge_ref: knowledge/database/missing-audit.md

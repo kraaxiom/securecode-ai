@@ -1,0 +1,33 @@
+id: dns-rebinding
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma de validation SSRF où l'adresse IP d'un hôte est résolue et validée
+    via `InetAddress.getByName()` séparément de la requête HTTP réelle effectuée ensuite par
+    le client HTTP (qui résoudra le DNS une seconde fois), sans épinglage (pinning) de l'IP
+    validée pour la connexion effective.
+  patterns:
+    - "InetAddress.getByName($host)  # validation séparée ...  restTemplate.getForObject($url, ...)  # nouvelle résolution DNS"
+  exclude_if:
+    - "l'IP validée est réutilisée directement pour établir la connexion (ex. Resolver personnalisé/DNS pinning sur le client HTTP)"
+    - "le client HTTP sortant passe par un proxy appliquant un filtrage réseau au niveau TCP"
+
+message: >
+  Validation d'hôte effectuée par une résolution DNS distincte de celle utilisée pour la
+  requête HTTP réelle — épingler l'adresse IP validée pour la connexion effective (DNS
+  pinning) plutôt que de laisser le client HTTP résoudre à nouveau le nom (voir
+  rules/remediation/dns-rebinding.md).
+
+false_positive_notes:
+  - "Si la validation et la requête utilisent le même appel réseau (résolution unique réutilisée), ce n'est pas exploitable."
+  - "Ce pattern nécessite une lecture attentive du flux de données entre validation et exécution — confiance par défaut faible, à confirmer manuellement."
+
+remediation_ref: rules/remediation/dns-rebinding.md
+knowledge_ref: knowledge/ssrf/dns-rebinding.md

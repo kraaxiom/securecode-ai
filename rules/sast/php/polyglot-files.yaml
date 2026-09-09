@@ -1,0 +1,34 @@
+id: polyglot-files
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une combinaison à risque : un fichier issu d'un répertoire
+    d'upload utilisateur passé à une fonction d'inclusion ou d'exécution
+    dynamique (include, require, eval), ou un fichier image stocké sans
+    ré-encodage, exposant l'application au risque de fichier polyglot.
+  patterns:
+    - "include(string_concat(upload_dir_var, _))"
+    - "require(string_concat(upload_dir_var, _))"
+    - "move_uploaded_file($_FILES[_]['tmp_name'], _) // sans appel ultérieur à imagecreatefromstring/imagejpeg dans la même fonction"
+  exclude_if:
+    - "le fichier stocké provient d'un ré-encodage complet (imagecreatefromstring puis imagejpeg/imagepng) et non d'une copie directe"
+    - "le chemin passé à include()/require() est un littéral constant, non dérivé d'un nom de fichier utilisateur"
+
+message: >
+  Fichier utilisateur potentiellement inclus/exécuté dynamiquement, ou stocké
+  sans ré-encodage — risque de fichier polyglot, voir
+  rules/remediation/polyglot-files.md.
+
+false_positive_notes:
+  - "Un include()/require() sur un chemin entièrement contrôlé par l'application (pas de segment issu de l'upload) n'est pas concerné."
+  - "Un stockage sans ré-encodage n'est exploitable comme polyglot que combiné à un point d'inclusion/exécution ailleurs dans l'application — confiance basse par défaut, à corréler manuellement."
+
+remediation_ref: rules/remediation/polyglot-files.md
+knowledge_ref: knowledge/upload/polyglot-files.md

@@ -1,0 +1,3 @@
+# Mass Assignment
+
+Le code vulnérable transmet l'intégralité du corps de la requête (`$request->all()`) directement à `update()`, permettant à un attaquant d'injecter des champs non prévus comme `role` pour modifier des attributs sensibles. La version corrigée introduit une liste blanche explicite via `$request->validate()`, ne laissant passer que `name` et `email`, complétée idéalement par `$fillable` sur le modèle en défense en profondeur. Cette faille correspond à CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes), tel qu'indiqué dans `knowledge/authorization/mass-assignment.md`.

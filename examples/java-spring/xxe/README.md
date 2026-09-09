@@ -1,0 +1,3 @@
+# XML External Entity Injection (CWE-611)
+
+Le code vulnérable utilise un `DocumentBuilderFactory` avec la configuration par défaut, qui autorise les déclarations DOCTYPE et la résolution des entités externes, permettant à un attaquant de soumettre un document XML exploitant une entité externe pour lire des fichiers locaux ou déclencher du SSRF. La version corrigée désactive explicitement les DOCTYPE (`disallow-doctype-decl`) ainsi que les entités externes générales et paramétriques via `setFeature`, active `XMLConstants.FEATURE_SECURE_PROCESSING`, et désactive `XInclude` et l'expansion des références d'entités, neutralisant ainsi toute exploitation XXE quel que soit le contenu XML fourni.

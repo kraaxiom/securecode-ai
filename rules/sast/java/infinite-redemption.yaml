@@ -1,0 +1,36 @@
+id: infinite-redemption
+language: java
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java de récompenses/points fidélité/cashback,
+    une opération d'échange (redemption) ne vérifiant pas l'état final avant
+    de créditer la récompense, ou permettant de rejouer l'opération sans
+    contrôle de transition d'état (absence de machine à états stricte),
+    permettant un échange répété illimité.
+  patterns:
+    - "redeemReward(Long userId, Long rewardId) créditant la récompense avant de marquer la transaction comme consommée (ordre inversé: crédit puis update du flag redeemed)"
+    - "méthode de redemption sans vérification d'un champ d'état (status == PENDING avant de passer à REDEEMED) permettant de rappeler l'endpoint plusieurs fois pour le même reward/coupon"
+    - "absence de @Transactional englobant la vérification d'éligibilité, le débit des points et le crédit de la récompense en une seule opération atomique"
+    - "endpoint de confirmation de récompense (callback/webhook) sans idempotency key, permettant un rejeu (replay) du même événement pour créditer plusieurs fois"
+
+message: >
+  Opération d'échange de récompense sans machine à états stricte ni
+  transaction atomique — un rejeu de la requête (replay, double clic,
+  requêtes concurrentes) peut créditer la récompense un nombre illimité de
+  fois (infinite redemption). Vérifier et transitionner l'état
+  atomiquement (SELECT ... FOR UPDATE + UPDATE conditionnel) avant tout
+  crédit, et exiger une clé d'idempotence sur les callbacks.
+
+false_positive_notes:
+  - "Si la transition d'état est vérifiée par une contrainte conditionnelle atomique (UPDATE ... WHERE status = 'PENDING') avant crédit, ce n'est pas un cas positif."
+  - "Les récompenses à usage illimité par design (ex: bonus quotidien réinitialisé) ne sont pas concernées."
+
+remediation_ref: rules/remediation/infinite-redemption.md
+knowledge_ref: knowledge/business-logic/infinite-redemption.md

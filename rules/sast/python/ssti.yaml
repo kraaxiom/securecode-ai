@@ -1,0 +1,38 @@
+id: ssti
+language: python
+category: injections
+cwe: CWE-1336
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le rendu d'un template dont le contenu (pas seulement les
+    variables de contexte) est construit à partir d'une entrée utilisateur
+    — render_template_string(f"...{var}...") en Flask/Jinja2,
+    Template(var).render(), jinja2.Environment().from_string(var) — ce qui
+    permet l'exécution de code via la syntaxe de template ({{ }}, {% %}).
+  patterns:
+    - "render_template_string(f\"... {var} ...\")"
+    - "render_template_string(request.args.get(\"tpl\"))"
+    - "Template(var).render()"
+    - "jinja2.Environment().from_string(var).render()"
+  exclude_if:
+    - "var ne constitue jamais le texte du template lui-même, seulement une valeur passée dans le contexte de rendu (ex: render_template(\"page.html\", name=var))"
+    - "var est un littéral constant (pas une entrée utilisateur)"
+
+message: >
+  Le contenu même du template provient d'une entrée utilisateur — un
+  attaquant peut injecter une syntaxe Jinja2 ({{ self.__init__.__globals__
+  ... }}) pour exécuter du code arbitraire côté serveur. Ne jamais
+  construire le texte du template à partir d'une entrée externe : séparer
+  strictement template statique et données de contexte.
+
+false_positive_notes:
+  - "render_template() (fichier de template statique) avec des variables de contexte n'est PAS du SSTI — seul render_template_string()/from_string() avec un template dynamique l'est."
+  - "Si le moteur de template est en sandbox stricte (jinja2.sandbox.SandboxedEnvironment) l'exploitation est plus difficile mais reste possible — ne pas déclasser sous `high`."
+
+remediation_ref: rules/remediation/ssti.md
+knowledge_ref: knowledge/injections/ssti.md

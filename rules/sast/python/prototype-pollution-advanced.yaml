@@ -1,0 +1,41 @@
+id: prototype-pollution-advanced
+language: python
+category: modern
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Adaptation Python du concept de prototype pollution JavaScript : détecte
+    une fusion récursive (deep merge/update) d'un dictionnaire contrôlé par
+    l'attaquant dans un objet de configuration interne ou dans `__dict__`,
+    sans filtrage des clés dangereuses (`__class__`, `__dict__`, `__init__`,
+    `__globals__`, `__builtins__`), permettant de modifier des attributs
+    internes voire d'atteindre une exécution de code via un gadget (ex:
+    `__init__.__globals__`).
+  patterns:
+    - "def deep_update(target, src): for k, v in src.items(): setattr(target, k, v) sans filtrage de k contre une liste de clés interdites"
+    - "obj.__dict__.update(user_controlled_dict) sans validation des clés"
+    - "merge(config, request.json) récursif (ex: via une fonction maison ou une lib comme mergedeep/deepmerge) appliqué à un objet de configuration global sans allowlist de clés"
+  exclude_if:
+    - "les clés du dictionnaire source sont validées contre une allowlist stricte (ou un schéma Pydantic) avant toute fusion/assignation"
+    - "la fusion cible exclusivement un dictionnaire de données simple (dict littéral) sans jamais atteindre __dict__, __class__ ou des attributs d'objets exécutables"
+
+message: >
+  Fusion récursive d'un dictionnaire contrôlé par l'attaquant dans
+  `__dict__` ou un objet de configuration sans filtrage des clés
+  dangereuses — équivalent Python de la pollution de prototype, pouvant
+  altérer le comportement interne de l'application ou, combiné à un gadget,
+  mener à une exécution de code (voir
+  rules/remediation/prototype-pollution-advanced.md).
+
+false_positive_notes:
+  - "Note d'adaptation : le concept JS original (Object.prototype) n'existe pas en Python ; ce rapprochement cible la fusion non filtrée dans __dict__/objets de config, le vecteur Python le plus proche en impact."
+  - "Si la fusion utilise exclusivement des dictionnaires de données (jamais setattr/__dict__.update sur des instances d'objets), le risque d'exécution de code est nul même sans filtrage — reclasser en `medium`."
+  - "Pydantic (avec `extra='forbid'`) ou un schéma de validation strict en amont élimine ce risque — reclasser en `low`."
+
+remediation_ref: rules/remediation/prototype-pollution-advanced.md
+knowledge_ref: knowledge/modern/prototype-pollution-advanced.md

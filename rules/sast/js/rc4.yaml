@@ -1,0 +1,30 @@
+id: rc4
+language: js
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage explicite du chiffrement par flux RC4 via l'API Node.js
+    crypto ou une bibliothèque tierce.
+  patterns:
+    - "crypto.createCipheriv(\"rc4\", _, _)"
+    - "CryptoJS.RC4.encrypt(_, _)"
+  exclude_if:
+    - "l'appel est présent uniquement dans un test de compatibilité désactivé par défaut"
+
+message: >
+  RC4 présente des biais statistiques exploitables et est interdit dans TLS
+  depuis la RFC 7465 — migrer vers AES-256-GCM ou ChaCha20-Poly1305
+  (voir rules/remediation/rc4.md).
+
+false_positive_notes:
+  - "Un usage isolé dans un outil de rétro-compatibilité avec un système tiers legacy documenté reste un vrai risque, ne pas déclasser sans justification."
+  - "Vérifier qu'il ne s'agit pas d'un test vérifiant que RC4 est bien rejeté par la configuration de l'application."
+
+remediation_ref: rules/remediation/rc4.md
+knowledge_ref: knowledge/crypto/rc4.md

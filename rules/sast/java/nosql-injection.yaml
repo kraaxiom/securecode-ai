@@ -1,0 +1,37 @@
+id: nosql-injection
+language: java
+category: injections
+cwe: CWE-943
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une requête MongoDB (via le driver Java ou
+    Spring Data MongoDB) à partir d'une chaîne JSON concaténée ou d'un
+    BasicDBObject/Document peuplé directement avec une entrée utilisateur
+    non typée, permettant l'injection d'opérateurs ($where, $ne, $gt).
+  patterns:
+    - "MongoCollection.find(Document.parse(string_concat(_, $var, _)))"
+    - "MongoCollection.find(new BasicDBObject(\"$where\", $var))"
+    - "MongoTemplate.find(new BasicQuery(string_concat(_, $var, _)), _)"
+    - "Document.parse(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var est désérialisé dans un DTO fortement typé (pas Map/Object brut) avant d'être utilisé dans le filtre"
+
+message: >
+  Requête NoSQL construite dynamiquement à partir d'une entrée non typée —
+  un attaquant peut injecter des opérateurs MongoDB ($where, $ne, $regex)
+  pour contourner l'authentification ou extraire des données ; utiliser les
+  Criteria/Query typés de Spring Data ou valider strictement le type des
+  champs (voir rules/remediation/nosql-injection.md).
+
+false_positive_notes:
+  - "L'utilisation de Criteria.where() avec des valeurs typées (String, Long) liées par l'API Spring Data n'est pas concernée."
+  - "Si l'entrée est désérialisée vers un DTO avec des types Java stricts (pas de Map<String,Object> générique), l'injection d'opérateur n'est généralement pas possible."
+
+remediation_ref: rules/remediation/nosql-injection.md
+knowledge_ref: knowledge/injections/nosql-injection.md

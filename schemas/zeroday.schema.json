@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ZeroDayFinding",
+  "description": "Faille potentiellement inédite (non couverte par une règle rules/sast/<lang>/<slug>.yaml existante), détectée par revue heuristique plutôt que par correspondance de signature. Voir docs/ZeroDay.md pour la méthodologie complète et les garde-fous. Ce n'est jamais une affirmation de compromission réelle ou d'exploitation en conditions réelles — c'est un pattern suspect à faire vérifier par un expert humain.",
+  "type": "object",
+  "required": ["id", "title", "description", "file", "discovery_method", "severity_estimate", "confidence", "reproduction", "status", "discovered_at"],
+  "properties": {
+    "id": { "type": "string", "description": "Identifiant unique (ex: uuid), stable dans le registre du projet (voir docs/ZeroDay.md section 3)" },
+    "title": { "type": "string", "description": "Titre court et descriptif, ex: \"Contournement de contrôle d'accès via désérialisation partielle du token de session\"" },
+    "description": {
+      "type": "string",
+      "description": "Explication complète et pédagogique du problème : mécanisme, cause racine, impact métier. Rédigée pour qu'un expert cybersécurité de l'entreprise puisse en prendre connaissance sans relire tout le code lui-même."
+    },
+    "cwe": {
+      "type": ["string", "null"],
+      "pattern": "^(CWE-[0-9]+)$",
+      "description": "CWE si un mapping raisonnable existe déjà ; null si le pattern est réellement inédit et ne correspond à aucun CWE connu avec certitude — ne jamais forcer un CWE approximatif juste pour remplir le champ."
+    },
+    "owasp_category": { "type": ["string", "null"], "description": "Catégorie OWASP si applicable, sinon null" },
+    "closest_known_pattern": {
+      "type": ["string", "null"],
+      "description": "Référence à knowledge/<categorie>/<slug>.md le plus proche si le nouveau pattern est une variation d'un pattern connu (aide à la triage), sinon null si vraiment sans précédent dans knowledge/"
+    },
+    "file": { "type": "string" },
+    "line_start": { "type": ["integer", "null"] },
+    "line_end": { "type": ["integer", "null"] },
+    "affected_component": { "type": "string", "description": "Fonction, endpoint, service ou module concerné, en langage humain (ex: \"POST /api/orders/:id/refund\")" },
+    "root_cause": {
+      "type": "string",
+      "description": "Cause racine technique précise (ex: \"l'état de la commande n'est jamais revérifié entre l'autorisation et l'exécution du remboursement, permettant un TOCTOU\")"
+    },
+    "discovery_method": {
+      "type": "string",
+      "enum": ["heuristic-review", "anomaly-detection", "deviation-from-convention", "dangerous-primitive-combination", "manual-expert-review"],
+      "description": "Comment le pattern a été repéré, faute de règle existante — voir docs/ZeroDay.md section 2 pour la définition de chaque méthode"
+    },
+    "severity_estimate": { "type": "string", "enum": ["info", "low", "medium", "high", "critical"] },
+    "confidence": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "description": "Confiance de l'agent dans la réalité du problème avant vérification humaine — jamais 'high' sans une reproduction locale réussie (voir reproduction.reproduced_locally)"
+    },
+    "reproduction": {
+      "type": "object",
+      "description": "Reproductibilité obligatoire — voir docs/ZeroDay.md section 4. Doit permettre à un expert humain de rejouer le problème sans deviner.",
+      "required": ["preconditions", "steps", "expected_result", "observed_result", "environment", "reproduced_locally"],
+      "properties": {
+        "preconditions": { "type": "string", "description": "État nécessaire avant reproduction (ex: compte utilisateur standard, commande existante au statut 'livrée')" },
+        "steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Étapes numérotées, exécutables localement/en environnement de dev uniquement — jamais contre un système tiers ou en production"
+        },
+        "expected_result": { "type": "string", "description": "Comportement attendu si le code était correct" },
+        "observed_result": { "type": "string", "description": "Comportement réellement observé, démontrant le problème" },
+        "environment": {
+          "type": "string",
+          "enum": ["local-dev", "test-fixture", "staging-isolated"],
+          "description": "Où la reproduction a eu lieu — jamais 'production' ni 'cible tierce'"
+        },
+        "reproduced_locally": { "type": "boolean", "description": "true si l'agent a effectivement rejoué les étapes avec succès dans l'environnement du projet avant de remonter la faille" },
+        "poc_ref": { "type": "string", "description": "Chemin vers un script/test de reproduction non destructif versionné dans le projet (ex: tests/security/zeroday/<id>.spec.ts), s'il existe" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["unconfirmed", "confirmed", "corrected", "false_positive", "accepted_risk"],
+      "description": "unconfirmed = détecté par l'agent, pas encore revu par un humain. confirmed = un expert a rejoué la reproduction et valide le problème. corrected = patch appliqué ET reproduction rejouée sans succès (le problème ne se manifeste plus). false_positive / accepted_risk = mêmes sémantiques que finding.schema.json, décision humaine explicite."
+    },
+    "verified_by": {
+      "type": ["object", "null"],
+      "description": "Renseigné dès qu'un humain confirme, corrige le statut, ou clôt le finding — jamais rempli automatiquement par l'agent",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      }
+    },
+    "patch_id": { "type": ["string", "null"], "description": "Référence à un patch.schema.json quand status: corrected" },
+    "promoted_to_knowledge_ref": {
+      "type": ["string", "null"],
+      "description": "Si ce pattern zero-day s'avère suffisamment général pour mériter une fiche knowledge/ permanente et une règle rules/sast/ dédiée (voir docs/ZeroDay.md section 6), référence vers le nouveau knowledge/<categorie>/<slug>.md créé"
+    },
+    "discovered_at": { "type": "string", "format": "date-time" },
+    "status_changed_at": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

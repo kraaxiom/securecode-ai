@@ -1,0 +1,24 @@
+id: session-prediction
+category: auth
+cwe: CWE-330
+type: iast
+instrumentation:
+  hook_points:
+    - "php: fonction de génération d'identifiant de session/token maison (hors session_start() natif géré par le framework)"
+    - "js: fonction de génération d'identifiant de session personnalisée (hors express-session/connect avec store sécurisé)"
+    - "python: fonction de génération d'identifiant de session/token personnalisée (hors gestion native du framework)"
+    - "java: génération de session ID personnalisée hors du conteneur/Spring Session"
+    - "csharp: génération d'identifiant personnalisée hors ASP.NET Core Data Protection/Identity"
+    - "go: appel à un générateur pseudo-aléatoire (math/rand) pour produire un identifiant de session"
+  taint_check: >
+    Trace si l'identifiant de session/token final (sink: valeur assignée au cookie/en-tête
+    de session) provient d'un générateur pseudo-aléatoire non cryptographique ou d'une
+    concaténation de valeurs prévisibles (source: horodatage, ID utilisateur, compteur)
+    plutôt que d'un générateur aléatoire cryptographiquement sûr dédié.
+  trigger_condition: >
+    L'identifiant de session atteignant le sink d'assignation au cookie/en-tête est
+    dérivé, directement ou via un hash, de valeurs prévisibles ou d'un générateur
+    pseudo-aléatoire non cryptographique, plutôt que d'un CSPRNG avec entropie suffisante.
+severity: high
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

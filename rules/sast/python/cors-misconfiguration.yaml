@@ -1,0 +1,35 @@
+id: cors-misconfiguration
+language: python
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une configuration CORS trop permissive dans une application
+    Python (Flask-CORS, django-cors-headers, FastAPI CORSMiddleware),
+    notamment la combinaison d'une origine joker avec les credentials
+    autorises.
+  patterns:
+    - "CORS(app, origins='*', supports_credentials=True) (Flask-CORS) — combinaison invalide/dangereuse"
+    - "CORS_ALLOW_ALL_ORIGINS = True avec CORS_ALLOW_CREDENTIALS = True (django-cors-headers)"
+    - "CORSMiddleware(allow_origins=['*'], allow_credentials=True) (FastAPI/Starlette)"
+    - "Reflexion dynamique de l'en-tete Origin recu dans Access-Control-Allow-Origin sans whitelist"
+  exclude_if:
+    - "allow_origins liste une whitelist explicite de domaines de confiance, sans joker '*' combine a allow_credentials=True"
+
+message: >
+  Configuration CORS permissive combinant origine joker (*) et
+  allow_credentials=True — permet a n'importe quel site tiers de lire des
+  reponses authentifiees via les cookies/credentials de la victime.
+  Restreindre allow_origins a une whitelist explicite de domaines de
+  confiance lorsque les credentials sont autorises.
+
+false_positive_notes:
+  - "Une API publique sans credentials (allow_credentials=False) avec origine joker est un choix legitime pour un usage public non authentifie — reclasser en `low`."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

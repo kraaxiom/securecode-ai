@@ -1,0 +1,12 @@
+id: mass-assignment
+category: authorization
+cwe: CWE-915
+type: rasp
+guard:
+  sink: "fonction d'affectation en masse des attributs d'un modèle/entité à partir d'un payload de requête (création ou mise à jour de ressource)"
+  block_condition: "le payload entrant porte une valeur pour un attribut marqué sensible (rôle, privilège, solde, drapeau interne) alors que ce champ ne figure pas dans la liste blanche des champs autorisés pour cette opération"
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

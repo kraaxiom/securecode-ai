@@ -1,0 +1,36 @@
+id: csp-weakness
+language: java
+category: frontend
+cwe: CWE-693
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une politique Content-Security-Policy configurée dans Spring
+    Security (headers().contentSecurityPolicy) ou construite manuellement
+    dans un template Thymeleaf/JSP, contenant des directives affaiblies comme
+    unsafe-inline, unsafe-eval ou un wildcard sur script-src.
+  patterns:
+    - "HttpSecurity.headers().contentSecurityPolicy(csp -> csp.policyDirectives(\"script-src 'self' 'unsafe-inline'\")) ou contenant 'unsafe-eval'"
+    - "en-tête Content-Security-Policy construit manuellement dans un filtre avec script-src * ou default-src *"
+    - "absence totale de configuration CSP dans la SecurityFilterChain pour une application servant des vues Thymeleaf/JSP avec contenu utilisateur"
+  exclude_if:
+    - "la CSP utilise des nonces ou hashes pour les scripts inline au lieu de unsafe-inline"
+    - "aucune directive script-src/style-src n'autorise unsafe-inline, unsafe-eval, ni de wildcard non justifié"
+
+message: >
+  La politique CSP configurée affaiblit sérieusement la protection contre le
+  XSS (unsafe-inline, unsafe-eval, ou wildcard sur script-src) — ces
+  directives annulent une grande partie du bénéfice de la CSP. Utiliser des
+  nonces générés par requête pour les scripts inline légitimes et restreindre
+  script-src à 'self' plus les origines strictement nécessaires.
+
+false_positive_notes:
+  - "L'absence totale de CSP est un défaut distinct (à signaler séparément comme configuration manquante) plutôt qu'une faiblesse de directive — ajuster la sévérité selon le cas observé."
+  - "unsafe-inline conservé uniquement en fallback pour navigateurs très anciens, combiné à des nonces pour les navigateurs modernes, est un compromis documenté acceptable — vérifier avant de remonter en `high`."
+
+remediation_ref: rules/remediation/csp-weakness.md
+knowledge_ref: knowledge/frontend/csp-weakness.md

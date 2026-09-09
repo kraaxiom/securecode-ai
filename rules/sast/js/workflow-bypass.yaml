@@ -1,0 +1,30 @@
+id: workflow-bypass
+language: js
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler de route d'étape finale mettant à jour un statut sans
+    vérifier l'état d'avancement réel de la ressource.
+  patterns:
+    - "app.post(\"/order/:id/confirm\", async (req, res) => { await db.updateOrderStatus(_, \"confirmed\"); })"
+    - "app.post(\"/kyc/activate\", async (req, res) => { await db.updateUserStatus(_, \"active\"); })"
+  exclude_if:
+    - "Une vérification explicite de TRANSITIONS[order.status] précède la mise à jour"
+    - "Un middleware de machine à états valide la transition avant d'atteindre le handler"
+
+message: >
+  Transition d'état finale appliquée sans vérification des étapes
+  préalables côté serveur — voir rules/remediation/workflow-bypass.md.
+
+false_positive_notes:
+  - "Si le endpoint est protégé par un rôle admin de confiance effectuant des corrections manuelles légitimes, documenter l'exception."
+  - "Vérifier si la validation de transition est centralisée dans un service partagé appelé ailleurs dans le pipeline de la requête."
+
+remediation_ref: rules/remediation/workflow-bypass.md
+knowledge_ref: knowledge/business-logic/workflow-bypass.md

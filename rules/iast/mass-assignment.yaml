@@ -1,0 +1,15 @@
+id: mass-assignment
+category: authorization
+cwe: CWE-915
+type: iast
+instrumentation:
+  hook_points:
+    - "php: appel Eloquent (Model::create($request->all())/fill()/update()) sans propriété $fillable/$guarded restrictive couvrant les attributs sensibles"
+    - "js: liaison directe du corps de requête à un modèle (Model.create(req.body)/Object.assign(entity, req.body)) sans schéma de validation whitelist en amont"
+    - "python: sérialiseur DRF ou modèle Pydantic/Django construit directement à partir du payload complet sans exclusion explicite des champs sensibles (role, is_staff, balance)"
+    - "java: désérialisation Jackson/Spring @RequestBody peuplant directement une entité JPA exposant des champs sensibles sans DTO d'entrée dédié"
+  taint_check: "corps de requête entrant (source) atteignant l'affectation en masse des attributs d'un modèle/entité (sink) sans passer par une liste blanche de champs autorisés ni un DTO distinct des attributs sensibles"
+  trigger_condition: "un attribut marqué sensible dans le modèle (rôle, statut de privilège, solde, drapeau interne) est affecté par une valeur provenant directement du corps de la requête, sans qu'un filtrage de champ explicite n'ait exclu cet attribut sur le chemin d'exécution observé"
+severity: high
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

@@ -1,0 +1,36 @@
+id: price-manipulation
+language: go
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un prix, une quantité ou un montant total accepté depuis les
+    données transmises par le client (corps JSON, formulaire) et utilisé
+    directement pour créer une commande/transaction en Go, sans recalcul
+    côté serveur à partir du catalogue/prix de référence.
+  patterns:
+    - "var req OrderRequest; json.NewDecoder(r.Body).Decode(&req); order := Order{Price: req.Price}; db.Create(&order) — prix pris directement depuis la requête client au lieu du catalogue serveur (product.Price)"
+    - "func AddToCart(w http.ResponseWriter, r *http.Request) { item := CartItem{ID: req.ID, Price: req.Price} } — prix stocké en session/panier depuis une valeur client sans revalidation lors du checkout"
+    - "total := 0.0; for _, item := range req.Items { total += item.Price * float64(item.Qty) } utilisé directement pour le paiement, sans recalculer chaque item.Price depuis la base de données"
+  exclude_if:
+    - "le prix/montant utilisé pour la transaction est systématiquement recalculé côté serveur à partir de l'identifiant produit et du catalogue de référence, en ignorant toute valeur de prix soumise par le client"
+
+message: >
+  Prix ou montant transmis par le client utilisé directement pour une
+  transaction sans recalcul côté serveur — un attaquant peut modifier la
+  requête pour payer un prix arbitraire. Ne jamais faire confiance à un prix
+  fourni par le client : recalculer systématiquement à partir de
+  l'identifiant produit et du catalogue serveur — voir
+  rules/remediation/price-manipulation.md.
+
+false_positive_notes:
+  - "Si le prix client n'est utilisé qu'à des fins d'affichage (jamais transmis à la logique de paiement réelle), non applicable."
+  - "Un contrôle de cohérence a posteriori (comparaison prix soumis vs catalogue, rejet en cas d'écart) équivaut à un recalcul serveur si strictement appliqué avant validation du paiement."
+
+remediation_ref: rules/remediation/price-manipulation.md
+knowledge_ref: knowledge/business-logic/price-manipulation.md

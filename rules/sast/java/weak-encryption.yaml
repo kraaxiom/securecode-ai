@@ -1,0 +1,33 @@
+id: weak-encryption
+language: java
+category: database
+cwe: CWE-326
+owasp: A02:2021-Cryptographic-Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code Java persistant des données sensibles, l'usage
+    d'algorithmes de chiffrement faibles/obsolètes ou de mode de chiffrement
+    non sécurisé pour protéger des données stockées en base.
+  patterns:
+    - "Cipher.getInstance(\"DES\") ou Cipher.getInstance(\"AES/ECB/...\") utilisé pour chiffrer des colonnes sensibles avant persistance JPA"
+    - "Cipher.getInstance(\"RSA/ECB/PKCS1Padding\") pour chiffrer des données métier (padding PKCS1 vulnérable aux attaques Bleichenbacher)"
+    - "clé de chiffrement dérivée directement d'un mot de passe court sans fonction de dérivation robuste (PBKDF2/Argon2), ex: MessageDigest.getInstance(\"MD5\") utilisé pour générer une clé AES"
+    - "@Convert(converter = ...) JPA AttributeConverter chiffrant une colonne sensible avec une clé statique codée en dur dans le code source plutôt qu'un gestionnaire de secrets"
+
+message: >
+  Algorithme ou mode de chiffrement faible utilisé pour protéger des
+  données sensibles en base (weak encryption) — expose les données en cas
+  de compromission de la base. Utiliser AES-256/GCM avec une clé dérivée
+  via un gestionnaire de secrets (pas de dérivation par hash rapide), et
+  bannir DES/RC4/ECB/RSA-PKCS1.
+
+false_positive_notes:
+  - "Si l'algorithme faible est utilisé uniquement pour des données non sensibles (checksum d'intégrité non cryptographique), reclasser en `low`."
+  - "AES/ECB utilisé pour du contenu non confidentiel (données publiques) ne justifie pas la sévérité `high`."
+
+remediation_ref: rules/remediation/weak-encryption.md
+knowledge_ref: knowledge/database/weak-encryption.md

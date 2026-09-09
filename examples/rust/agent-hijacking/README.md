@@ -1,0 +1,3 @@
+# Agent Hijacking (CWE-1427)
+
+Le code vulnérable expose un outil de paiement directement invocable par le modèle pendant l'analyse d'un ticket support externe, et exécute l'action financière proposée sans aucune validation ni confirmation humaine — un contenu de ticket malveillant pourrait ainsi déclencher un remboursement non autorisé. La correction sépare strictement la couche de décision (le modèle ne fait que proposer, sans accès direct à l'outil) de la couche d'exécution, journalise exhaustivement chaque proposition, et exige une confirmation humaine explicite avant toute action financière irréversible (plafond d'exécution automatique fixé à zéro). Élimine la classe de vulnérabilité CWE-1427 (Improper Neutralization of Input Used for LLM Prompting).

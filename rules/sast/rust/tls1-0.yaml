@@ -1,0 +1,33 @@
+id: tls1-0
+language: rust
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration rustls/openssl autorisant TLS 1.0/1.1, via
+    ProtocolVersion::TLSv1_0/TLSv1_1 (rustls) ou SslMethod/set_min_proto_version
+    (openssl) fixé en dessous de TLS 1.2.
+  patterns:
+    - "&rustls::version::TLS10"
+    - "&rustls::version::TLS11"
+    - "set_min_proto_version(Some(SslVersion::TLS1))"
+    - "set_min_proto_version(Some(SslVersion::TLS1_1))"
+  exclude_if:
+    - "présence conjointe et documentée avec un flag legacy explicitement requis par un partenaire tiers, avec ticket de dépréciation planifié"
+
+message: >
+  TLS 1.0/1.1 sont dépréciés par la RFC 8996 et exclus des référentiels PCI-DSS
+  depuis 2018 — fixer la version minimale à TLS 1.2 (rustls::version::TLS12 ou
+  SslVersion::TLS1_2).
+
+false_positive_notes:
+  - "Si la version minimale est écrasée plus loin par une valeur supérieure, vérifier l'ordre d'exécution avant de conclure."
+  - "Compatibilité avec un partenaire legacy documentée ne change pas la sévérité, seulement la priorité de remédiation."
+
+remediation_ref: rules/remediation/tls1-0.md
+knowledge_ref: knowledge/crypto/tls1-0.md

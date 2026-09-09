@@ -1,0 +1,41 @@
+id: web-cache-deception
+language: java
+category: modern
+cwe: CWE-524
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un mapping Spring MVC dont le chemin d'URL sensible peut être
+    suffixé par une extension statique (ex: `/account/profile.js`,
+    `/api/user.css`) et néanmoins routé vers le contrôleur authentifié, alors
+    qu'un reverse proxy/CDN en amont met en cache les ressources par
+    extension de fichier — un attaquant peut faire mettre en cache une
+    réponse authentifiée sous une URL prévisible et la rejouer.
+  patterns:
+    - "@GetMapping(\"/account/**\") $ret $method(...) { ... } // mapping wildcard qui matche aussi /account/profile.js, .css, .jpg"
+    - "@RequestMapping(value = \"/api/user\") // sans contrainte stricte de correspondance exacte, accessible via /api/user;.js ou /api/user%2e%2e/style.css selon le conteneur"
+  exclude_if:
+    - "Le reverse proxy/CDN en amont ne met en cache que des chemins strictement présents dans une liste blanche de fichiers statiques (pas de correspondance par extension sur des routes applicatives)"
+    - "Le mapping Spring utilise une correspondance exacte (@GetMapping(\"/account/profile\")) sans wildcard ni gestion d'extension supplémentaire"
+
+message: >
+  Une route authentifiée peut être atteinte avec un suffixe d'extension
+  statique (ex: `/account/profile.js`) tout en retournant le contenu
+  authentifié original — si un cache/CDN en amont met en cache les réponses
+  par extension de fichier, un attaquant peut déclencher la mise en cache de
+  données personnelles d'une victime et les récupérer via la même URL (web
+  cache deception). Configurer le reverse proxy pour ne mettre en cache que
+  des chemins de fichiers statiques réels (vérification d'existence sur
+  disque), et s'assurer que les routes applicatives ne matchent pas de
+  suffixes d'extension arbitraires.
+
+false_positive_notes:
+  - "Si l'infrastructure de cache (CDN/reverse proxy) ne cache que sur Cache-Control explicite émis par l'application et non par extension d'URL, ce n'est pas exploitable — vérifier la configuration du CDN avant de reclasser."
+  - "Si toutes les routes sensibles répondent avec Cache-Control: no-store, le risque est atténué même en cas de mapping permissif — reclasser en `medium`."
+
+remediation_ref: rules/remediation/web-cache-deception.md
+knowledge_ref: knowledge/modern/web-cache-deception.md

@@ -1,0 +1,12 @@
+id: error-sqli
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: exécution de requête SQL et gestionnaire d'exception associé (PDOStatement::execute, cursor.execute, Statement.executeQuery)
+  block_condition: Une exception SQL est levée suite à une valeur taintée non liée par un paramètre préparé, avec message d'exception destiné à être renvoyé au client.
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/error-sqli.md
+knowledge_ref: knowledge/injections/error-sqli.md

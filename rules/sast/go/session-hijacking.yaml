@@ -1,0 +1,36 @@
+id: session-hijacking
+language: go
+category: sessions
+cwe: CWE-613
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de session sans expiration raisonnable
+    (MaxAge), une déconnexion qui ne détruit pas la session côté serveur, ou
+    une journalisation de l'identifiant de session en clair.
+  patterns:
+    - "store.Options = &sessions.Options{ MaxAge: 0, _ }" # session sans expiration (cookie persistant par défaut)
+    - "store.Options = &sessions.Options{ _ }" # MaxAge absent
+    - "func Logout($w, $r) { _ http.SetCookie($w, &http.Cookie{ Name: $name, MaxAge: -1 }); _ }" # sans invalidation côté serveur (session.Options.MaxAge = -1; session.Save)
+    - "log.Printf(_, session.ID)" # log de l'identifiant de session
+  exclude_if:
+    - "MaxAge est défini à une valeur raisonnable et positive (ex: <= 1800 secondes)"
+    - "Logout définit explicitement session.Options.MaxAge = -1 puis appelle session.Save(r, w), invalidant la session côté serveur"
+    - "l'identifiant loggé est tronqué ou hashé avant journalisation"
+
+message: >
+  Configuration de session ou de déconnexion insuffisamment protégée
+  (expiration absente, absence de destruction côté serveur, ou identifiant
+  de session journalisé en clair) — facilite le détournement de session
+  (voir rules/remediation/session-hijacking.md).
+
+false_positive_notes:
+  - "MaxAge: 0 dans gorilla/sessions signifie 'cookie de session' (expire à la fermeture du navigateur), pas une absence de contrôle — mais ne protège pas contre un vol de cookie tant que la session serveur reste active ; évaluer en combinaison avec la durée de vie du store."
+  - "Si Logout invalide explicitement la session côté serveur (MaxAge = -1 + Save), le risque est neutralisé."
+
+remediation_ref: rules/remediation/session-hijacking.md
+knowledge_ref: knowledge/sessions/session-hijacking.md

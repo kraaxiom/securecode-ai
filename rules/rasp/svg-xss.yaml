@@ -1,0 +1,15 @@
+id: svg-xss
+category: xss
+cwe: CWE-79
+type: rasp
+guard:
+  sink: fonction de service de fichier statique ou d'insertion DOM inline traitant un fichier SVG uploadé
+  block_condition: >
+    Fichier SVG marqué non fiable, non passé par une sanitisation XML dédiée, est servi avec un
+    Content-Type interprétable par le navigateur (image/svg+xml) depuis l'origine de l'application,
+    ou inséré inline dans le DOM.
+  action: sanitize
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/svg-xss.md
+knowledge_ref: knowledge/xss/svg-xss.md

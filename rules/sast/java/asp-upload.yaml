@@ -1,0 +1,36 @@
+id: asp-upload
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Note de pertinence — ce pattern vise historiquement les extensions .asp/.aspx
+    exécutables sous IIS. En Java, la situation équivalente est un servlet ou
+    contrôleur Spring agissant en proxy/passerelle d'upload vers un backend
+    legacy ASP/IIS (architecture hétérogène fréquente en migration), qui
+    transmet un nom de fichier client sans le neutraliser avant écriture sur le
+    partage consommé par le serveur IIS.
+  patterns:
+    - "MultipartFile.getOriginalFilename() transmis tel quel à un backend ASP/IIS (écriture sur partage réseau UNC ou appel HTTP proxy) sans liste blanche d'extensions"
+    - "contrôleur Spring exposant un upload dont le fichier écrit est servi ensuite par un vhost IIS avec exécution de scripts .asp/.aspx activée"
+  exclude_if:
+    - "l'extension est validée par liste blanche stricte côté Java avant tout transfert vers le backend legacy"
+    - "le répertoire cible n'a pas l'exécution de script activée côté IIS (vérification hors du seul code Java, à noter en commentaire de revue)"
+
+message: >
+  Un service Java transmet un fichier uploadé à un backend legacy IIS/ASP sans
+  valider strictement son extension — un attaquant peut déposer un script
+  .asp/.aspx exécutable exploitable côté backend. Appliquer une liste blanche
+  d'extensions et renommer le fichier avec un identifiant généré côté serveur.
+
+false_positive_notes:
+  - "Ce pattern est de pertinence limitée en Java pur ; il ne s'applique qu'aux architectures hybrides avec un backend IIS/ASP en aval. Reclasser en `info` si aucun composant ASP n'existe dans l'architecture."
+  - "Si le nom de fichier original n'est jamais utilisé pour l'écriture (remplacé par un UUID), ce risque ne s'applique pas."
+
+remediation_ref: rules/remediation/asp-upload.md
+knowledge_ref: knowledge/upload/asp-upload.md

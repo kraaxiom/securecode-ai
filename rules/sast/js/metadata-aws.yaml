@@ -1,0 +1,28 @@
+id: metadata-aws
+language: js
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête sortante dont la destination dérive d'une entrée utilisateur sans filtrage explicite de l'adresse de métadonnées cloud AWS (169.254.169.254) ni des plages link-local.
+  patterns:
+    - "fetch($url) // sans filtrage explicite de 169.254.0.0/16"
+    - "axios.get($url)"
+  exclude_if:
+    - "$url/$host est filtré explicitement contre la plage 169.254.0.0/16 et le nom d'hôte de métadonnées avant l'appel"
+    - "$url est une constante applicative non dérivée d'une entrée utilisateur"
+
+message: >
+  Requête sortante non filtrée pouvant atteindre le service de métadonnées AWS (169.254.169.254) — voir rules/remediation/metadata-aws.md.
+
+false_positive_notes:
+  - "Si un filtrage explicite de la plage 169.254.0.0/16 (et du nom d'hôte de métadonnées le cas échéant) est appliqué avant l'appel, reclasser en `info`."
+  - "Si l'infrastructure ne fournit pas de rôle/identité/compte de service avec permissions sensibles, l'impact réel est réduit même si le pattern reste présent."
+
+remediation_ref: rules/remediation/metadata-aws.md
+knowledge_ref: knowledge/ssrf/metadata-aws.md

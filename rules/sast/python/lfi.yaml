@@ -1,0 +1,38 @@
+id: lfi
+language: python
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'inclusion dynamique d'un module ou d'un template dont le nom
+    est dérivé d'une entrée utilisateur, via importlib, __import__,
+    exec/eval sur du contenu de fichier, ou un moteur de template Jinja2
+    chargeant un fichier arbitraire (Environment.get_template avec chemin
+    utilisateur, render_template avec chemin non whitelisté).
+  patterns:
+    - "importlib.import_module($user_input)"
+    - "__import__($user_input)"
+    - "exec(open($user_input).read())"
+    - "jinja_env.get_template($user_input)"
+    - "render_template($user_input)"
+  exclude_if:
+    - "$user_input est comparé à une liste blanche fermée de noms de modules/templates avant l'appel"
+    - "$user_input est un littéral constant"
+
+message: >
+  Inclusion de fichier/module dont le nom dépend d'une entrée utilisateur —
+  un attaquant peut forcer le chargement d'un fichier arbitraire local
+  (LFI) menant potentiellement à l'exécution de code. Restreindre à une
+  liste blanche fermée de noms autorisés (voir rules/remediation/lfi.md).
+
+false_positive_notes:
+  - "render_template() de Flask est généralement confiné au dossier templates/, mais reste vulnérable si le nom de fichier permet la traversée ('../../etc/passwd') — vérifier l'absence de validation en amont avant de déclasser."
+  - "Si le nom du template/module provient exclusivement de la configuration serveur (non exposé au client), reclasser en `info`."
+
+remediation_ref: rules/remediation/lfi.md
+knowledge_ref: knowledge/file-inclusion/lfi.md

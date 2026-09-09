@@ -1,0 +1,33 @@
+id: mime-bypass
+language: javascript
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé (fileFilter multer ou
+    équivalent) basée uniquement sur file.mimetype, valeur Content-Type
+    entièrement contrôlée par le client, sans corroboration par une détection
+    de type basée sur le contenu réel (file-type, sharp metadata).
+  patterns:
+    - "fileFilter: (req, file, cb) => cb(null, allowedList.includes(file.mimetype))"
+    - "if (allowedMimeArray.includes(file.mimetype))"
+    - "req.headers['content-type'] === string_literal_mime"
+  exclude_if:
+    - "fileTypeFromFile()/fileTypeFromBuffer() ou une détection par contenu équivalente est appelée et son résultat comparé à une liste blanche avant acceptation"
+    - "file.mimetype n'est utilisé qu'à des fins de log/affichage, jamais comme critère d'acceptation"
+
+message: >
+  Validation basée sur le type MIME déclaré par le client (file.mimetype),
+  falsifiable — voir rules/remediation/mime-bypass.md.
+
+false_positive_notes:
+  - "Si une détection par contenu (module file-type) est appliquée plus loin dans le même flux de traitement, ce fileFilter peut n'être qu'un filtre préliminaire non bloquant."
+  - "Vérifier si un middleware amont a déjà validé le contenu réel avant d'atteindre ce point."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

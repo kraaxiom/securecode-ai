@@ -1,0 +1,37 @@
+id: blind-ssrf
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête HTTP sortante déclenchée par une entrée utilisateur
+    (webhook, callback URL, avatar/preview fetch) dont la réponse n'est
+    jamais renvoyée au client — typiquement requests.post/get dans un
+    traitement asynchrone (Celery task, background job) sans lecture du
+    corps de réponse exposée à l'appelant.
+  patterns:
+    - "requests.post($user_callback_url, _)"
+    - "requests.head($user_url)"
+    - "session.get($user_url, timeout=_)"
+  exclude_if:
+    - "$user_callback_url est validé contre une liste blanche fermée de domaines autorisés avant l'appel"
+    - "la résolution DNS du host est vérifiée pour exclure les plages IP privées/loopback/link-local avant l'envoi de la requête"
+
+message: >
+  Requête HTTP sortante déclenchée par une URL utilisateur sans que la
+  réponse ne soit visible côté client — SSRF aveugle exploitable pour
+  scanner le réseau interne ou déclencher des effets de bord sur des
+  services internes. Résoudre et valider l'IP cible (pas seulement le
+  hostname) avant chaque requête (voir rules/remediation/blind-ssrf.md).
+
+false_positive_notes:
+  - "Un webhook/callback strictement limité à des domaines partenaires enregistrés à l'avance (whitelist en base) réduit fortement le risque — vérifier la présence de ce contrôle avant de remonter en `high`."
+  - "La seule validation du schéma d'URL (http/https) ne protège pas contre le SSRF vers des IP internes."
+
+remediation_ref: rules/remediation/blind-ssrf.md
+knowledge_ref: knowledge/ssrf/blind-ssrf.md

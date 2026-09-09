@@ -1,0 +1,3 @@
+# Server-Side Template Injection (SSTI) (CWE-1336)
+
+La version vulnérable concatène l'entrée utilisateur directement dans le texte du template (`"Bonjour " + name + ", bienvenue !"`) avant de le compiler avec `Template.Parse`, ce qui permet à un attaquant d'injecter de la syntaxe de template (ex: expressions Scriban) interprétée au rendu, avec un risque allant de la divulgation d'information à l'exécution de code selon le moteur. La correction fige le texte du template comme une constante statique versionnée par le développeur (`"Bonjour {{ name }}, bienvenue !"`) et transmet l'entrée utilisateur uniquement comme variable de contexte au rendu, jamais comme structure de template.

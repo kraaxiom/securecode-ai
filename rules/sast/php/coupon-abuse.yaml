@@ -1,0 +1,33 @@
+id: coupon-abuse
+language: php
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le marquage d'usage d'un coupon via cookie/session côté client
+    plutôt que via une contrainte serveur, ou une génération de code
+    prévisible dérivée d'un identifiant utilisateur.
+  patterns:
+    - "setcookie(string_concat(\"coupon_used_\", _), _)"
+    - "$_SESSION[string_concat(\"coupon_\", $code)] = _"
+    - "string_concat(\"PROMO\", str_pad($userId, _, _, _))"
+  exclude_if:
+    - "Une contrainte d'unicité en base (UNIQUE(coupon_id, user_id)) est vérifiée avant l'affectation du cookie/session"
+    - "Le code est généré via random_bytes()/bin2hex()"
+
+message: >
+  Usage de coupon vérifié uniquement côté client ou code promotionnel
+  prévisible — imposer une contrainte d'unicité serveur et une génération
+  à haute entropie (voir rules/remediation/coupon-abuse.md).
+
+false_positive_notes:
+  - "Le cookie/session peut être un simple confort UX si le serveur revalide systématiquement via une requête en base avant application."
+  - "Un format de code non lié à l'identité de l'utilisateur (ex: campagne publique) réduit le risque d'énumération ciblée."
+
+remediation_ref: rules/remediation/coupon-abuse.md
+knowledge_ref: knowledge/business-logic/coupon-abuse.md

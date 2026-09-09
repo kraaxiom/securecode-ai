@@ -1,0 +1,37 @@
+id: origin-bypass
+language: csharp
+category: websocket
+cwe: CWE-346
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'origine WebSocket/SignalR trop permissive :
+    comparaison partielle (`Contains`, `EndsWith`, `StartsWith`) ou expression
+    régulière mal ancrée sur l'en-tête `Origin`, ou une politique CORS
+    (`AddCors`) autorisant `AllowAnyOrigin()` combinée à `AllowCredentials()`.
+  patterns:
+    - "if (origin.Contains(\"trusted-domain.com\")) { AcceptWebSocket(); } // comparaison partielle au lieu d'égalité stricte"
+    - "if (origin.EndsWith(\".trusted-domain.com\")) { ... } // ne vérifie pas l'absence de préfixe malveillant type trusted-domain.com.evil.com"
+    - "Regex.IsMatch(origin, \"trusted-domain\\\\.com\") // regex non ancrée sans ^...$"
+    - "options.AddPolicy(\"*\", builder => builder.AllowAnyOrigin().AllowCredentials()) // combinaison invalide/dangereuse en pratique contournée par certains clients"
+  exclude_if:
+    - "la comparaison utilise une égalité stricte (`==` ou `.Equals()`) contre une allowlist explicite d'origines complètes (scheme+host+port)"
+    - "la politique CORS utilise `WithOrigins(\"https://app.trusted-domain.com\")` avec une liste explicite au lieu de `AllowAnyOrigin()`"
+
+message: >
+  Vérification de l'en-tête Origin trop permissive (comparaison partielle,
+  regex non ancrée, ou politique CORS `AllowAnyOrigin` avec credentials) — un
+  attaquant peut héberger un domaine satisfaisant accidentellement la
+  condition et réaliser un Cross-Site WebSocket Hijacking (voir
+  rules/remediation/origin-bypass.md).
+
+false_positive_notes:
+  - "Si la liste des origines de confiance est fixe et ne contient aucun sous-domaine ambigu, le risque de bypass par sous-domaine reste théorique — évaluer au cas par cas."
+  - "Une regex ancrée mais sans échappement du point (`.`) reste exploitable via un domaine contenant un caractère quelconque à cette position — signaler quand même."
+
+remediation_ref: rules/remediation/origin-bypass.md
+knowledge_ref: knowledge/websocket/origin-bypass.md

@@ -1,0 +1,35 @@
+id: browser-storage-leak
+language: javascript
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture de données sensibles (jetons, mots de passe, secrets
+    d'API, informations personnelles) dans localStorage, sessionStorage ou
+    IndexedDB, ainsi que la création de cookies applicatifs sans attributs
+    de sécurité.
+  patterns:
+    - "localStorage.setItem(/token|jwt|auth|password|secret|apiKey/i, _)"
+    - "sessionStorage.setItem(/token|jwt|auth|password|secret|apiKey/i, _)"
+    - "indexedDB objectStore.put(_) avec un champ sensible non chiffré"
+    - "document.cookie = string_concat(_) sans 'HttpOnly'|'Secure'|'SameSite'"
+  exclude_if:
+    - "la clé stockée est un identifiant non sensible (préférence UI, thème, langue)"
+    - "la valeur est chiffrée côté client avant écriture avec une clé non dérivable du stockage lui-même"
+
+message: >
+  Donnée sensible écrite dans un stockage accessible en JavaScript — migrer
+  vers un cookie HttpOnly/Secure/SameSite géré côté serveur (voir
+  rules/remediation/browser-storage-leak.md).
+
+false_positive_notes:
+  - "document.cookie ne peut jamais poser HttpOnly depuis le JS — cet indicateur signale surtout l'absence de Secure/SameSite, pas HttpOnly qui doit venir du serveur."
+  - "Le stockage de données déjà publiques (préférences d'affichage) ne doit pas être remonté."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

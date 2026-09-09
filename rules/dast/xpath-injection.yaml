@@ -1,0 +1,19 @@
+id: xpath-injection
+category: injections
+cwe: CWE-643
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST
+  target: champ de formulaire (souvent identifiant/mot de passe) inséré dans une expression XPath sans échappement
+  technique: differential-response
+  indicators:
+    - réponse positive (accès accordé ou données retournées) à une entrée de forme booléenne/tautologique XPath alors qu'une entrée neutre équivalente échoue
+    - différence de comportement observable entre une condition XPath vraie et une condition XPath fausse injectée dans le même paramètre
+    - message d'erreur du moteur XPath révélé suite à une entrée syntaxiquement malformée
+false_positive_notes:
+  - confirmer que la différence de réponse provient de l'évaluation XPath et non d'une logique métier normale (ex. compte existant/inexistant)
+  - reproduire le test avec plusieurs variantes de la classe d'entrée pour écarter le hasard
+remediation_ref: rules/remediation/xpath-injection.md
+knowledge_ref: knowledge/injections/xpath-injection.md

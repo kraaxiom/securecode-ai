@@ -1,0 +1,3 @@
+## Jailbreak de modèle (CWE-1427)
+
+Le code vulnérable considère le system prompt comme unique barrière de sécurité, sans couche de modération indépendante en entrée ou en sortie ni limite sur le nombre de tours de conversation, ce qui permet une érosion progressive des garde-fous du modèle sur plusieurs échanges. La correction ajoute un classifieur de sécurité indépendant qui filtre à la fois le message utilisateur entrant et la réponse générée, et introduit une surveillance du nombre de tours suspects par session afin de bloquer une session après des tentatives répétées de contournement, sans jamais s'appuyer uniquement sur les instructions du prompt système.

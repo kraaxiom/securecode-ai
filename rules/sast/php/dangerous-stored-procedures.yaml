@@ -1,0 +1,33 @@
+id: dangerous-stored-procedures
+language: php
+category: database
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel de procédure stockée construit par concaténation de
+    variable dans le code applicatif appelant, ou l'activation de
+    fonctionnalités d'exécution système du SGBD.
+  patterns:
+    - "->query(string_concat(\"CALL \", $procName, \"(\", $var, \")\"))"
+    - "->exec(string_concat(\"CALL \", _, \"('\", $var, \"')\"))"
+    - "->exec(\"EXEC sp_configure 'xp_cmdshell', 1\")"
+  exclude_if:
+    - "L'appel utilise une requête préparée avec paramètre lié (->prepare(\"CALL proc(?)\"))"
+    - "La configuration désactive explicitement la fonctionnalité (valeur 0) plutôt que de l'activer"
+
+message: >
+  Appel de procédure stockée construit par concaténation, ou activation de
+  fonctionnalité d'exécution système du SGBD — voir
+  rules/remediation/dangerous-stored-procedures.md.
+
+false_positive_notes:
+  - "Si $var est un littéral constant interne (pas une entrée utilisateur), le risque d'injection est nul."
+  - "Une procédure elle-même sécurisée (paramètres liés en interne) mais appelée par concaténation applicative reste à corriger côté appelant."
+
+remediation_ref: rules/remediation/dangerous-stored-procedures.md
+knowledge_ref: knowledge/database/dangerous-stored-procedures.md

@@ -1,0 +1,33 @@
+id: account-takeover
+language: js
+category: business-logic
+cwe: CWE-640
+owasp: A07:2021-Identification-and-Authentication-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un jeton de sécurité (reset password, vérification
+    e-mail) à partir de Math.random(), Date.now(), ou d'un hachage de valeurs
+    prévisibles, au lieu de crypto.randomBytes.
+  patterns:
+    - "Math.random().toString(36)"
+    - "Buffer.from(string_concat($userId, Date.now()))"
+    - "crypto.createHash(_).update(string_concat(_, Date.now()))"
+  exclude_if:
+    - "Le jeton est généré via crypto.randomBytes() ou crypto.randomUUID()"
+    - "La valeur n'est pas utilisée comme jeton de sécurité (reset, vérification, session)"
+
+message: >
+  Jeton de sécurité généré à partir d'une source non cryptographique
+  (Math.random/Date.now) — utiliser crypto.randomBytes(32) (voir
+  rules/remediation/account-takeover.md).
+
+false_positive_notes:
+  - "Math.random() utilisé pour de l'affichage UI non sécuritaire (ex: ID de composant React) n'est pas concerné."
+  - "Vérifier si un middleware d'authentification tiers (Passport, NextAuth) gère déjà la génération de jeton en amont."
+
+remediation_ref: rules/remediation/account-takeover.md
+knowledge_ref: knowledge/business-logic/account-takeover.md

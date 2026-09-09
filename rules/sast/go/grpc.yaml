@@ -1,0 +1,34 @@
+id: grpc
+language: go
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un service grpc-go dont le serveur est instancié sans
+    intercepteur unaire/stream d'authentification, ou dont la réflexion
+    gRPC est enregistrée sans garde d'environnement.
+  patterns:
+    - "grpc.NewServer()"
+    - "reflection.Register($server)"
+    - "func (s *$Server) $Method(ctx context.Context, req *$Req) (*$Resp, error) { ... }"
+  exclude_if:
+    - "grpc.NewServer est appelé avec grpc.UnaryInterceptor/grpc.ChainUnaryInterceptor incluant une vérification d'authentification (ex: token JWT dans les métadonnées)"
+    - "reflection.Register est appelé uniquement sous une garde conditionnelle d'environnement (if env == \"development\")"
+
+message: >
+  Serveur gRPC sans intercepteur d'authentification global, ou réflexion
+  gRPC active sans restriction d'environnement — ajouter un intercepteur
+  unaire/stream vérifiant le token sur toutes les méthodes et désactiver la
+  réflexion en production (voir rules/remediation/grpc.md).
+
+false_positive_notes:
+  - "Si la méthode est un simple health check public volontairement non protégé, reclasser en `info`."
+  - "Vérifier qu'un intercepteur global n'est pas déjà chaîné ailleurs dans l'initialisation du serveur avant de remonter en `high`."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

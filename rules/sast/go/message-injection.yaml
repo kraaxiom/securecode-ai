@@ -1,0 +1,37 @@
+id: message-injection
+language: go
+category: websocket
+cwe: CWE-20
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un message reçu sur une connexion gorilla/websocket
+    (`conn.ReadMessage()`, `conn.ReadJSON(&v)`) utilisé directement dans une
+    requête SQL, une commande système, un template HTML, ou rediffusé
+    (broadcast) à d'autres clients via `conn.WriteMessage` sans validation ni
+    échappement.
+  patterns:
+    - "_, msg, _ := conn.ReadMessage(); db.Query(fmt.Sprintf(\"...%s...\", msg)) ou concaténation directe dans une requête SQL"
+    - "conn.ReadJSON(&payload); exec.Command(\"sh\", \"-c\", payload.Cmd).Run() sans liste blanche de commandes"
+    - "_, msg, _ := conn.ReadMessage(); template.HTML(msg) ou fmt.Fprintf(w, string(msg)) sans échappement"
+    - "_, msg, _ := conn.ReadMessage(); for _, c := range hub.clients { c.WriteMessage(websocket.TextMessage, msg) } sans validation de schéma"
+  exclude_if:
+    - "le message est validé contre un schéma strict (struct avec json.Unmarshal suivi d'une validation via go-playground/validator ou équivalent) avant tout usage"
+    - "le message est transmis à une requête paramétrée (placeholders liés, database/sql avec arguments) ou à exec.Command avec une liste d'arguments fixe sans interpréteur shell"
+
+message: >
+  Contenu d'un message WebSocket (conn.ReadMessage/ReadJSON) utilisé sans
+  validation dans une requête, une commande ou un rendu de template —
+  vulnérable à l'injection SQL, de commande ou XSS diffusé en temps réel
+  (voir rules/remediation/message-injection.md).
+
+false_positive_notes:
+  - "Si le message est immédiatement validé par un schéma strict (validator.Struct) avant tout traitement en aval, reclasser en `low`."
+  - "Un simple relais (echo/broadcast) vers d'autres clients sans traitement serveur applicatif reste un risque XSS côté client à évaluer séparément."
+
+remediation_ref: rules/remediation/message-injection.md
+knowledge_ref: knowledge/websocket/message-injection.md

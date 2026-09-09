@@ -1,0 +1,31 @@
+id: md5
+language: rust
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la dépendance et l'usage du crate `md-5` (Md5::new, md5::compute)
+    pour hacher un mot de passe ou produire une preuve d'intégrité opposable.
+  patterns:
+    - "md-5 = \"_\" (Cargo.toml)"
+    - "Md5::new()"
+    - "md5::compute(_)"
+  exclude_if:
+    - "usage exclusif comme clé de cache non adversariale sans enjeu de sécurité"
+
+message: >
+  MD5 (crate `md-5`) est une fonction de hachage cassée (collisions triviales) —
+  pour un mot de passe utiliser le crate `argon2`, pour une intégrité opposable
+  utiliser le crate `sha2`.
+
+false_positive_notes:
+  - "Si MD5 sert uniquement de somme de contrôle non adversariale (détection de corruption accidentelle), reclasser en `low`."
+  - "Vérifier si le résultat sert à un hachage de mot de passe : dans ce cas maintenir `high`, pas `medium`."
+
+remediation_ref: rules/remediation/md5.md
+knowledge_ref: knowledge/crypto/md5.md

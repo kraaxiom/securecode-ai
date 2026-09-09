@@ -1,0 +1,19 @@
+id: xxe
+category: injections
+cwe: CWE-611
+owasp: A05:2021-Security_Misconfiguration
+severity: critical
+type: dast
+test:
+  method: POST
+  target: corps de requête XML soumis à un endpoint acceptant du contenu de type application/xml ou text/xml
+  technique: out-of-band
+  indicators:
+    - callback DNS/HTTP hors bande déclenché lorsqu'une référence d'entité externe non destructive et contrôlée par le testeur est traitée par le parseur
+    - contenu d'un fichier local avec marqueurs de délimitation reconnaissables reflété dans la réponse suite au traitement d'une entité externe pointant vers un fichier neutre
+    - délai ou erreur anormale du serveur corrélé au traitement d'une entité externe référencée dans le document XML soumis
+false_positive_notes:
+  - utiliser un domaine de callback contrôlé et neutre pour confirmer la résolution hors bande sans impact
+  - vérifier que le endpoint traite effectivement le XML soumis avant de conclure à une absence de vulnérabilité
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

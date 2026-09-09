@@ -1,0 +1,38 @@
+id: dependency-confusion
+language: python
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte dans requirements.txt, pyproject.toml ou pip.conf des indices de
+    confusion de dépendances : paquet interne référencé sans registre privé
+    explicite, ou configuration pip pointant vers PyPI public sans priorité
+    donnée à un index interne pour des noms de paquets internes.
+  patterns:
+    - "requirements.txt: nom de paquet interne (même préfixe que l'organisation) sans '--index-url' privé déclaré en tête de fichier"
+    - "pip.conf / pip.ini: absence de '[global] index-url' pointant vers un registre interne alors que des paquets internes sont installés"
+    - "pyproject.toml: [tool.poetry.source] absent alors qu'un paquet référencé n'existe pas sur PyPI public sous ce nom exact"
+    - "setup.py / pyproject.toml: dependency_links ou extra-index-url public ajouté APRÈS un index privé (ordre de priorité inversé)"
+  exclude_if:
+    - "index-url privé déclaré explicitement en premier avec --index-url (pas --extra-index-url) pour les paquets internes"
+    - "paquet interne publié avec un préfixe/scope réservé sur PyPI (ex: dépôt vide 'squatté' par l'organisation elle-même)"
+
+message: >
+  Le fichier de dépendances Python ne garantit pas la priorité d'un registre
+  interne pour un paquet portant un nom interne — un attaquant peut publier un
+  paquet malveillant de même nom sur PyPI public avec un numéro de version
+  supérieur pour qu'il soit installé à la place. Utiliser --index-url (pas
+  --extra-index-url) vers le registre privé, ou réserver le nom sur PyPI
+  (voir rules/remediation/dependency-confusion.md).
+
+false_positive_notes:
+  - "Si tous les paquets du fichier sont publics et légitimement sur PyPI (pas de paquet interne), non applicable."
+  - "Si un fichier pip.conf global (hors dépôt) impose déjà --index-url privé exclusif, le risque est mitigé — vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

@@ -1,0 +1,35 @@
+id: dashboard-exposure
+language: config
+category: kubernetes
+cwe: CWE-306
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte une exposition réseau non maîtrisée du Kubernetes Dashboard
+    (Service NodePort/LoadBalancer, Ingress public) combinée à un login
+    contournable ou un ServiceAccount trop privilégié.
+  patterns:
+    - "kind: Service ... app: kubernetes-dashboard ... type: NodePort"
+    - "kind: Service ... app: kubernetes-dashboard ... type: LoadBalancer"
+    - "--enable-skip-login=true"
+    - "--enable-insecure-login=true"
+    - "ClusterRoleBinding ... kubernetes-dashboard ... roleRef: cluster-admin"
+  exclude_if:
+    - "Service de type ClusterIP combiné à un accès exclusivement via kubectl proxy/VPN"
+    - "Ingress protégé par une annotation d'authentification (oauth2-proxy, basic-auth) vérifiée"
+
+message: >
+  Le Kubernetes Dashboard est exposé publiquement et/ou lié à un rôle trop
+  privilégié — porte d'entrée directe vers les ressources du cluster. Voir
+  rules/remediation/dashboard-exposure.md.
+
+false_positive_notes:
+  - "Si le Service est en `ClusterIP` et qu'un `NetworkPolicy` restreint l'accès au namespace, reclasser en `low`."
+  - "Un ClusterRoleBinding vers un rôle scoped (pas cluster-admin) réduit fortement le risque — vérifier le `roleRef` exact."
+
+remediation_ref: rules/remediation/dashboard-exposure.md
+knowledge_ref: knowledge/kubernetes/dashboard-exposure.md

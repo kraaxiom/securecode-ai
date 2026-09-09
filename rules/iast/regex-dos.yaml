@@ -1,0 +1,15 @@
+id: regex-dos
+category: injections
+cwe: CWE-1333
+type: iast
+instrumentation:
+  hook_points:
+    - "Java: java.util.regex.Pattern.matcher / Matcher.matches sur entrée utilisateur"
+    - "JavaScript/Node.js: RegExp.prototype.test / String.prototype.match"
+    - "Python: re.match / re.search / re.fullmatch"
+    - "PHP: preg_match / preg_replace"
+  taint_check: trace la propagation d'une entrée utilisateur non bornée en taille jusqu'à son évaluation par une expression régulière identifiée comme présentant des groupes imbriqués avec quantificateurs ou une alternance ambiguë
+  trigger_condition: le temps d'exécution mesuré de l'appel regex dépasse un seuil configuré (ex. >500ms) pour une entrée dont l'origine est directement traçable à une source utilisateur, ou croissance super-linéaire observée sur appels successifs de longueur croissante
+severity: medium
+remediation_ref: rules/remediation/regex-dos.md
+knowledge_ref: knowledge/injections/regex-dos.md

@@ -1,0 +1,20 @@
+id: ldap-injection
+category: injections
+cwe: CWE-90
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête ou champ de formulaire utilisé comme terme de recherche ou identifiant dans un filtre LDAP (ex. champ "utilisateur", "login", "recherche annuaire")
+  technique: differential-response
+  indicators:
+    - "Réponse différente (contenu, nombre de résultats ou code HTTP) lorsque des métacaractères de filtre LDAP (parenthèses, astérisque, esperluette, barre verticale) sont injectés par rapport à la ligne de base"
+    - "Message d'erreur applicatif exposant un fragment de filtre LDAP ou le nom du connecteur d'annuaire"
+    - "Contournement apparent de l'authentification avec une entrée structurée en filtre LDAP toujours vrai, sans qu'aucun payload d'exploitation réel ne soit soumis"
+    - "Liste de résultats élargie de façon anormale après injection d'un caractère générique dans le champ de recherche"
+false_positive_notes:
+  - "Un caractère générique légitime supporté par la fonctionnalité de recherche peut produire un différentiel similaire — vérifier la documentation fonctionnelle avant de conclure."
+  - "Un proxy ou WAF intermédiaire peut normaliser certains métacaractères avant l'annuaire, masquant ou simulant le signal."
+remediation_ref: rules/remediation/ldap-injection.md
+knowledge_ref: knowledge/injections/ldap-injection.md

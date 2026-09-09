@@ -1,0 +1,35 @@
+id: imap-injection
+language: php
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une commande IMAP par concaténation d'une
+    variable utilisateur non échappée, passée à imap_search()/imap_reopen()/
+    imap_open() ou une commande brute similaire.
+  patterns:
+    - "imap_search(_, string_concat(_, $var, _))"
+    - "imap_reopen(_, string_concat(_, $var, _))"
+    - "imap_open(string_concat(_, $var, _), _, _)"
+  exclude_if:
+    - "$var provient d'une liste blanche de valeurs autorisées (ex: noms de dossiers connus)"
+    - "$var est filtré par un str_replace/regex supprimant les guillemets et les caractères \\r\\n avant concaténation"
+    - "$var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Commande IMAP construite par concaténation d'une entrée utilisateur non
+  échappée — valider par liste blanche (dossiers) ou neutraliser guillemets
+  et CR/LF (critères de recherche) avant utilisation (voir
+  rules/remediation/imap-injection.md).
+
+false_positive_notes:
+  - "Si la variable provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur), ce n'est pas exploitable — reclasser en `info`."
+  - "Si l'application utilise déjà une bibliothèque encodant les littéraux (ex: wrapper maison validé), vérifier manuellement avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/imap-injection.md
+knowledge_ref: knowledge/injections/imap-injection.md

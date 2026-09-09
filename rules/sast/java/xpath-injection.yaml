@@ -1,0 +1,33 @@
+id: xpath-injection
+language: java
+category: injections
+cwe: CWE-643
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une expression XPath par concaténation de
+    chaînes passée à XPath.evaluate()/XPathExpression, sans utilisation de
+    variables XPath liées (XPathVariableResolver).
+  patterns:
+    - "XPath.evaluate(string_concat(_, $var, _), _)"
+    - "XPath.compile(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "l'expression utilise un XPathVariableResolver pour lier $var au lieu de la concaténer"
+
+message: >
+  Expression XPath construite par concaténation d'une entrée non fiable —
+  un attaquant peut altérer la logique de sélection XML (contournement de
+  contrôle, extraction de nœuds) ; utiliser XPathVariableResolver pour lier
+  les valeurs au lieu de les concaténer (voir rules/remediation/xpath-injection.md).
+
+false_positive_notes:
+  - "Une expression XPath statique sans variable utilisateur n'est pas concernée."
+  - "Si $var est strictement validé par whitelist (ex: liste fermée de noms de nœuds) avant concaténation, le risque est réduit mais la règle reste conservatrice."
+
+remediation_ref: rules/remediation/xpath-injection.md
+knowledge_ref: knowledge/injections/xpath-injection.md

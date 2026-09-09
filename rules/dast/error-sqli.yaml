@@ -1,0 +1,19 @@
+id: error-sqli
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête ou champ de formulaire injecté dans une requête SQL construite par concaténation
+  technique: error-signature
+  indicators:
+    - Message d'erreur SQL brut (nom du driver, syntaxe, extrait de requête) renvoyé dans la réponse HTTP après soumission d'une entrée provoquant une erreur de syntaxe.
+    - Fragment de données de la base de données visible dans le message d'erreur suite à l'injection d'une sous-requête déclenchant une erreur de type/conversion.
+    - Code HTTP 500 accompagné d'une stack trace exposant le nom de la table ou de la colonne ciblée.
+false_positive_notes:
+  - Environnement de développement configuré pour afficher des erreurs détaillées de façon générale, indépendamment d'une injection SQL.
+  - Messages d'erreur génériques masquant le détail réel, pouvant être confondus avec un signal d'erreur SQL exploitable.
+remediation_ref: rules/remediation/error-sqli.md
+knowledge_ref: knowledge/injections/error-sqli.md

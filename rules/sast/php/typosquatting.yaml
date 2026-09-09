@@ -1,0 +1,32 @@
+id: typosquatting
+language: php
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans composer.json, un nom de package présentant une distance
+    d'édition faible (1-2 caractères, permutation, séparateur différent)
+    avec un package Packagist populaire connu, sans en être l'orthographe
+    exacte.
+  patterns:
+    - "require.<vendor>/<package> avec distance de Levenshtein <= 2 d'un package populaire connu (ex: guzzlehtttp/guzzle vs guzzlehttp/guzzle)"
+  exclude_if:
+    - "Le nom du package correspond exactement à l'orthographe officielle du package populaire visé"
+    - "Le vendor/package est un fork légitime documenté et intentionnel (mention explicite dans README/composer.json 'replace')"
+
+message: >
+  Nom de dépendance très proche d'un package populaire connu — vérifier
+  qu'il ne s'agit pas d'un typosquat et corriger vers l'orthographe exacte
+  du package officiel (voir rules/remediation/typosquatting.md).
+
+false_positive_notes:
+  - "Certains vendors légitimes ont des noms proches par convention (ex: variantes officielles d'une même organisation) — vérifier le dépôt source avant de bloquer."
+  - "Si le package a un historique de releases long et une forte adoption vérifiable, reclasser en `info`."
+
+remediation_ref: rules/remediation/typosquatting.md
+knowledge_ref: knowledge/supply-chain/typosquatting.md

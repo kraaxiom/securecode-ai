@@ -1,0 +1,32 @@
+id: env-exposure
+language: php
+category: server
+cwe: CWE-538
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Vérification config/infra : détecte un fichier `.env` (ou `.env.local`,
+    `.env.production`) situé dans le webroot servi par le serveur, ainsi que
+    l'absence de règle Nginx/Apache bloquant l'accès aux dotfiles.
+  patterns:
+    - "fichier_webroot(nom matches /^\\.env(\\..+)?$/)"
+    - "config_nginx_ou_apache(absence de bloc `location ~ /\\.` ou `<FilesMatch \"^\\.\">`)"
+  exclude_if:
+    - "le fichier .env est situé strictement en dehors du DocumentRoot/root du serveur web"
+    - "une règle serveur bloque déjà explicitement l'accès à tous les dotfiles"
+
+message: >
+  Fichier .env potentiellement accessible publiquement dans le webroot —
+  déplacer hors du webroot et bloquer les dotfiles au niveau serveur
+  (voir rules/remediation/env-exposure.md).
+
+false_positive_notes:
+  - "Si le fichier détecté est un `.env.example` ne contenant que des valeurs placeholder, la sévérité peut être reclassée en `low`."
+  - "Vérifier que le fichier ne contient pas de secrets réels avant de confirmer un impact `critical` — l'exposition d'un `.env` vide de secrets reste une mauvaise pratique mais pas une fuite immédiate."
+
+remediation_ref: rules/remediation/env-exposure.md
+knowledge_ref: knowledge/server/env-exposure.md

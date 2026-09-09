@@ -1,0 +1,32 @@
+id: missing-rate-limit
+language: js
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Express sensible (login, register, reset de mot de
+    passe) définie sans middleware de limitation de débit
+    (`express-rate-limit` ou équivalent) attaché au routeur ou à la route.
+  patterns:
+    - "app.post('/login', _)"       # sans middleware de type limiter avant le handler
+    - "app.post('/register', _)"
+    - "router.post('/password/reset', _)"
+  exclude_if:
+    - "un middleware rateLimit(...) est passé en argument avant le handler final"
+    - "un middleware de rate limiting est appliqué globalement via app.use() en amont de la route"
+
+message: >
+  Route sensible sans limitation de débit — ajouter express-rate-limit ou
+  équivalent (voir rules/remediation/missing-rate-limit.md).
+
+false_positive_notes:
+  - "Si une passerelle API (API Gateway, Cloudflare, nginx limit_req) applique déjà un throttling global documenté, réduire la sévérité."
+  - "Endpoint interne réservé aux services de confiance sur réseau isolé : évaluer l'exposition réelle."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

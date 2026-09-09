@@ -1,0 +1,15 @@
+id: blind-sql-injection
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "php: PDO::query / PDOStatement::execute"
+    - "python: cursor.execute (psycopg2, sqlite3, MySQLdb)"
+    - "java: Statement.executeQuery / PreparedStatement"
+    - "node: mysql.query / pg.query"
+  taint_check: Suivi de la donnée depuis une source HTTP (paramètre, cookie, en-tête) jusqu'à un sink d'exécution de requête SQL sans passage par un paramétrage lié (bind).
+  trigger_condition: Une valeur taintée atteint le sink SQL dans une clause conditionnelle (WHERE/HAVING) sans neutralisation ni requête préparée, indépendamment du fait qu'une erreur ou un résultat soit renvoyé.
+severity: high
+remediation_ref: rules/remediation/blind-sql-injection.md
+knowledge_ref: knowledge/injections/blind-sql-injection.md

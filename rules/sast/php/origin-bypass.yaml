@@ -1,0 +1,32 @@
+id: origin-bypass
+language: php
+category: websocket
+cwe: CWE-346
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'Origin faite par sous-chaîne (strpos/str_contains)
+    plutôt que par égalité stricte à une liste fermée, ou une regex de validation
+    d'origine non ancrée.
+  patterns:
+    - "strpos($origin, _) === false"
+    - "str_contains($origin, _)"
+    - "preg_match('/[^^]...[^$]/', $origin)"
+  exclude_if:
+    - "La comparaison utilise in_array($origin, $whitelist, true) ou une égalité stricte '==='"
+    - "La regex est strictement ancrée avec ^ et $ et les points échappés"
+
+message: >
+  Vérification d'Origin par sous-chaîne ou regex non ancrée — contournable par
+  un domaine du type example.com.attacker.com (voir rules/remediation/origin-bypass.md).
+
+false_positive_notes:
+  - "Si strpos est utilisé sur une valeur qui n'est pas l'en-tête Origin (autre contexte métier), ce n'est pas applicable — vérifier le contexte."
+  - "Une regex ancrée correctement (`^https://app\\.example\\.com$`) n'est pas vulnérable même si elle utilise preg_match."
+
+remediation_ref: rules/remediation/origin-bypass.md
+knowledge_ref: knowledge/websocket/origin-bypass.md

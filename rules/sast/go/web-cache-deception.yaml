@@ -1,0 +1,40 @@
+id: web-cache-deception
+language: go
+category: modern
+cwe: CWE-524
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un routeur net/http (mux personnalisé, `http.ServeMux`,
+    routeurs tiers) qui traite des segments de chemin arbitraires après une
+    route authentifiée valide comme la même route (fallback permissif), ou
+    un handler qui sert du contenu personnalisé via `http.ServeFile`/
+    `http.FileServer` sans vérifier que l'extension d'URL correspond au
+    `Content-Type` réel, combiné à l'absence de `Cache-Control: private,
+    no-store` sur les réponses contenant des données utilisateur.
+  patterns:
+    - "mux.HandleFunc(\"/compte/profil/\", profileHandler) où profileHandler ignore les segments après /profil/ (ex: /compte/profil/inexistant.css) et retourne la même réponse authentifiée sans 404"
+    - "http.ServeFile(w, r, r.URL.Path) sur une route authentifiée dynamique, sans validation stricte que le chemin correspond à un fichier statique réel"
+    - "handler authentifié écrivant des données utilisateur sans w.Header().Set(\"Cache-Control\", \"private, no-store\"), déployé derrière un CDN qui met en cache par extension d'URL (*.css, *.js, *.jpg)"
+  exclude_if:
+    - "le routeur retourne une 404 stricte sur tout segment de chemin non reconnu après une route valide (pas de fallback vers le handler authentifié)"
+    - "la réponse fixe explicitement Cache-Control: private, no-store sur toute route exposant des données utilisateur, quel que soit le suffixe d'URL"
+
+message: >
+  Routeur ou handler permissif sur les segments de chemin combiné à
+  l'absence de Cache-Control restrictif — un attaquant peut construire une
+  URL avec une fausse extension statique (ex: /profil/x.css) pour faire
+  mettre en cache par un CDN la réponse authentifiée d'une victime et la
+  servir ensuite à n'importe quel visiteur (voir
+  rules/remediation/web-cache-deception.md).
+
+false_positive_notes:
+  - "Si le CDN/cache en amont met en cache uniquement sur la base du Content-Type réel de la réponse (jamais sur l'apparence de l'URL), le risque est neutralisé côté infrastructure — vérifier la configuration avant de confirmer."
+  - "Si http.ServeMux (ou le routeur utilisé) ne fait pas de correspondance par préfixe sur les routes sensibles, ou renvoie systématiquement 404 sur les chemins non enregistrés, reclasser en `low`."
+
+remediation_ref: rules/remediation/web-cache-deception.md
+knowledge_ref: knowledge/modern/web-cache-deception.md

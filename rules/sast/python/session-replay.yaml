@@ -1,0 +1,32 @@
+id: session-replay
+language: python
+category: sessions
+cwe: CWE-294
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un jeton de session ou d'API (JWT, session cookie) accepté sans
+    contrôle anti-rejeu (pas de vérification jti/nonce, pas d'expiration exp
+    courte, pas de liste de révocation) pouvant être intercepté puis rejoué.
+  patterns:
+    - "jwt.decode($_, options={'verify_exp': False}) (PyJWT)"
+    - "Vérification JWT sans contrôle du claim 'jti' contre une liste de jetons déjà consommés/révoqués"
+    - "Comparaison de token de session sans TTL (pas d'expiration exp/nbf définie lors de l'émission)"
+  exclude_if:
+    - "verify_exp reste activé (comportement par défaut de PyJWT) et une liste de révocation ou un nonce est vérifié"
+
+message: >
+  Jeton de session/API accepté sans protection anti-rejeu — un jeton
+  intercepté (log, proxy, réseau) reste valide et rejouable jusqu'à son
+  expiration. Activer la vérification d'expiration (verify_exp=True),
+  utiliser un identifiant unique (jti) à usage unique et une liste de révocation.
+
+false_positive_notes:
+  - "Si verify_exp=False est utilisé volontairement pour un cas de test isolé (fixtures), vérifier que ce code n'est pas atteignable en production."
+
+remediation_ref: rules/remediation/session-replay.md
+knowledge_ref: knowledge/sessions/session-replay.md

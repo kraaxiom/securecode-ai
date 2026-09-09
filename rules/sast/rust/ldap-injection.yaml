@@ -1,0 +1,27 @@
+id: ldap-injection
+language: rust
+category: injections
+cwe: CWE-90
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un usage non sécurisé d'une entrée utilisateur pouvant conduire à injection ldap.
+  patterns:
+    - "ldap3 crate: LdapConn.search(&format!(_, $var), ...) sans échappement LDAP"
+  exclude_if:
+    - "la valeur est validée par liste blanche ou échappée via l'API dédiée de la crate avant usage"
+    - "$var provient d'une constante interne (pas d'entrée utilisateur), non exploitable"
+
+message: >
+  Injection LDAP détectée — valider/échapper strictement toute entrée utilisateur avant usage dans ce contexte (voir rules/remediation/ldap-injection.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une liste blanche stricte ou échappée via l'API dédiée du framework avant usage, ce n'est pas exploitable."
+  - "Si $var provient d'une constante interne (pas d'entrée utilisateur), reclasser en `info`."
+
+remediation_ref: rules/remediation/ldap-injection.md
+knowledge_ref: knowledge/injections/ldap-injection.md

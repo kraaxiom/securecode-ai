@@ -1,0 +1,37 @@
+id: api-mass-assignment
+language: csharp
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint ASP.NET Core Web API dont l'action lie directement
+    le corps de requête à une entité Entity Framework (via [FromBody] sur
+    l'entité elle-même ou via un mapping automatique sans DTO ni [Bind]
+    restrictif), permettant à un client de modifier des champs sensibles
+    (Role, IsAdmin, Balance) non prévus par le formulaire d'origine.
+  patterns:
+    - "public IActionResult $Action([FromBody] $EntityType $var) { _context.$Set.Update($var); }"
+    - "_context.$Set.Add($request)"
+    - "context.Entry($entity).CurrentValues.SetValues($request)"
+    - "TryUpdateModelAsync($entity)"
+  exclude_if:
+    - "l'action utilise un DTO distinct de l'entité EF, avec mapping explicite champ par champ (ex: via AutoMapper avec profil restrictif)"
+    - "l'entité applique [Bind(Include = \"...\")] avec une liste blanche explicite des propriétés autorisées"
+
+message: >
+  Liaison directe du corps de requête à une entité Entity Framework sans DTO
+  ni liste blanche de propriétés — un attaquant peut injecter des champs
+  sensibles (Role, IsAdmin, Balance) non prévus par le formulaire d'origine
+  (voir rules/remediation/api-mass-assignment.md).
+
+false_positive_notes:
+  - "Si l'entité ne contient aucun champ privilégié (rôle, statut, solde), le risque est réduit — reclasser en `medium`."
+  - "Vérifier que le DTO utilisé en entrée ne réexpose pas accidentellement un champ sensible via une propriété calculée."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

@@ -1,0 +1,38 @@
+id: deep-query
+language: java
+category: graphql
+cwe: CWE-674
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma GraphQL (graphql-java / Netflix DGS) exposant des
+    champs auto-référentiels ou des relations imbriquées (ex: `friends`,
+    `children`, `replies`) sans limite de profondeur configurée, permettant
+    une requête récursive profondément imbriquée qui épuise les ressources
+    du resolver.
+  patterns:
+    - "GraphQL.newGraphQL($schema).build() // aucune MaxQueryDepthInstrumentation enregistrée"
+    - "type $T { $field: [$T] } // schéma SDL avec type auto-référentiel sans directive de profondeur max"
+    - "@DgsData(parentType = \"$T\", field = \"$field\") $ret $resolver(...) // resolver récursif sans DataLoader ni limite de profondeur"
+  exclude_if:
+    - "new MaxQueryDepthInstrumentation($maxDepth) est enregistrée sur le GraphQL.Builder"
+    - "Le schéma applique une directive de profondeur maximale (@maxDepth) ou un validateur de requête personnalisé limite la profondeur avant exécution"
+
+message: >
+  Le schéma GraphQL expose des relations auto-référentielles sans limite de
+  profondeur — une requête imbriquée récursivement (ex:
+  `user { friends { friends { friends { ... } } } }`) peut provoquer une
+  explosion combinatoire de résolutions et un déni de service. Enregistrer
+  `MaxQueryDepthInstrumentation` avec une profondeur maximale raisonnable et
+  valider la profondeur de chaque requête avant exécution.
+
+false_positive_notes:
+  - "Si tous les types auto-référentiels du schéma utilisent un DataLoader avec mise en cache et une pagination obligatoire (first/limit), le risque est réduit — reclasser en `low`."
+  - "Si l'API n'expose aucun type auto-référentiel ou récursif dans le schéma, cette règle ne s'applique pas."
+
+remediation_ref: rules/remediation/deep-query.md
+knowledge_ref: knowledge/graphql/deep-query.md

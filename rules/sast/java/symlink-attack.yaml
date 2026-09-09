@@ -1,0 +1,35 @@
+id: symlink-attack
+language: java
+category: file-inclusion
+cwe: CWE-61
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'existence/permission (`File.exists()`, `Files.isReadable()`)
+    suivie plus tard d'une opération séparée sur le même chemin (fenêtre TOCTOU), dans un
+    répertoire potentiellement partagé (uploads, fichiers temporaires), sans vérification
+    explicite qu'il ne s'agit pas d'un lien symbolique.
+  patterns:
+    - "file.exists() ... new FileOutputStream($path)  # sans Files.isSymbolicLink($path) ni LinkOption.NOFOLLOW_LINKS"
+    - "Files.createTempFile(...) sans PosixFilePermissions restrictifs"
+    - "Files.newOutputStream($path) sans StandardOpenOption.CREATE_NEW"
+  exclude_if:
+    - "Files.isSymbolicLink($path) est vérifié explicitement avant l'opération sensible"
+    - "l'ouverture utilise StandardOpenOption.CREATE_NEW (échec atomique si le fichier/lien existe déjà)"
+
+message: >
+  Accès fichier dans un répertoire potentiellement partagé sans vérification qu'il ne s'agit
+  pas d'un lien symbolique et sans ouverture atomique exclusive — utiliser
+  `StandardOpenOption.CREATE_NEW` et vérifier `Files.isSymbolicLink()` avant toute opération
+  sensible (voir rules/remediation/symlink-attack.md).
+
+false_positive_notes:
+  - "Si le répertoire cible est dédié et non accessible en écriture par d'autres utilisateurs/processus, le risque de TOCTOU est fortement réduit."
+  - "Reclasser en `info` si le code n'est jamais exécuté sur un répertoire multi-utilisateur (ex. uniquement sur un volume privé au conteneur applicatif)."
+
+remediation_ref: rules/remediation/symlink-attack.md
+knowledge_ref: knowledge/file-inclusion/symlink-attack.md

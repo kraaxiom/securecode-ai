@@ -1,0 +1,32 @@
+id: weak-privileges
+language: js
+category: database
+cwe: CWE-269
+owasp: A01:2021-Broken-Access-Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de pool de connexion applicative utilisant un
+    compte disposant potentiellement de privilèges d'administration complets.
+  patterns:
+    - "new Pool({ user: \"postgres\", _ })"
+    - "new Pool({ user: \"root\", _ })"
+    - "mysql.createPool({ user: \"root\", _ })"
+  exclude_if:
+    - "L'identifiant est utilisé exclusivement dans un script de migration distinct du code applicatif runtime"
+    - "Le compte est démontré comme un rôle restreint malgré son nom (à documenter manuellement)"
+
+message: >
+  Connexion applicative utilisant potentiellement un compte à privilèges
+  élevés — créer un rôle applicatif dédié limité au CRUD nécessaire (voir
+  rules/remediation/weak-privileges.md).
+
+false_positive_notes:
+  - "Le nom du compte ne garantit pas des privilèges élevés si le rôle a été explicitement restreint côté SGBD — à vérifier en base."
+  - "Un usage dans un script de migration/CI ponctuel est attendu et distinct du compte runtime applicatif."
+
+remediation_ref: rules/remediation/weak-privileges.md
+knowledge_ref: knowledge/database/weak-privileges.md

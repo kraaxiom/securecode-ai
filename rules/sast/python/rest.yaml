@@ -1,0 +1,33 @@
+id: rest
+language: python
+category: api
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un endpoint REST (Flask/Django/FastAPI/DRF) enregistre sans
+    decorateur d'authentification/autorisation, alors que l'action modifie ou
+    expose des donnees sensibles.
+  patterns:
+    - "@app.route('/admin/...', methods=['POST']) (Flask) sans decorateur @login_required ou verification manuelle de session"
+    - "class AdminViewSet(viewsets.ModelViewSet): (DRF) sans permission_classes defini alors que DEFAULT_PERMISSION_CLASSES est AllowAny"
+    - "@app.delete('/users/{id}') (FastAPI) sans dependance Depends(get_current_user) sur une route de suppression"
+  exclude_if:
+    - "Un decorateur/dependance d'authentification (login_required, permission_classes, Depends(get_current_user)) est present"
+    - "L'endpoint est intentionnellement public et ne traite aucune donnee sensible"
+
+message: >
+  Endpoint REST sensible enregistre sans controle d'authentification ni
+  d'autorisation explicite — accessible potentiellement a tout utilisateur
+  non authentifie. Ajouter un decorateur ou une dependance de verification
+  d'identite/permission sur chaque endpoint manipulant des donnees sensibles.
+
+false_positive_notes:
+  - "Verifier si une authentification globale (middleware appliquee a toute l'application) couvre deja cette route avant de remonter."
+
+remediation_ref: rules/remediation/rest.md
+knowledge_ref: knowledge/api/rest.md

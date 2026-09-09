@@ -1,0 +1,36 @@
+id: open-redirect
+language: java
+category: frontend
+cwe: CWE-601
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une redirection Spring MVC (redirect:, RedirectView,
+    HttpServletResponse.sendRedirect) construite à partir d'un paramètre
+    fourni par le client sans validation contre une liste blanche de
+    destinations autorisées.
+  patterns:
+    - "return \"redirect:\" + request.getParameter(\"url\") dans un contrôleur Spring MVC sans validation"
+    - "response.sendRedirect(request.getParameter(\"returnUrl\")) sans vérification que l'URL cible est relative ou dans une liste blanche de domaines"
+    - "new RedirectView($userControlledParam) sans validation de domaine/chemin"
+  exclude_if:
+    - "l'URL de redirection est validée contre une liste blanche de chemins/domaines autorisés, ou restreinte à un chemin relatif interne (ne commençant pas par // ou http)"
+    - "le paramètre n'est jamais utilisé pour construire l'URL de redirection finale (valeur ignorée ou remplacée par une valeur fixe)"
+
+message: >
+  L'URL de redirection est construite à partir d'un paramètre fourni par le
+  client sans validation — permet une redirection ouverte vers un site
+  malveillant (phishing) en abusant de la confiance dans le domaine
+  légitime. Valider l'URL cible contre une liste blanche de chemins/domaines
+  autorisés, ou n'accepter que des chemins relatifs internes.
+
+false_positive_notes:
+  - "Une validation par startsWith(\"/\") seule ne suffit pas (contournable par //evil.com, considéré comme protocol-relative) — vérifier que la validation est réellement stricte avant d'exclure."
+  - "Si le paramètre ne peut provenir que de valeurs générées côté serveur (jamais exposé au client), ce risque ne s'applique pas."
+
+remediation_ref: rules/remediation/open-redirect.md
+knowledge_ref: knowledge/frontend/open-redirect.md

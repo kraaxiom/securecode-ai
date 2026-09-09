@@ -1,0 +1,35 @@
+id: dos-query
+language: csharp
+category: graphql
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur GraphQL HotChocolate exposant des champs de liste avec
+    pagination (`[UsePaging]`, `[UseFiltering]` sur un `IQueryable`) sans
+    borne maximale imposée côté resolver, ou sans analyse de coût de requête
+    (`MaxAllowedComplexity`) configurée au niveau du schéma.
+  patterns:
+    - "[UsePaging] public IQueryable<*> GetItems([Service] AppDbContext db) => db.Items sans MaxPageSize configuré sur l'attribut ou dans AddGraphQLServer()"
+    - "services.AddGraphQLServer().AddQueryType<Query>() sans .AddMaxExecutionDepthRule(...) ni .ModifyRequestOptions(o => o.ComplexityAnalyzerOptions.MaxAllowedComplexity = ...)"
+    - "public IQueryable<*> GetItems([Service] AppDbContext db, int first) => db.Items.Take(first) sans plafond Math.Min(first, MaxPageSize)"
+  exclude_if:
+    - "l'attribut [UsePaging(MaxPageSize = N)] (avec N raisonnable, ex: <= 100) est explicitement configuré"
+    - "une règle de complexité (`ComplexityAnalyzerOptions.MaxAllowedComplexity`) rejette les requêtes dépassant un seuil configuré"
+
+message: >
+  Champs GraphQL paginés sans plafond de taille ni analyse de coût de
+  requête — une requête combinant listes larges et alias multiples peut
+  provoquer un déni de service par surcharge base de données/mémoire (voir
+  rules/remediation/dos-query.md).
+
+false_positive_notes:
+  - "Si la base de données applique elle-même un LIMIT global via Entity Framework Core configuré avec un plafond par défaut, le risque est atténué."
+  - "Un endpoint accessible uniquement en interne avec authentification forte réduit la probabilité d'exploitation mais ne l'élimine pas."
+
+remediation_ref: rules/remediation/dos-query.md
+knowledge_ref: knowledge/graphql/dos-query.md

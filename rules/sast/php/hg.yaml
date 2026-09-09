@@ -1,0 +1,32 @@
+id: hg
+language: php
+category: sensitive-files
+cwe: CWE-538
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: filesystem-pattern
+  description: >
+    Détecte la présence de le répertoire `.hg/` (historique du dépôt Mercurial, code source, éventuels secrets commités) accessible dans le webroot public, atteignable par une requête HTTP
+    directe (pas d'analyse du contenu du fichier — simple présence dans un
+    répertoire servi publiquement par le serveur web).
+  patterns:
+    - "fichier correspondant à: .hg/ (répertoire complet)"
+    - "chemin situé sous un répertoire configuré comme webroot (ex: public/, www/, htdocs/, wwwroot/)"
+  exclude_if:
+    - "le fichier est situé strictement en dehors de la racine documentaire du serveur web (ex: hors de public/ pour une app Laravel/Symfony)"
+    - "une règle serveur (nginx deny / Apache Require all denied) bloque explicitement et vérifiablement l'accès au fichier"
+
+message: >
+  .hg/ détecté dans le webroot public — accessible potentiellement par
+  une requête HTTP directe. Voir rules/remediation/hg.md pour la
+  correction (règle serveur, .gitignore, contrôle CI).
+
+false_positive_notes:
+  - "Si le répertoire scanné n'est pas réellement le webroot déployé (ex: scan du dépôt Git complet, pas de l'artefact de déploiement), reclasser en `info`."
+  - "Vérifier qu'une règle de blocage serveur n'est pas déjà en place avant de considérer l'alerte comme exploitable."
+
+remediation_ref: rules/remediation/hg.md
+knowledge_ref: knowledge/sensitive-files/hg.md

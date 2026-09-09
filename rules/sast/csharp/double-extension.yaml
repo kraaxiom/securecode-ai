@@ -1,0 +1,36 @@
+id: double-extension
+language: csharp
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'extension de fichier téléversé basée sur une
+    recherche de sous-chaîne (Contains/IndexOf) plutôt que sur l'extraction
+    de l'extension finale via Path.GetExtension, permettant de contourner
+    le contrôle avec un nom du type "shell.aspx.jpg".
+  patterns:
+    - "$file.FileName.Contains($ext)"
+    - "$file.FileName.IndexOf($ext)"
+    - "$file.FileName.EndsWith($ext)"
+  exclude_if:
+    - "l'extension est extraite avec Path.GetExtension($file.FileName) puis comparée strictement (==) à une liste blanche"
+    - "le nom de fichier est rejeté si Path.GetFileName($file.FileName) contient plus d'un caractère '.'"
+
+message: >
+  Validation d'extension par recherche de sous-chaîne (Contains/EndsWith)
+  sur le nom de fichier complet — un nom comme "shell.aspx.jpg" peut
+  contourner ce contrôle. Utiliser Path.GetExtension() sur l'extension
+  finale et rejeter les noms à extensions multiples (voir
+  rules/remediation/double-extension.md).
+
+false_positive_notes:
+  - "Si le EndsWith/Contains est appliqué après extraction stricte via Path.GetExtension (donc sur l'extension seule, pas le nom complet), ce n'est pas vulnérable — reclasser en `info`."
+  - "Si le serveur IIS cible n'interprète jamais d'extension intermédiaire (pas de mapping AddHandler équivalent), l'impact réel dépend de la configuration serveur — vérifier manuellement."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

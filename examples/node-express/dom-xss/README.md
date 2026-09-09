@@ -1,0 +1,3 @@
+# DOM-based XSS
+
+`vulnerable.js` concatène directement un paramètre de requête (`req.query.q`) dans un bloc `<script>` inline renvoyé par le serveur, ce qui permet à une valeur contrôlée par l'attaquant d'être interprétée comme du code JavaScript. `fixed.js` transmet cette même valeur via un attribut `data-*` échappé avec `encodeURIComponent`, lu côté client puis assigné uniquement à `textContent`, jamais réinjecté comme code. Cette vulnérabilité relève de CWE-79 (Improper Neutralization of Input During Web Page Generation), la variante DOM se distinguant par une exécution entièrement côté client, indépendante d'un stockage serveur.

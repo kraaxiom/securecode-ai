@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Patch",
+  "type": "object",
+  "required": ["id", "finding_id", "file", "diff", "confidence", "applied"],
+  "properties": {
+    "id": { "type": "string", "description": "Identifiant unique du patch (ex: uuid)" },
+    "finding_id": { "type": "string", "description": "Référence au finding corrigé (finding.schema.json#id)" },
+    "file": { "type": "string", "description": "Chemin du fichier modifié" },
+    "diff": { "type": "string", "description": "Diff unifié minimal (avant/après)" },
+    "remediation_ref": { "type": "string", "description": "Référence à rules/remediation/<slug>.md utilisée pour générer ce patch" },
+    "confidence": { "type": "string", "enum": ["low", "medium", "high"], "description": "Confiance de l'IA dans la correctness du patch proposé" },
+    "applied": { "type": "boolean", "description": "true si le patch a été effectivement appliqué au fichier" },
+    "applied_at": { "type": "string", "format": "date-time", "description": "Horodatage de l'application, absent si applied=false" },
+    "tests_ref": { "type": "array", "items": { "type": "string" }, "description": "Chemins des tests de non-régression associés" }
+  }
+}

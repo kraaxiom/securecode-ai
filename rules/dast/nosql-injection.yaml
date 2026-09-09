@@ -1,0 +1,20 @@
+id: nosql-injection
+category: injections
+cwe: CWE-943
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST|PUT
+  target: champ JSON du corps de requête normalement attendu comme chaîne (ex. champ "username" ou "password") ou paramètre transmis dans une syntaxe de tableau/objet HTTP
+  technique: differential-response
+  indicators:
+    - "Différentiel de réponse (authentification réussie, nombre de résultats, code HTTP) lorsque le champ attendu comme chaîne est envoyé sous forme d'objet JSON structuré plutôt que de chaîne simple"
+    - "Contournement apparent de l'authentification lorsque le champ mot de passe est envoyé comme objet plutôt que comme chaîne, sans qu'aucun payload d'exploitation réel ne soit utilisé"
+    - "Message d'erreur applicatif exposant un fragment de requête vers la base NoSQL ou le nom du driver/moteur"
+    - "Temps de réponse anormalement élevé lorsqu'une structure d'opérateur imbriquée est soumise en lieu et place d'une valeur scalaire"
+false_positive_notes:
+  - "Certaines API acceptent légitimement des objets structurés pour des champs de recherche avancée — confirmer le schéma attendu avant de conclure."
+  - "Une validation de schéma stricte côté serveur peut rejeter la requête avec un code générique, masquant le signal différentiel."
+remediation_ref: rules/remediation/nosql-injection.md
+knowledge_ref: knowledge/injections/nosql-injection.md

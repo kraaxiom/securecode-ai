@@ -1,0 +1,19 @@
+id: broken-access-control
+category: authorization
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+type: dast
+test:
+  method: GET|POST|PUT|DELETE
+  target: endpoint sensible (lecture/écriture/suppression de ressource) accédé sans jeton d'authentification ou avec un jeton d'un rôle insuffisant
+  technique: differential-response
+  indicators:
+    - "un appel sans en-tête d'authentification, ou avec un jeton expiré/invalide, obtient un statut de succès sur un endpoint sensible au lieu d'un refus (401)"
+    - "un compte authentifié mais dépourvu de toute autorisation spécifique sur la ressource obtient un statut de succès (200) au lieu d'un refus (403)"
+    - "incohérence de statut de refus entre plusieurs endpoints exposant la même ressource par des chemins différents (ex. API vs export)"
+false_positive_notes:
+  - "endpoint public par conception (contenu non sensible) : vérifier la classification de la ressource avant conclusion"
+  - "statut 200 renvoyé avec un corps d'erreur applicatif (pattern anti-REST) : ne pas confondre avec un vrai contournement d'autorisation"
+remediation_ref: rules/remediation/broken-access-control.md
+knowledge_ref: knowledge/authorization/broken-access-control.md

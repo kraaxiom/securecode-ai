@@ -1,0 +1,30 @@
+id: des
+language: go
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'import et l'appel du paquet crypto/des (des.NewCipher,
+    des.NewTripleDESCipher) pour chiffrer des données applicatives.
+  patterns:
+    - "import \"crypto/des\""
+    - "des.NewCipher(_)"
+    - "des.NewTripleDESCipher(_)"
+  exclude_if:
+    - "usage exclusif pour interopérer en lecture avec un format tiers legacy imposé, documenté comme tel"
+
+message: >
+  DES/3DES (crypto/des) est un algorithme de chiffrement obsolète (clé effective
+  56 bits, vulnérable à Sweet32) — migrer vers crypto/aes en mode GCM.
+
+false_positive_notes:
+  - "Si l'appel sert uniquement à déchiffrer des données legacy en lecture seule pour migration, reclasser en `medium` avec plan de migration explicite."
+  - "Vérifier qu'aucune donnée sensible nouvelle n'est chiffrée avec cet algorithme avant de conclure."
+
+remediation_ref: rules/remediation/des.md
+knowledge_ref: knowledge/crypto/des.md

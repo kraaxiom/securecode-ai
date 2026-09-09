@@ -1,0 +1,17 @@
+id: mfa-bypass
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+type: dast
+test:
+  method: POST
+  target: séquence des requêtes du flux d'authentification multi-étapes (identifiant/mot de passe puis vérification du second facteur)
+  technique: differential-response
+  indicators:
+    - "Un état de session pleinement privilégié (accès à des ressources protégées) est observé immédiatement après la première étape (identifiant/mot de passe), avant toute soumission du second facteur, lors du rejeu de la séquence en s'arrêtant volontairement avant l'étape MFA"
+    - "Un endpoint alternatif (API mobile, ancienne version d'API) accepte la même paire identifiant/mot de passe sans redemander le second facteur, alors que le flux web principal l'exige"
+false_positive_notes:
+  - "Certaines applications autorisent légitimement une session à privilèges réduits ('authentification partielle') entre les deux étapes — vérifier que les ressources accessibles à ce stade sont bien limitées avant de conclure à un contournement réel."
+remediation_ref: rules/remediation/mfa-bypass.md
+knowledge_ref: knowledge/auth/mfa-bypass.md

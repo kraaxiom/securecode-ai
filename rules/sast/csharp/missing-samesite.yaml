@@ -1,0 +1,35 @@
+id: missing-samesite
+language: csharp
+category: sessions
+cwe: CWE-1275
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une CookieOptions ou une configuration de session/authentification
+    ASP.NET Core sans attribut SameSite explicite, ou avec SameSiteMode.None
+    non associé à Secure.
+  patterns:
+    - "new CookieOptions { _ }" # SameSite absent de l'initialisation
+    - "new CookieOptions { SameSite = SameSiteMode.None, _ }" # sans Secure = true dans le même objet
+    - "services.AddSession(options => { _ })" # options.Cookie.SameSite non défini
+    - "options.Cookie.SameSite = SameSiteMode.None" # sans options.Cookie.SecurePolicy = CookieSecurePolicy.Always
+  exclude_if:
+    - "SameSite est explicitement défini à Lax ou Strict dans le même objet CookieOptions"
+    - "SameSite = SameSiteMode.None est associé à Secure = true (ou SecurePolicy.Always) dans la même configuration, avec justification fonctionnelle (widget cross-site)"
+
+message: >
+  Cookie créé sans attribut SameSite explicite (ou avec SameSite=None non
+  sécurisé) — le navigateur continuera d'envoyer ce cookie lors de requêtes
+  cross-site, exposant l'application au CSRF (voir
+  rules/remediation/missing-samesite.md).
+
+false_positive_notes:
+  - "Si SameSite=None est utilisé avec Secure=true pour un besoin d'intégration cross-site documenté, le risque est acceptable — reclasser en `info` avec justification."
+  - "Vérifier la configuration globale CookiePolicyOptions.MinimumSameSitePolicy avant de remonter le signal, car elle peut s'appliquer par défaut à tous les cookies."
+
+remediation_ref: rules/remediation/missing-samesite.md
+knowledge_ref: knowledge/sessions/missing-samesite.md

@@ -1,0 +1,32 @@
+id: mass-assignment
+language: js
+category: authorization
+cwe: CWE-915
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte req.body passé directement à un constructeur/méthode de mise à
+    jour ORM (findByIdAndUpdate, Model.create) sans extraction explicite de
+    champs.
+  patterns:
+    - "Model.findByIdAndUpdate($_, req.body, _)"
+    - "new Model(req.body)"
+    - "Model.create(req.body)"
+  exclude_if:
+    - "Une déstructuration explicite ({ name, email } = req.body) précède l'appel ORM, limitant les champs transmis"
+    - "Un schéma de validation (Joi, Zod, class-validator) restreint les champs acceptés avant l'appel ORM"
+
+message: >
+  Liaison directe du corps de requête à un modèle sans liste blanche de
+  champs — un attaquant peut injecter des attributs sensibles (voir
+  rules/remediation/mass-assignment.md).
+
+false_positive_notes:
+  - "Si un schéma de validation strict (Zod/Joi) est appliqué avant l'appel ORM et exclut les champs sensibles, le risque est atténué — vérifier le schéma avant de confirmer."
+
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

@@ -1,0 +1,37 @@
+id: service-worker-abuse
+language: python
+category: frontend
+cwe: CWE-494
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un backend Python qui sert un fichier service-worker.js sans
+    en-tetes d'integrite/controle stricts, ou qui autorise son upload/
+    modification par un chemin non protege (permettant a un attaquant de
+    remplacer le service worker et d'intercepter tout le trafic futur du
+    client).
+  patterns:
+    - "Route Flask/Django servant /service-worker.js depuis un repertoire d'upload utilisateur ou un chemin modifiable sans controle d'integrite"
+    - "Absence de Content-Type: application/javascript strict et de restriction de scope sur la route servant le service worker"
+    - "Endpoint permettant l'ecriture d'un fichier .js dans le meme repertoire que le service worker legitime"
+  exclude_if:
+    - "Le fichier service-worker.js est servi depuis un emplacement statique non modifiable par les utilisateurs, avec integrite verifiee (checksum, CI/CD signee)"
+
+message: >
+  Service worker servi depuis un emplacement ou un mecanisme permettant sa
+  modification par un tiers non autorise — un service worker malveillant
+  peut intercepter durablement toutes les requetes futures du navigateur de
+  la victime (equivalent d'une persistance XSS totale). Servir le service
+  worker exclusivement depuis un emplacement statique controle par le
+  pipeline de deploiement, jamais depuis un repertoire modifiable par
+  upload utilisateur.
+
+false_positive_notes:
+  - "Si aucun service worker n'est servi par l'application, ce pattern ne s'applique pas."
+
+remediation_ref: rules/remediation/service-worker-abuse.md
+knowledge_ref: knowledge/frontend/service-worker-abuse.md

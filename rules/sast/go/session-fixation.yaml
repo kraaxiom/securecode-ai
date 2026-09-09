@@ -1,0 +1,35 @@
+id: session-fixation
+language: go
+category: sessions
+cwe: CWE-384
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction de connexion qui authentifie l'utilisateur en
+    réutilisant la session existante (gorilla/sessions) sans en régénérer
+    l'identifiant, ou qui accepte un identifiant de session fourni par le
+    client via l'URL.
+  patterns:
+    - "func Login($w, $r) { _ session, _ := store.Get($r, $name); session.Values[\"user_id\"] = $userID; session.Save($r, $w); _ }" # sans nouvelle session / rotation d'ID
+    - "r.URL.Query().Get(\"sessionid\")" # identifiant de session accepté depuis l'URL
+    - "r.FormValue(\"session_id\")"
+  exclude_if:
+    - "un nouvel objet de session est explicitement créé (store.New(r, name) plutôt que store.Get) après authentification réussie, invalidant l'ancien identifiant"
+    - "la bibliothèque de session utilisée régénère automatiquement l'identifiant à chaque Save() (comportement documenté et non contourné)"
+
+message: >
+  Authentification effectuée sans régénération de l'identifiant de session —
+  un attaquant ayant préalablement imposé un identifiant à la victime
+  pourrait réutiliser ce même identifiant après connexion (voir
+  rules/remediation/session-fixation.md).
+
+false_positive_notes:
+  - "gorilla/sessions ne régénère pas automatiquement l'ID de session cookie ; vérifier que le code appelle explicitement store.New ou équivalent après login avant de conclure à un faux positif."
+  - "Ne jamais accepter un identifiant de session transmis en paramètre d'URL ou de formulaire, même si le reste du flux paraît correct."
+
+remediation_ref: rules/remediation/session-fixation.md
+knowledge_ref: knowledge/sessions/session-fixation.md

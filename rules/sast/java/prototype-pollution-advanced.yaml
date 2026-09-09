@@ -1,0 +1,47 @@
+id: prototype-pollution-advanced
+language: java
+category: modern
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent Java de la pollution de prototype JavaScript : liaison de
+    propriétés non filtrée lors d'une désérialisation (Jackson
+    `ObjectMapper`, Spring `@ModelAttribute`/data binding) qui permet à un
+    attaquant de peupler des champs internes/sensibles via des noms de
+    propriété imbriqués (ex: `class.classLoader.*`, propriétés non
+    déclarées dans le DTO), aboutissant à une pollution d'état interne de
+    classe ou, historiquement, à une exécution de code via le ClassLoader
+    (CVE Spring `class.module.classLoader`).
+  patterns:
+    - "@ModelAttribute $T $obj // binding automatique sans @InitBinder restreignant les champs autorisés (setAllowedFields/setDisallowedFields)"
+    - "objectMapper.readValue($body, $T.class) // ObjectMapper avec FAIL_ON_UNKNOWN_PROPERTIES désactivé et sans @JsonIgnoreProperties, DTO exposant des setters sur des champs internes"
+    - "BeanUtils.populate($bean, $requestParamsMap) // Apache Commons BeanUtils, binding de propriétés imbriquées non filtré (ex: \"class.classLoader.resources\")"
+    - "WebDataBinder $binder // aucun appel à binder.setDisallowedFields(\"class.*\", \"class.classLoader.*\")"
+
+  exclude_if:
+    - "@InitBinder configure explicitement setAllowedFields ou setDisallowedFields(\"class.*\") sur le binder"
+    - "Le DTO de désérialisation est un objet plat (record/POJO) sans setter exposant class/classLoader ni propriétés imbriquées arbitraires"
+    - "objectMapper est configuré avec FAIL_ON_UNKNOWN_PROPERTIES=true et des DTO strictement typés"
+
+message: >
+  La liaison de propriétés (data binding Spring ou désérialisation Jackson/
+  BeanUtils) accepte des noms de propriété imbriqués non filtrés — un
+  attaquant peut cibler des propriétés internes sensibles telles que
+  `class.classLoader.*` pour altérer l'état interne d'un bean ou, sur des
+  versions vulnérables, atteindre le ClassLoader (pollution d'état
+  équivalente à la prototype pollution côté JVM). Restreindre les champs
+  liables via `WebDataBinder.setDisallowedFields("class.*")`, utiliser des
+  DTO plats dédiés à chaque endpoint, et activer
+  `FAIL_ON_UNKNOWN_PROPERTIES` sur `ObjectMapper`.
+
+false_positive_notes:
+  - "Cette règle documente un équivalent Java (data-binding property pollution) — la pollution de prototype au sens strict (Object.prototype) n'existe pas en Java ; ne pas la confondre avec la vulnérabilité JS."
+  - "Si tous les endpoints utilisent des records/DTO immuables sans binding réflexif de propriétés imbriquées, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/prototype-pollution-advanced.md
+knowledge_ref: knowledge/modern/prototype-pollution-advanced.md

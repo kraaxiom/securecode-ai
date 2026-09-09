@@ -1,0 +1,29 @@
+id: rc4
+language: go
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'import et l'appel du paquet crypto/rc4 (rc4.NewCipher), ou
+    l'inclusion explicite d'une cipher suite RC4 dans une config tls.Config.
+  patterns:
+    - "import \"crypto/rc4\""
+    - "rc4.NewCipher(_)"
+    - "tls.TLS_RSA_WITH_RC4_128_SHA"
+  exclude_if:
+    - "usage exclusif dans un test de compatibilité avec un protocole legacy externe, documenté comme tel"
+
+message: >
+  RC4 (crypto/rc4) présente des biais statistiques exploitables et est
+  interdit dans TLS depuis la RFC 7465 — migrer vers AES-GCM ou ChaCha20-Poly1305.
+
+false_positive_notes:
+  - "Si la cipher suite RC4 est listée mais exclue par MinVersion/CipherSuites restreints ailleurs dans la config, vérifier la configuration effective avant de conclure."
+
+remediation_ref: rules/remediation/rc4.md
+knowledge_ref: knowledge/crypto/rc4.md

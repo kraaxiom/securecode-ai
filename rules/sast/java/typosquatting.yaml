@@ -1,0 +1,33 @@
+id: typosquatting
+language: java
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte dans pom.xml/build.gradle un artifactId/groupId proche d'un
+    package Java populaire mais orthographié différemment (typosquatting),
+    signe possible d'une dépendance frauduleuse imitant une bibliothèque
+    légitime.
+  patterns:
+    - "pom.xml: <groupId>org.apache.commmons</groupId> ou <artifactId>commons-lang4</artifactId> (variantes proches de commons-lang3/org.apache.commons)"
+    - "build.gradle: implementation 'com.googlecode.json-simple:json-simple-fix' ou variantes non officielles de bibliothèques connues (gson, jackson, guava)"
+    - "pom.xml: <groupId>com.fasterxml.jackson.core</groupId> (faute proche de com.fasterxml.jackson.core)"
+    - "build.gradle: groupId/artifactId avec distance de Levenshtein faible (1-2 caractères) par rapport à un package Maven Central très téléchargé, publié par un mainteneur différent"
+
+message: >
+  Nom de dépendance visuellement proche d'un package populaire mais publié
+  par un groupId/mainteneur différent — indicateur de typosquatting.
+  Vérifier le groupId exact et le mainteneur officiel sur Maven Central
+  avant intégration, corriger la dépendance vers l'artefact légitime.
+
+false_positive_notes:
+  - "Si l'artifactId proche est un fork légitime et documenté (mention explicite dans le README du projet), reclasser en `low` après vérification."
+  - "Certains groupId historiques (ex: anciens artefacts pré-réorganisation Apache) peuvent sembler proches sans être malveillants — croiser avec la date de première publication et la réputation du mainteneur."
+
+remediation_ref: rules/remediation/typosquatting.md
+knowledge_ref: knowledge/supply-chain/typosquatting.md

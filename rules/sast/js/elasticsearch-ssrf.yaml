@@ -1,0 +1,28 @@
+id: elasticsearch-ssrf
+language: js
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une URL vers un cluster Elasticsearch (ou de recherche similaire) à partir d'une entrée utilisateur (hôte, port ou chemin d'API).
+  patterns:
+    - "new Client({ node: $userHost })"
+    - "fetch(string_concat($userHost, ":9200", _))"
+  exclude_if:
+    - "$userHost est validée contre une whitelist fermée d'hôtes Elasticsearch constants"
+    - "Le cluster impose une authentification/autorisation vérifiée indépendamment de l'origine de la requête"
+
+message: >
+  URL/hôte du cluster Elasticsearch dérivé d'une entrée utilisateur — voir rules/remediation/elasticsearch-ssrf.md.
+
+false_positive_notes:
+  - "Si l'hôte est fixé en configuration serveur (pas d'entrée utilisateur), ce n'est pas exploitable."
+  - "Si le cluster impose une authentification forte et une segmentation réseau stricte, le risque résiduel est réduit mais la détection reste pertinente."
+
+remediation_ref: rules/remediation/elasticsearch-ssrf.md
+knowledge_ref: knowledge/ssrf/elasticsearch-ssrf.md

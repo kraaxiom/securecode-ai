@@ -1,0 +1,15 @@
+id: mfa-bypass
+category: auth
+cwe: CWE-287
+type: rasp
+guard:
+  sink: fonction d'émission de session/token pleinement privilégié suite à un flux d'authentification multi-facteurs
+  block_condition: >
+    Émission d'une session/token pleinement privilégié pour un utilisateur dont le compte
+    a la MFA activée, sans qu'un marqueur serveur infalsifiable de validation du second
+    facteur n'ait été positionné pour cette session en cours.
+  action: block
+  fail_mode: fail-closed   # laisser passer un contournement de MFA annule la protection que l'utilisateur a explicitement activée ; blocage strict recommandé par défaut
+severity: high
+remediation_ref: rules/remediation/mfa-bypass.md
+knowledge_ref: knowledge/auth/mfa-bypass.md

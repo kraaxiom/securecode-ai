@@ -1,0 +1,38 @@
+id: browser-storage-leak
+language: rust
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée sensible (token, secret, mot de passe, clé d'API)
+    sérialisée par le backend Rust (actix-web/axum) dans une réponse JSON ou
+    un cookie non protégé, typiquement destinée à être stockée côté
+    navigateur (localStorage/sessionStorage) par le frontend.
+  patterns:
+    - "HttpResponse::Ok().json(json!({ _, \"token\": $secret, _ }))"
+    - "Json(SecretResponse { token: $secret, _ })"
+    - "Cookie::new($_, $secret)  # sans .http_only(true)"
+    - "CookieBuilder::new($_, $secret).finish()  # sans http_only(true)"
+  exclude_if:
+    - "la valeur exposée est un identifiant public non sensible (user_id, display_name)"
+    - "le cookie est construit avec .http_only(true).secure(true).same_site(_)"
+    - "le token est de très courte durée de vie et explicitement prévu pour un usage client unique (CSRF token)"
+
+message: >
+  Une donnée sensible semble sérialisée par le backend Rust dans une réponse
+  JSON ou un cookie sans protection http_only, susceptible d'être stockée côté
+  navigateur (localStorage/sessionStorage) — préférer un cookie
+  HttpOnly/Secure/SameSite (voir rules/remediation/browser-storage-leak.md).
+
+false_positive_notes:
+  - "Si le cookie est construit avec .http_only(true).secure(true).same_site(_), ce n'est pas un vrai positif."
+  - "Si la réponse JSON ne contient que des données publiques, il n'y a pas de fuite exploitable."
+  - "Un jeton CSRF de courte durée destiné explicitement au client n'est pas concerné par ce contrôle."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

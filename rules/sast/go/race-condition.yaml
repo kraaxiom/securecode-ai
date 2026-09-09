@@ -1,0 +1,38 @@
+id: race-condition
+language: go
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pattern lire-vérifier-écrire (check-then-act) non atomique sur
+    une ressource partagée (solde, stock, quota) en Go — lecture via une
+    requête SQL ou un accès mémoire partagé, suivie d'une condition puis
+    d'une écriture séparée, sans transaction, verrou (sync.Mutex) ni requête
+    SQL conditionnelle atomique.
+  patterns:
+    - "row := db.QueryRow(\"SELECT stock FROM products WHERE id = $1\", id); ...; db.Exec(\"UPDATE products SET stock = $1 WHERE id = $2\", newStock, id) — deux requêtes séparées hors transaction, sans SELECT ... FOR UPDATE ni clause conditionnelle"
+    - "func (s *Service) Withdraw(id string, amount int) error { balance := s.getBalance(id); if balance >= amount { s.setBalance(id, balance-amount) } } — lecture puis écriture d'un solde en mémoire/DB sans mutex ni transaction"
+    - "goroutine manipulant une map partagée ou un champ de struct (compteur, stock) via lecture puis écriture sans sync.Mutex/sync.RWMutex ni opération atomic.* (sync/atomic)"
+  exclude_if:
+    - "la lecture et l'écriture sont protégées par une transaction SQL avec verrou explicite (BEGIN ... SELECT ... FOR UPDATE ... COMMIT) ou par un sync.Mutex/sync.RWMutex encapsulant toute la section critique de bout en bout"
+    - "la mise à jour utilise une requête SQL atomique conditionnelle (UPDATE ... SET stock = stock - $1 WHERE stock >= $1) ou un package sync/atomic (atomic.AddInt64, atomic.CompareAndSwap) pour la ressource en mémoire"
+
+message: >
+  Vérification et mise à jour d'une ressource partagée effectuées en deux
+  opérations séparées non atomiques — des goroutines ou requêtes concurrentes
+  peuvent toutes deux passer la vérification avant l'écriture (double
+  dépense, survente de stock). Utiliser une transaction avec SELECT ... FOR
+  UPDATE, un sync.Mutex encadrant toute la section critique, ou une requête
+  SQL conditionnelle atomique — voir rules/remediation/race-condition.md.
+
+false_positive_notes:
+  - "Si la ressource n'est jamais accédée en concurrence (un seul goroutine, traitement strictement séquentiel) le risque est nul."
+  - "Un channel Go utilisé comme sémaphore/file de sérialisation en amont peut mitiger le risque sans verrou explicite visible dans la fonction — vérifier l'architecture avant de confirmer `high`."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

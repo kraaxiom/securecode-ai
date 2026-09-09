@@ -1,0 +1,35 @@
+id: batch-attack
+language: rust
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint async-graphql acceptant un batch d'opérations
+    (`BatchRequest`) sans limite sur sa taille, typiquement via
+    `GraphQLBatchRequest` d'async-graphql-axum ou async-graphql-actix-web
+    exécuté directement sans middleware limitant le nombre d'opérations.
+  patterns:
+    - "async fn graphql_handler(schema: Extension<AppSchema>, req: GraphQLBatchRequest) -> GraphQLResponse { schema.execute_batch(req.into_inner()).await.into() } sans vérification de la taille du batch avant exécution"
+    - "BatchRequest::Batch(requests) traité par une boucle for req in requests { schema.execute(req).await } sans plafond sur requests.len()"
+    - "GraphQLBatchRequest extrait directement dans un handler axum/actix sans middleware ni vérification match req { BatchRequest::Batch(v) if v.len() > N => reject, ... }"
+  exclude_if:
+    - "une vérification explicite (ex: match &req { BatchRequest::Batch(v) if v.len() > 10 => return erreur, _ => {} }) est effectuée avant schema.execute_batch"
+    - "le batching est désactivé explicitement (utilisation de GraphQLRequest simple au lieu de GraphQLBatchRequest) ou non exposé par la route"
+
+message: >
+  Endpoint GraphQL acceptant un batch d'opérations sans limite de taille — un
+  attaquant peut soumettre des centaines de tentatives (ex: bruteforce
+  d'identifiants) en une seule requête HTTP, contournant le rate-limiting
+  (voir rules/remediation/batch-attack.md).
+
+false_positive_notes:
+  - "Si un rate-limiting est appliqué au niveau de chaque opération individuelle du batch (et non seulement au niveau HTTP), le risque est réduit."
+  - "Certaines API internes de confiance utilisent le batching pour l'efficacité légitime — vérifier le contexte d'authentification avant de remonter en `high`."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

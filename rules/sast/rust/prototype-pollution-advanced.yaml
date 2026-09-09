@@ -1,0 +1,40 @@
+id: prototype-pollution-advanced
+language: rust
+category: modern
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Adaptation Rust du concept de prototype pollution JavaScript : détecte
+    une fusion récursive (deep merge) d'une `serde_json::Value` contrôlée
+    par l'attaquant dans un objet de configuration interne ou d'état
+    applicatif partagé, réalisée par insertion clé par clé dans une
+    `serde_json::Map` sans filtrage des clés privilégiées/sensibles,
+    permettant d'écraser des champs internes (ex: `role`, `is_admin`,
+    `internal_flags`) non exposés intentionnellement par le schéma public.
+  patterns:
+    - "fn deep_merge(target: &mut Value, src: &Value) { if let (Value::Object(t), Value::Object(s)) = (target, src) { for (k, v) in s { t.insert(k.clone(), v.clone()); } } } appliqué sans allowlist de clés à une config globale"
+    - "serde_json::from_str::<Value>(user_input) fusionné récursivement dans un état d'application (AppState/config) sans validation de schéma préalable (pas de struct typée avec #[serde(deny_unknown_fields)])"
+    - "config_map.extend(user_controlled_map) où config_map contient des clés privilégiées, sans filtrage des clés source"
+  exclude_if:
+    - "les clés de la Value source sont validées contre une allowlist stricte, ou la désérialisation utilise une struct typée avec #[serde(deny_unknown_fields)] plutôt qu'une Value générique"
+    - "la fusion cible exclusivement des données métier non privilégiées, sans jamais atteindre une structure de configuration ou d'état contenant des indicateurs de rôle/permission"
+
+message: >
+  Fusion récursive d'une valeur JSON contrôlée par l'attaquant dans un objet
+  de configuration/état applicatif sans filtrage des clés privilégiées —
+  équivalent Rust de la pollution de prototype, permettant d'écraser des
+  champs internes sensibles (voir
+  rules/remediation/prototype-pollution-advanced.md).
+
+false_positive_notes:
+  - "Note d'adaptation : Rust n'a pas de chaîne de prototypes partagée comme JavaScript ; ce rapprochement cible la fusion non filtrée dans une serde_json::Value de configuration/état, le vecteur Rust le plus proche en impact."
+  - "Si la désérialisation utilise systématiquement des structs typées (serde derive) plutôt que Value générique, avec deny_unknown_fields, reclasser en `low` — le typage statique élimine l'essentiel du risque."
+  - "Une fusion limitée à des données métier sans rapport avec des permissions/rôles réduit l'impact réel même sans filtrage — reclasser en `medium`."
+
+remediation_ref: rules/remediation/prototype-pollution-advanced.md
+knowledge_ref: knowledge/modern/prototype-pollution-advanced.md

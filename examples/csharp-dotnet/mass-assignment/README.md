@@ -1,0 +1,3 @@
+# Mass Assignment (CWE-915)
+
+La version vulnérable lie directement le corps JSON de la requête au modèle interne complet `User` via `[FromBody] User payload`, y compris son attribut sensible `IsAdmin` : un attaquant peut ajouter `"isAdmin": true` au JSON envoyé sur un endpoint de mise à jour de profil et s'octroyer des privilèges d'administrateur. La correction introduit un DTO `UpdateUserProfileRequest` distinct du modèle interne, qui n'expose que les champs `Name` et `Email` en liste blanche explicite ; le champ `IsAdmin` n'existe tout simplement pas dans ce DTO et ne peut donc jamais être assigné via ce point d'entrée, quel que soit le contenu du corps de la requête.

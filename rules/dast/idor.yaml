@@ -1,0 +1,19 @@
+id: idor
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+type: dast
+test:
+  method: GET|PUT|DELETE|PATCH
+  target: endpoint manipulant un objet référencé par un identifiant fourni par le client (ex. /invoices/{id}, /users/{id}/profile, /documents/{id})
+  technique: differential-response
+  indicators:
+    - "un compte authentifié obtient un statut de succès et le contenu d'un objet en substituant un identifiant appartenant à un autre utilisateur, sans que ce compte soit propriétaire de l'objet"
+    - "la réponse à un identifiant appartenant à autrui est structurellement identique (statut, forme des données) à celle obtenue pour un objet possédé par le compte de test, alors que seul le propriétaire devrait y accéder"
+    - "absence de code 403 face à un identifiant valide mais non possédé, alors qu'un 404/403 est renvoyé pour un identifiant inexistant (fuite d'information sur l'existence de l'objet)"
+false_positive_notes:
+  - "ressource explicitement publique ou partagée par conception (ex. contenu public, ressource multi-tenant partagée légitimement) : vérifier le modèle de données avant conclusion"
+  - "différence de réponse due à un état métier (objet supprimé/archivé) plutôt qu'à un contrôle d'appartenance"
+remediation_ref: rules/remediation/idor.md
+knowledge_ref: knowledge/authorization/idor.md

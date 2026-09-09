@@ -1,0 +1,40 @@
+id: browser-storage-leak
+language: csharp
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée sensible (token, secret, mot de passe, clé d'API)
+    injectée par le backend ASP.NET Core dans une réponse ou une vue destinée
+    à être stockée côté client (ViewData/TempData/JSON de réponse), ce qui
+    conduit typiquement à un stockage navigateur (localStorage/sessionStorage)
+    de cette donnée par le frontend.
+  patterns:
+    - "ViewData[\"_\"] = $secret"
+    - "TempData[\"_\"] = $secret"
+    - "return Json(new { _, token = $secret, _ })"
+    - "return Ok(new { _, apiKey = $secret, _ })"
+    - "HttpContext.Response.Cookies.Append($_, $secret)"
+  exclude_if:
+    - "la valeur assignée est un identifiant public non sensible (ex: userId, displayName)"
+    - "le cookie est créé avec les options HttpOnly = true et Secure = true"
+    - "la donnée est un jeton de très courte durée de vie explicitement prévu pour un usage client unique (ex: CSRF token)"
+
+message: >
+  Une donnée sensible semble transmise par le backend dans une réponse ou une
+  vue susceptible d'être persistée côté navigateur (localStorage/sessionStorage) —
+  préférer un cookie HttpOnly/Secure/SameSite ou ne jamais exposer ce secret au
+  client (voir rules/remediation/browser-storage-leak.md).
+
+false_positive_notes:
+  - "Si la donnée exposée est un jeton de très courte durée explicitement conçu pour du stockage côté client (ex: token CSRF), le risque est réduit."
+  - "Si ViewData/TempData contient uniquement des données publiques (nom d'affichage, préférences UI), ce n'est pas une fuite exploitable."
+  - "Vérifier que les cookies créés par le backend portent bien HttpOnly/Secure/SameSite avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

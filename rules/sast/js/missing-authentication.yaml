@@ -1,0 +1,32 @@
+id: missing-authentication
+language: js
+category: websocket
+cwe: CWE-306
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler `wss.on('connection', (ws) => {...})` qui ne vérifie
+    aucun token/session avant d'accepter la connexion, ou un handler de message
+    qui exécute une action sensible sans référence à un utilisateur authentifié
+    attaché au socket (`ws.user`).
+  patterns:
+    - "wss.on('connection', (ws) => { ws.on('message', ...) }) sans vérification de ws.user ni token en amont"
+    - "ws.on('message', (raw) => { ... delete/update/admin action ... }) sans référence à ws.user"
+  exclude_if:
+    - "server.on('upgrade', ...) ou wss.on('connection', ...) vérifie un token signé avant d'accepter la connexion"
+    - "Le handler de message vérifie ws.user (ou équivalent) avant d'exécuter une action sensible"
+
+message: >
+  Canal WebSocket acceptant des connexions ou exécutant des actions sensibles
+  sans authentification vérifiée (voir rules/remediation/missing-authentication.md).
+
+false_positive_notes:
+  - "Si le canal ne diffuse que des données publiques en lecture seule sans action d'écriture, reclasser en `medium` voire `low`."
+  - "Si l'authentification est appliquée par un middleware Socket.IO (`io.use(...)`) non visible dans ce fichier, vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/missing-authentication.md
+knowledge_ref: knowledge/websocket/missing-authentication.md

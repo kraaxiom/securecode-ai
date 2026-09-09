@@ -1,0 +1,15 @@
+id: imap-injection
+category: injections
+cwe: CWE-93
+type: iast
+instrumentation:
+  hook_points:
+    - "php: imap_search / imap_open comme sink"
+    - "python: imaplib.IMAP4.search / imaplib.IMAP4.select comme sink"
+    - "java: jakarta.mail.Folder.search / jakarta.mail.Store.connect comme sink"
+    - "js: node-imap Connection.search comme sink"
+  taint_check: trace la propagation depuis une entrée utilisateur (terme de recherche, nom de dossier, identifiant) jusqu'à la construction d'une commande IMAP sans échappement des caractères de contrôle et guillemets
+  trigger_condition: une commande IMAP construite dynamiquement contient un caractère CR/LF ou une séquence de terminaison de commande provenant d'une source non neutralisée
+severity: medium
+remediation_ref: rules/remediation/imap-injection.md
+knowledge_ref: knowledge/injections/imap-injection.md

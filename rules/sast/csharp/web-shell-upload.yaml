@@ -1,0 +1,36 @@
+id: web-shell-upload
+language: csharp
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la combinaison à risque d'un point d'upload sans liste
+    blanche stricte d'extensions et d'un répertoire de destination situé
+    dans le webroot, permettant le dépôt d'un web shell exécutable.
+  patterns:
+    - "$file.CopyToAsync(_)"
+    - "Path.Combine($env.WebRootPath, $file.FileName)"
+    - "$file.SaveAs(string_concat($env.WebRootPath, _))"
+  exclude_if:
+    - "une liste blanche stricte d'extensions et de types de contenu est appliquée avant l'écriture, validée sur le contenu réel du fichier"
+    - "le stockage des fichiers utilisateurs est physiquement séparé de l'arborescence servie publiquement (hors wwwroot)"
+    - "les permissions du répertoire d'upload interdisent l'exécution de scripts par le processus serveur"
+
+message: >
+  Combinaison d'un upload sans liste blanche stricte et d'une écriture
+  dans le répertoire wwwroot — risque de dépôt d'un web shell exécutable
+  à distance. Séparer stockage utilisateur et arborescence servie, et
+  valider strictement le contenu (voir
+  rules/remediation/web-shell-upload.md).
+
+false_positive_notes:
+  - "Si le fichier est stocké hors de wwwroot ou dans un stockage objet externe (ex: Azure Blob Storage), le risque de dépôt de web shell exécutable directement est écarté — reclasser en `info`."
+  - "Si une liste blanche stricte d'extensions et une validation de contenu réel sont déjà en place, le risque résiduel est faible."
+
+remediation_ref: rules/remediation/web-shell-upload.md
+knowledge_ref: knowledge/upload/web-shell-upload.md

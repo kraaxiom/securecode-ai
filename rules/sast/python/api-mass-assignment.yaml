@@ -1,0 +1,36 @@
+id: api-mass-assignment
+language: python
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte l'affectation en masse de champs d'un modele a partir d'une
+    entree utilisateur non filtree (request.json, request.data) sans
+    whitelist explicite des champs autorises, permettant a un attaquant
+    d'ecraser des champs sensibles (is_admin, role, balance).
+  patterns:
+    - "Model.objects.create(**request.data) (Django) sans validation de whitelist de champs"
+    - "for key, value in request.json.items(): setattr(user, key, value) sans whitelist"
+    - "MyModel(**request.get_json()) (SQLAlchemy) instanciation directe depuis le JSON entrant"
+    - "serializer = MySerializer(instance, data=request.data); serializer.save() avec des champs sensibles (is_staff, role) non marques read_only"
+  exclude_if:
+    - "Une whitelist explicite de champs autorises est appliquee avant l'affectation (ex: {k: v for k, v in data.items() if k in ALLOWED_FIELDS})"
+    - "Les champs sensibles sont marques read_only_fields dans le serializer DRF"
+
+message: >
+  Affectation en masse de champs de modele depuis une entree utilisateur non
+  filtree — un attaquant peut inclure des champs additionnels (is_admin,
+  role, price) dans sa requete pour les ecraser. Utiliser une whitelist
+  explicite des champs modifiables ou marquer les champs sensibles en
+  read_only dans le serializer.
+
+false_positive_notes:
+  - "Si le modele ne contient aucun champ sensible au moment de l'affectation (ex: table purement decorative), le risque est reduit — reclasser en `medium`."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

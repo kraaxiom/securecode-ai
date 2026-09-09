@@ -1,0 +1,35 @@
+id: agent-hijacking
+language: java
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code applicatif LangChain4j ou Spring AI, un agent
+    autonome (AiServices, ChatClient avec outils) exécutant des actions
+    sensibles (appel d'outil, exécution de commande, envoi HTTP) directement
+    à partir d'une sortie de contenu externe ou de la réponse du LLM sans
+    validation ni confirmation humaine intermédiaire.
+  patterns:
+    - "AiServices.builder(_).tools(_).build() sans couche de validation des appels d'outils avant exécution"
+    - "ChatClient.builder(_).defaultTools(_) exposant des @Tool capables d'actions destructives (suppression, transfert, exécution système) sans contrôle d'autorisation par appel"
+    - "@Tool public ... execute(String input) exécutant Runtime.exec/ProcessBuilder directement avec l'argument fourni par le modèle"
+    - "boucle d'agent (while(!done)) enchaînant des appels d'outils successifs sans limite d'itérations ni liste blanche d'actions autorisées"
+
+message: >
+  Un agent LLM exécute des outils/actions sensibles en se basant sur une
+  sortie de modèle influençable par du contenu externe, sans validation
+  d'autorisation par appel ni limite d'itérations — un contenu malveillant
+  injecté dans le contexte peut détourner l'agent (agent hijacking) pour
+  déclencher des actions non voulues.
+
+false_positive_notes:
+  - "Si chaque @Tool valide explicitement ses paramètres et vérifie une autorisation métier avant d'agir (pattern confirmation/human-in-the-loop), reclasser en `medium`."
+  - "Les outils en lecture seule (recherche, consultation) présentent un risque moindre que les outils à effet de bord — ajuster la sévérité selon la nature de l'action exposée."
+
+remediation_ref: rules/remediation/agent-hijacking.md
+knowledge_ref: knowledge/llm/agent-hijacking.md

@@ -1,0 +1,39 @@
+id: service-worker-abuse
+language: java
+category: frontend
+cwe: CWE-494
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un contrôleur Spring servant un fichier de service worker
+    (sw.js, service-worker.js) sans en-têtes d'intégrité/contrôle stricts,
+    ou un endpoint permettant l'upload/modification de ce fichier sans
+    authentification forte — un service worker compromis a un contrôle
+    persistant sur toutes les requêtes du client.
+  patterns:
+    - "@GetMapping(\"/sw.js\")/(\"/service-worker.js\") servant le fichier depuis un emplacement modifiable par upload utilisateur (même répertoire que des uploads non contrôlés)"
+    - "endpoint permettant l'écriture de fichiers statiques (assets, JS) accessible sans authentification stricte ni restriction d'extension, incluant potentiellement des fichiers .js à la racine du scope autorisé"
+    - "absence de Content-Type: application/javascript strict et de Service-Worker-Allowed restrictif sur la réponse servant le script"
+  exclude_if:
+    - "le fichier de service worker est servi depuis un emplacement statique en lecture seule, non modifiable par un flux d'upload utilisateur"
+    - "les endpoints d'upload de fichiers statiques sont strictement authentifiés et n'acceptent pas d'extension .js"
+
+message: >
+  Le service worker est servi depuis un emplacement potentiellement
+  modifiable par un flux d'upload non suffisamment contrôlé — un attaquant
+  capable d'y déposer un fichier peut remplacer le service worker et obtenir
+  un contrôle persistant sur toutes les requêtes futures du navigateur de la
+  victime (interception, cache empoisonné, hors-ligne malveillant). Servir le
+  service worker depuis un emplacement statique en lecture seule, distinct de
+  tout répertoire d'upload utilisateur.
+
+false_positive_notes:
+  - "Si le service worker est packagé au build (ressource statique versionnée, jamais réécrit à l'exécution), ce risque ne s'applique pas."
+  - "Un endpoint d'upload strictement réservé aux administrateurs authentifiés réduit fortement le risque — vérifier le contrôle d'accès avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/service-worker-abuse.md
+knowledge_ref: knowledge/frontend/service-worker-abuse.md

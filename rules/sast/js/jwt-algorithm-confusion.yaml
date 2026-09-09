@@ -1,0 +1,32 @@
+id: jwt-algorithm-confusion
+language: js
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel jwt.verify (jsonwebtoken) sans option `algorithms`
+    explicite, ou avec une liste mélangeant algorithmes symétriques (HS*)
+    et asymétriques (RS*/ES*) pour une même clé.
+  patterns:
+    - "jwt.verify($_, $_)"
+    - "jwt.verify($_, $_, { /* pas de propriété algorithms */ })"
+    - "jwt.verify($_, $_, { algorithms: ['HS256', 'RS256'] })"
+  exclude_if:
+    - "L'option algorithms contient un unique algorithme cohérent avec le type de clé utilisé"
+
+message: >
+  Vérification JWT sans restriction stricte d'algorithme — un attaquant
+  peut forger un token avec un algorithme différent (voir
+  rules/remediation/jwt-algorithm-confusion.md).
+
+false_positive_notes:
+  - "Certaines versions récentes de jsonwebtoken lèvent une erreur si `algorithms` est absent — vérifier la version avant escalade."
+  - "Si la clé de vérification est un secret HMAC dédié (pas une clé publique RSA), le risque de confusion est réduit mais toujours à corriger."
+
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

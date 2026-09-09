@@ -1,0 +1,37 @@
+id: message-injection
+language: csharp
+category: websocket
+cwe: CWE-20
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un message reçu sur un canal SignalR (méthode de Hub invoquée par
+    le client, ex: `public async Task SendMessage(string content)`) ou sur un
+    WebSocket brut (`WebSocket.ReceiveAsync`) utilisé directement dans une
+    requête SQL, une commande système, un rendu de vue, ou rediffusé via
+    `Clients.All.SendAsync`/`IHubContext` sans validation ni échappement.
+  patterns:
+    - "public async Task *(string content) { ... await _db.ExecuteSqlRawAsync($\"...{content}...\") } dans une classe Hub"
+    - "public async Task *(string content) { ... await Clients.All.SendAsync(\"Receive\", content) } sans validation de schéma préalable"
+    - "await webSocket.ReceiveAsync(buffer, ...); ... Process.Start(new ProcessStartInfo(\"cmd.exe\", \"/c \" + message))"
+    - "public async Task *(string content) { ... return View(content) } ou Html.Raw(content) dans un handler de Hub"
+  exclude_if:
+    - "le message est validé contre un schéma strict (FluentValidation, DataAnnotations, System.Text.Json avec contrat strict) avant tout usage"
+    - "le message est transmis à une requête paramétrée (`ExecuteSqlInterpolatedAsync`/paramètres liés Dapper) ou à Process.Start avec des arguments passés en liste (ArgumentList) sans interprétation shell"
+
+message: >
+  Contenu d'un message SignalR/WebSocket utilisé sans validation dans une
+  requête, une commande ou un rendu de vue — vulnérable à l'injection SQL,
+  de commande ou XSS diffusé en temps réel (voir
+  rules/remediation/message-injection.md).
+
+false_positive_notes:
+  - "Si le message est immédiatement validé par FluentValidation ou des DataAnnotations strictes avant tout traitement en aval, reclasser en `low`."
+  - "Un simple relais (echo) vers d'autres clients via `Clients.Others.SendAsync` sans traitement serveur applicatif reste un risque XSS côté client à évaluer séparément."
+
+remediation_ref: rules/remediation/message-injection.md
+knowledge_ref: knowledge/websocket/message-injection.md

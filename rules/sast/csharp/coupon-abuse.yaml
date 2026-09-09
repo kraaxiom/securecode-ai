@@ -1,0 +1,35 @@
+id: coupon-abuse
+language: csharp
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une application C# de code promo/coupon sans contrôle d'usage
+    unique par utilisateur ni verrouillage transactionnel du compteur
+    d'utilisation, permettant une application multiple ou concurrente du même
+    coupon au-delà de sa limite prévue.
+  patterns:
+    - "var coupon = await _db.Coupons.FirstAsync(c => c.Code == code); if (coupon.Uses < coupon.MaxUses) { coupon.Uses++; await _db.SaveChangesAsync(); } — lecture puis incrément non atomique, sans transaction ni concurrency token (RowVersion)"
+    - "public async Task ApplyCoupon(int userId, string code) { if (!await _db.Orders.AnyAsync(o => o.UserId == userId && o.CouponCode == code)) { ... } } — vérification d'unicité par requête séparée sans contrainte UNIQUE en base (UserId, CouponId), contournable en requêtes concurrentes"
+    - "validation du coupon reposant uniquement sur un cookie/session ASP.NET côté client pour éviter la réutilisation (pas de vérification serveur liée à l'identité du compte)"
+  exclude_if:
+    - "l'incrément du compteur d'usage est protégé par une transaction avec UPDATE atomique conditionnel (WHERE Uses < MaxUses) ou un RowVersion, et une contrainte UNIQUE en base empêche la double association coupon-utilisateur"
+
+message: >
+  Application de coupon/code promo sans verrouillage atomique du compteur
+  d'usage ni contrainte d'unicité en base — des requêtes concurrentes ou
+  répétées peuvent appliquer le même coupon plus de fois que prévu. Utiliser
+  une contrainte UNIQUE (UserId, CouponId) et un UPDATE atomique conditionnel
+  pour le compteur d'usage — voir rules/remediation/coupon-abuse.md.
+
+false_positive_notes:
+  - "Un coupon à usage illimité par conception (pas de MaxUses) n'est pas concerné."
+  - "Si la contrainte d'unicité est déjà imposée au niveau base de données (index UNIQUE) même sans verrou explicite dans le code, le risque de dépassement massif est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/coupon-abuse.md
+knowledge_ref: knowledge/business-logic/coupon-abuse.md

@@ -1,0 +1,32 @@
+id: des
+language: js
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage explicite de DES/3DES via l'API Node.js crypto ou une
+    bibliothèque tierce (crypto-js).
+  patterns:
+    - "crypto.createCipheriv(\"des\", _, _)"
+    - "crypto.createCipheriv(\"des-ede3*\", _, _)"
+    - "CryptoJS.DES.encrypt(_, _)"
+    - "CryptoJS.TripleDES.encrypt(_, _)"
+  exclude_if:
+    - "l'appel se trouve dans un fichier de test/fixture dédié à la compatibilité descendante et n'écrit aucune donnée persistée"
+
+message: >
+  Algorithme DES/3DES obsolète (clé effective 56 bits, vulnérable à
+  Sweet32) — migrer vers AES-256-GCM via crypto.createCipheriv('aes-256-gcm', ...)
+  (voir rules/remediation/des.md).
+
+false_positive_notes:
+  - "Si l'appel sert uniquement à déchiffrer un flux legacy en lecture seule avant migration, garder le finding mais abaisser la priorité de correction."
+  - "Vérifier que l'argument cipher n'est pas une chaîne dynamique non résolue statiquement avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/des.md
+knowledge_ref: knowledge/crypto/des.md

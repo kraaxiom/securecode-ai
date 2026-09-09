@@ -1,0 +1,33 @@
+id: missing-rate-limit
+language: php
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route sensible (authentification, inscription, reset de mot
+    de passe) définie sans middleware `throttle` (Laravel) ni mécanisme
+    équivalent de limitation de débit.
+  patterns:
+    - "Route::post('/login', _)"           # sans ->middleware('throttle:_')
+    - "Route::post('/register', _)"
+    - "Route::post('/password/reset', _)"
+    - "Route::post('/password/email', _)"
+  exclude_if:
+    - "la route chaîne ->middleware('throttle:_') ou un middleware personnalisé de rate limiting"
+    - "la limitation est appliquée globalement au niveau du groupe de routes parent"
+
+message: >
+  Route sensible sans limitation de débit — ajouter un middleware throttle ou
+  équivalent (voir rules/remediation/missing-rate-limit.md).
+
+false_positive_notes:
+  - "Si une passerelle API/WAF en amont applique déjà un throttling global documenté, réduire la sévérité en `low`."
+  - "Route interne accessible uniquement via réseau privé de confiance : évaluer l'exposition réelle avant de maintenir en `medium`."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

@@ -1,0 +1,3 @@
+# Markdown-based XSS (CWE-79)
+
+Le rendu Markdown d'une page de wiki utilisait Parsedown avec `setSafeMode(false)`, autorisant le HTML brut (scripts, gestionnaires `on*`, liens `javascript:`) fourni par l'utilisateur à passer tel quel dans la page rendue. La correction réactive `setSafeMode(true)` pour bloquer le HTML brut à la source, puis fait passer le HTML résultant dans HTMLPurifier en défense en profondeur avant de le transmettre à la vue Blade. Ce durcissement neutralise le vecteur d'injection décrit par le CWE-79 (Improper Neutralization of Input During Web Page Generation) propre au XSS via Markdown.

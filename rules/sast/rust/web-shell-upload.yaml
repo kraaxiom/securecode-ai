@@ -1,0 +1,36 @@
+id: web-shell-upload
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la combinaison à risque d'un point d'upload sans liste
+    blanche stricte d'extensions et d'un répertoire de destination servi
+    publiquement, permettant le dépôt d'un web shell exécutable.
+  patterns:
+    - "File::create($staticDir.join($field.content_disposition().get_filename()))"
+    - "Files::new(_, $uploadDir)"
+    - "ServeDir::new($uploadDir)"
+  exclude_if:
+    - "une liste blanche stricte d'extensions et de types de contenu est appliquée avant l'écriture, validée sur le contenu réel du fichier"
+    - "le stockage des fichiers utilisateurs est physiquement séparé du répertoire servi par Files::new/ServeDir"
+    - "les permissions du répertoire d'upload interdisent l'exécution de scripts par le processus serveur ou tout processus adjacent"
+
+message: >
+  Combinaison d'un upload sans liste blanche stricte et d'une écriture
+  dans un répertoire servi publiquement — risque de dépôt d'un web shell
+  exécutable à distance. Séparer stockage utilisateur et arborescence
+  servie, et valider strictement le contenu (voir
+  rules/remediation/web-shell-upload.md).
+
+false_positive_notes:
+  - "Si le répertoire de destination n'est jamais exposé via Files::new/ServeDir ni exécuté par un processus adjacent, le risque de dépôt de web shell exécutable est écarté — reclasser en `info`."
+  - "Si une liste blanche stricte d'extensions et une validation de contenu réel sont déjà en place, le risque résiduel est faible."
+
+remediation_ref: rules/remediation/web-shell-upload.md
+knowledge_ref: knowledge/upload/web-shell-upload.md

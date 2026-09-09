@@ -1,0 +1,39 @@
+id: prototype-pollution
+language: python
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Python n'a pas de prototype d'objet partage comme JavaScript, donc la
+    pollution de prototype classique ne s'y applique pas directement. Pattern
+    Python-equivalent adapte : fusion recursive non filtree d'un dictionnaire
+    utilisateur dans la configuration/etat applicatif, ou usage de
+    setattr()/__dict__.update() avec des cles utilisateur non filtrees,
+    pouvant ecraser des attributs internes sensibles (__class__, __init__,
+    attributs de config partages entre requetes).
+  patterns:
+    - "setattr(obj, key, value) dans une boucle sur request.json.items() sans whitelist de cles autorisees"
+    - "obj.__dict__.update(request.get_json()) sans filtrer les cles (risque d'ecraser __class__ ou des attributs internes)"
+    - "deep_merge(config, request.json) (fusion recursive maison) appliquee a un objet de configuration partage entre requetes, sans filtrer les cles reservees"
+  exclude_if:
+    - "Une whitelist explicite de cles/attributs autorises est appliquee avant setattr/update"
+    - "La fusion cible un dictionnaire local a la requete (pas un etat partage/global) sans risque de pollution inter-requetes"
+
+message: >
+  Fusion ou affectation dynamique d'attributs depuis une entree utilisateur
+  non filtree (setattr/__dict__.update/fusion recursive) — bien que Python
+  n'ait pas de prototype global comme JavaScript, cela peut ecraser des
+  attributs internes ou un etat de configuration partage entre requetes,
+  avec des effets similaires (contournement de logique, corruption d'etat).
+  Filtrer strictement les cles autorisees avant toute affectation dynamique.
+
+false_positive_notes:
+  - "Ce pattern n'est qu'un equivalent conceptuel pour Python — la severite reelle depend fortement de ce que l'attribut ecrase controle ; a evaluer au cas par cas plutot que de remonter systematiquement en `high`."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

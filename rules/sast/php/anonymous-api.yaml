@@ -1,0 +1,33 @@
+id: anonymous-api
+language: config
+category: kubernetes
+cwe: CWE-306
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte une configuration du kube-apiserver autorisant l'accès anonyme,
+    ou un binding RBAC accordant des droits au groupe anonyme/non authentifié.
+  patterns:
+    - "--anonymous-auth=true"
+    - "subjects: ... name: system:anonymous"
+    - "subjects: ... name: system:unauthenticated"
+    - "--authorization-mode=AlwaysAllow"
+  exclude_if:
+    - "RoleBinding scoped à un namespace non sensible avec un rôle en lecture seule strictement justifié et documenté"
+    - "--anonymous-auth absent sur une version de Kubernetes où la valeur par défaut effective est false"
+
+message: >
+  L'API server Kubernetes accepte des requêtes anonymes ou un binding RBAC
+  accorde des droits au groupe non authentifié — accès potentiel sans
+  identifiant. Voir rules/remediation/anonymous-api.md.
+
+false_positive_notes:
+  - "Vérifier la version de Kubernetes : la valeur par défaut de `--anonymous-auth` a évolué selon les versions."
+  - "Un binding `system:anonymous` vers un rôle strictement limité à un healthcheck public documenté peut être accepté après revue manuelle."
+
+remediation_ref: rules/remediation/anonymous-api.md
+knowledge_ref: knowledge/kubernetes/anonymous-api.md

@@ -1,0 +1,3 @@
+# Secret Leakage via LLM
+
+La version vulnérable intègre une clé API interne en clair directement dans le prompt système envoyé au modèle et laisse l'agent lire librement n'importe quel fichier de configuration sans restriction, exposant ainsi des secrets au contexte du modèle qui peut ensuite les restituer par inadvertance dans ses réponses (CWE-200, Exposure of Sensitive Information to an Unauthorized Actor). La version corrigée remplace le secret par une référence indirecte résolue côté application au moment de l'appel via un outil dédié, restreint l'accès de l'agent aux fichiers à une liste blanche de répertoires publics, et applique un filtrage de sortie détectant tout motif de secret avant de renvoyer une réponse du modèle.

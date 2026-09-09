@@ -1,0 +1,36 @@
+id: blind-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'insertion d'une entrée utilisateur non échappée dans un canal
+    consulté par un back-office/admin (panel support, dashboard interne via
+    Thymeleaf/JSP) plutôt que directement restituée au même utilisateur —
+    typique de l'exploitation en XSS aveugle.
+  patterns:
+    - "th:utext=\"${$var}\" dans un template consulté par un rôle admin/support"
+    - "response.getWriter().write($var) dans un endpoint de consultation de tickets/logs par un back-office"
+  exclude_if:
+    - "$var passe par un échappement HTML contextuel (Thymeleaf th:text, StringEscapeUtils.escapeHtml4) avant rendu"
+    - "le contenu n'est jamais consulté dans une interface HTML (API JSON pure consommée par un client non-navigateur)"
+
+message: >
+  Donnée utilisateur stockée puis rendue sans échappement dans une interface
+  consultée par un opérateur/administrateur (support, modération) — un
+  attaquant peut y injecter du JavaScript exécuté dans le contexte du
+  back-office lors de la consultation (XSS aveugle) ; échapper
+  systématiquement via th:text (jamais th:utext) ou
+  StringEscapeUtils.escapeHtml4 avant rendu (voir rules/remediation/blind-xss.md).
+
+false_positive_notes:
+  - "L'utilisation de th:text (Thymeleaf, échappement automatique) au lieu de th:utext neutralise ce vecteur."
+  - "Un contenu strictement consommé par une API JSON sans rendu HTML n'est pas concerné."
+
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

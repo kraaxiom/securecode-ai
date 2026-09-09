@@ -1,0 +1,34 @@
+id: double-extension
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'extension de fichier uploadé (MultipartFile) basée
+    sur String.contains()/indexOf() au lieu d'extraire correctement la dernière
+    extension, laissant passer des noms comme shell.jsp.jpg ou shell.jpg.jsp.
+  patterns:
+    - "filename.contains(\".jpg\") ou filename.endsWith(...) mal implémenté avec startsWith/contains au lieu de la dernière extension réelle"
+    - "liste blanche vérifiée via String.matches(\".*\\\\.(jpg|png)\") sans ancrage de fin de chaîne ($)"
+    - "extension extraite via filename.split(\"\\\\.\")[1] (premier segment) au lieu du dernier segment après le dernier point"
+  exclude_if:
+    - "l'extension est extraite via FilenameUtils.getExtension() (Apache Commons IO) ou équivalent robuste, comparée par égalité stricte à une liste blanche"
+    - "le fichier est systématiquement renommé avec une extension générée côté serveur, ignorant le nom original"
+
+message: >
+  La validation d'extension de fichier est vulnérable au bypass par double
+  extension (ex: shell.jsp.jpg) — utiliser FilenameUtils.getExtension()
+  (Commons IO) pour extraire la dernière extension réelle et la comparer par
+  égalité stricte à une liste blanche, puis renommer le fichier stocké.
+
+false_positive_notes:
+  - "Si la configuration du serveur d'application interdit l'exécution de scripts dans le répertoire de destination, l'impact est réduit — vérifier avant de reclasser."
+  - "Une double vérification par magic bytes en complément de l'extension réduit le risque mais ne l'élimine pas — ne pas exclure sur ce seul critère."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

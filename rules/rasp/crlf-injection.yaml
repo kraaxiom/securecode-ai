@@ -1,0 +1,12 @@
+id: crlf-injection
+category: injections
+cwe: CWE-93
+type: rasp
+guard:
+  sink: écriture d'en-tête HTTP ou de ligne de log (setHeader, header(), writeHead)
+  block_condition: Une valeur taintée contenant une séquence \r\n, \r ou \n atteint le sink sans neutralisation préalable.
+  action: sanitize
+  fail_mode: fail-closed
+severity: medium
+remediation_ref: rules/remediation/crlf-injection.md
+knowledge_ref: knowledge/injections/crlf-injection.md

@@ -1,0 +1,27 @@
+id: http-response-splitting
+language: csharp
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un usage non sécurisé d'une entrée utilisateur pouvant conduire à fractionnement de réponse http.
+  patterns:
+    - "Response.Headers.Add avec $var contenant \\r\\n non filtré"
+  exclude_if:
+    - "la valeur est validée par liste blanche ou échappée via l'API dédiée du framework avant usage"
+    - "$var provient d'une constante interne (pas d'entrée utilisateur), non exploitable"
+
+message: >
+  Fractionnement de réponse HTTP détectée — valider/échapper strictement toute entrée utilisateur avant usage dans ce contexte (voir rules/remediation/http-response-splitting.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une liste blanche stricte ou échappée via l'API dédiée du framework avant usage, ce n'est pas exploitable."
+  - "Si $var provient d'une constante interne (pas d'entrée utilisateur), reclasser en `info`."
+
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

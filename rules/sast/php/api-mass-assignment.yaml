@@ -1,0 +1,33 @@
+id: api-mass-assignment
+language: php
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le passage direct du corps de requête complet (sans liste
+    blanche) à une opération de persistance (création ou mise à jour d'un
+    modèle Eloquent ou équivalent).
+  patterns:
+    - "$Model::create($request->all())"
+    - "$model->update($request->all())"
+    - "$model->fill($request->all())"
+  exclude_if:
+    - "Le modèle cible définit $fillable avec une liste explicite excluant les champs sensibles"
+    - "Un tableau validé issu de $request->validate(...) ou d'un Form Request est utilisé à la place de $request->all()"
+
+message: >
+  Le corps de requête est passé sans filtrage à une opération de persistance
+  — utiliser un tableau validé en liste blanche et vérifier $fillable/$guarded
+  sur le modèle (voir rules/remediation/api-mass-assignment.md).
+
+false_positive_notes:
+  - "Si $fillable du modèle exclut déjà explicitement tous les champs sensibles (role, is_admin, balance), le risque est atténué mais la pratique reste déconseillée."
+  - "Un Form Request avec règles de validation strictes appliqué en amont réduit le risque réel même si la ligne finale ressemble au pattern."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

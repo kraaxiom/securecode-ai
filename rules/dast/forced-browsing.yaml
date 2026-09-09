@@ -1,0 +1,19 @@
+id: forced-browsing
+category: authorization
+cwe: CWE-425
+owasp: A01:2021-Broken Access Control
+severity: medium
+type: dast
+test:
+  method: GET
+  target: chemin d'URL/fichier non référencé depuis l'interface (deviné à partir de conventions de nommage courantes ou de fichiers de sauvegarde/config) mais potentiellement servi par le serveur
+  technique: error-signature
+  indicators:
+    - "une requête directe sur un chemin non lié depuis la navigation normale renvoie un statut 200 avec un contenu exploitable au lieu d'un 404/403"
+    - "une étape intermédiaire d'un flux multi-étapes est accessible directement sans avoir complété les étapes précédentes, et l'application l'accepte comme valide"
+    - "un fichier au nom conventionnel (sauvegarde, export, log) situé dans un répertoire servi statiquement répond avec succès"
+false_positive_notes:
+  - "404 personnalisée renvoyant un statut 200 avec page d'erreur : ne pas confondre avec une ressource réellement accessible"
+  - "chemin volontairement public mais non lié dans le menu (page marketing non indexée) : vérifier la sensibilité réelle du contenu avant conclusion"
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

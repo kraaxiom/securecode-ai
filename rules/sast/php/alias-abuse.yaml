@@ -1,0 +1,30 @@
+id: alias-abuse
+language: php
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à GraphQL::executeQuery (webonyx/graphql-php) sans règle
+    de validation limitant le nombre d'alias/champs ou la complexité de la
+    requête.
+  patterns:
+    - "GraphQL::executeQuery($schema, $query, ...) sans DocumentValidator::addRule(new QueryComplexity(...)) préalable dans le même fichier de bootstrap"
+  exclude_if:
+    - "DocumentValidator::addRule(new QueryComplexity(_)) est configuré avant l'exécution"
+    - "Une vérification manuelle du nombre d'alias (ex: substr_count) est appliquée avant l'exécution"
+
+message: >
+  Exécution de requête GraphQL sans limite d'alias/complexité — risque d'abus
+  d'alias pour bruteforce ou déni de service (voir rules/remediation/alias-abuse.md).
+
+false_positive_notes:
+  - "Si la limite de complexité est configurée globalement dans un fichier de bootstrap séparé non analysé, vérifier manuellement avant de remonter en `medium`."
+  - "Sur une API interne non exposée publiquement, le risque est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/alias-abuse.md
+knowledge_ref: knowledge/graphql/alias-abuse.md

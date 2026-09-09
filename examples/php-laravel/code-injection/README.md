@@ -1,0 +1,3 @@
+# Code Injection
+
+La version vulnérable passe directement l'entrée utilisateur `formula` à `eval()`, donnant à un attaquant un contrôle total sur le code PHP exécuté par le serveur (CWE-94, Improper Control of Generation of Code). La version corrigée supprime toute évaluation dynamique et remplace le mécanisme par une structure déclarative (`match`) opérant sur une liste blanche d'opérations autorisées (`add`, `sub`, `mul`, `div`), toute valeur non prévue étant explicitement rejetée. Le résultat métier reste identique pour les opérations légitimes, sans jamais interpréter d'entrée comme du code.

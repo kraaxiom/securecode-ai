@@ -1,0 +1,15 @@
+id: smtp-injection
+category: injections
+cwe: CWE-93
+type: iast
+instrumentation:
+  hook_points:
+    - "PHP: mail() / PHPMailer setFrom/addAddress/Subject"
+    - "Python: smtplib.SMTP.sendmail / email.message.Message header assignment"
+    - "Java: javax.mail.internet.MimeMessage.setSubject / setFrom / setRecipients"
+    - "Node.js: nodemailer transport.sendMail avec en-têtes construits par concaténation"
+  taint_check: trace la propagation d'une entrée utilisateur non neutralisée jusqu'à son intégration dans un en-tête email (From, Subject, To, Cc, Bcc, Reply-To) construit par concaténation de chaînes
+  trigger_condition: la valeur de l'en-tête évaluée au moment de l'appel contient un caractère de retour chariot ou de saut de ligne (`\r`, `\n`) directement traçable à une entrée utilisateur non filtrée par une fonction d'échappement d'en-tête reconnue
+severity: medium
+remediation_ref: rules/remediation/smtp-injection.md
+knowledge_ref: knowledge/injections/smtp-injection.md

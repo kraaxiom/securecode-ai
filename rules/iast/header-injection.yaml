@@ -1,0 +1,15 @@
+id: header-injection
+category: injections
+cwe: CWE-113
+type: iast
+instrumentation:
+  hook_points:
+    - "php: header() comme sink"
+    - "js: http.ServerResponse.setHeader / res.set (Express) comme sink"
+    - "python: django.http.HttpResponse.__setitem__ / flask.Response.headers comme sink"
+    - "java: javax.servlet.http.HttpServletResponse.setHeader / addHeader comme sink"
+  taint_check: trace la propagation depuis une entrée de requête (paramètre, en-tête, cookie) jusqu'à la valeur passée à une fonction de définition d'en-tête de réponse sans neutralisation des caractères CR/LF
+  trigger_condition: la valeur transmise à la fonction de définition d'en-tête contient un caractère de retour chariot ou de saut de ligne provenant d'une source non neutralisée
+severity: medium
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

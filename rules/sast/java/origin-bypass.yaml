@@ -1,0 +1,39 @@
+id: origin-bypass
+language: java
+category: websocket
+cwe: CWE-346
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'origine WebSocket implémentée de façon
+    incorrecte ou contournable : comparaison partielle (`contains`,
+    `endsWith`, `startsWith`) au lieu d'une égalité stricte contre une liste
+    blanche, ou utilisation de `setAllowedOriginPatterns("*")` combinée à
+    des credentials.
+  patterns:
+    - "$origin.contains($allowedDomain)"
+    - "$origin.endsWith($allowedDomain) // ex: origin.endsWith(\"monsite.com\") accepte \"evilmonsite.com\""
+    - "$origin.startsWith($scheme + $allowedDomain) // sans validation du reste de la chaîne"
+    - "registry.addHandler($h, $path).setAllowedOriginPatterns(\"*\")"
+  exclude_if:
+    - "La comparaison utilise .equals() ou une liste blanche exacte (Set<String> allowedOrigins) validée par égalité stricte"
+    - "setAllowedOriginPatterns est restreint à des motifs de domaine explicites sans wildcard global"
+
+message: >
+  La vérification de l'en-tête `Origin` utilise une comparaison partielle
+  (`contains`/`endsWith`/`startsWith`) qui peut être contournée par un
+  domaine attaquant contenant la chaîne autorisée (ex: `evil-monsite.com`).
+  Comparer l'origine par égalité stricte contre une liste blanche explicite
+  de domaines complets, et ne jamais utiliser `setAllowedOriginPatterns("*")`
+  lorsque l'authentification par cookie est active.
+
+false_positive_notes:
+  - "Si le domaine de comparaison inclut un séparateur strict (ex: vérification du suffixe précédé d'un point et du schéma exact via URI parsing), le contournement n'est pas trivial — vérifier manuellement avant de reclasser."
+  - "Si aucune session par cookie n'est utilisée sur ce canal (auth par jeton applicatif uniquement), la sévérité peut être réduite en `medium`."
+
+remediation_ref: rules/remediation/origin-bypass.md
+knowledge_ref: knowledge/websocket/origin-bypass.md

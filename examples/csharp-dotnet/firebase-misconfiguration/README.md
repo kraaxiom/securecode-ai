@@ -1,0 +1,3 @@
+# Mauvaise configuration Firebase (Firestore/Realtime Database/Storage) (CWE-284)
+
+La version vulnérable expose un endpoint backend qui utilise le SDK Firebase Admin avec un compte de service disposant de droits complets, et fait confiance à l'`userId` fourni par le client sans jamais vérifier le jeton d'authentification Firebase ni la propriété du document, reflétant côté serveur des règles de sécurité laxistes du type `allow read, write: if true`. La correction vérifie systématiquement le jeton d'identité Firebase (`FirebaseAuth.VerifyIdTokenAsync`), compare l'UID authentifié à celui de la ressource demandée, et utilise un compte de service à privilèges minimaux dédié à cette seule opération.

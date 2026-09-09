@@ -1,0 +1,34 @@
+id: known-cves
+language: java
+category: supply-chain
+cwe: CWE-1104
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: high
+confidence_default: high
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte dans pom.xml/build.gradle des dépendances épinglées à une version
+    connue pour porter une CVE publiée (référence à croiser avec une base
+    CVE/OSV au moment du scan), notamment les composants historiquement
+    critiques de l'écosystème Java.
+  patterns:
+    - "pom.xml: <artifactId>log4j-core</artifactId><version>2.0..2.14.1</version> (CVE-2021-44228 Log4Shell)"
+    - "pom.xml: <artifactId>spring-core</artifactId><version>< 5.3.18</version> ou spring-cloud-function avec version vulnérable (CVE-2022-22965 Spring4Shell)"
+    - "pom.xml/build.gradle: <artifactId>fastjson</artifactId><version>< 1.2.83</version> (désérialisation RCE)"
+    - "pom.xml: <artifactId>commons-collections</artifactId><version>< 3.2.2</version> (désérialisation RCE, CVE-2015-4852 chaîne ysoserial)"
+    - "build.gradle: implementation 'org.apache.struts:struts2-core:<version vulnérable>' (CVE Struts OGNL RCE)"
+
+message: >
+  Dépendance figée sur une version portant une CVE publiquement connue et
+  exploitée. Mettre à jour vers la dernière version corrigée et vérifier
+  l'absence de configuration contournant le correctif (ex: JndiLookup
+  toujours présent après mise à jour partielle de log4j).
+
+false_positive_notes:
+  - "Si un correctif backporté (patch vendor) est appliqué sur une version mineure sans bump de version affichée, vérifier le changelog avant de confirmer — ne pas se fier uniquement au numéro de version."
+  - "Si le module vulnérable est présent en dépendance transitive mais exclu explicitement (<exclusions> Maven ou `exclude group:` Gradle), reclasser en `info`."
+
+remediation_ref: rules/remediation/known-cves.md
+knowledge_ref: knowledge/supply-chain/known-cves.md

@@ -1,0 +1,35 @@
+id: indirect-prompt-injection
+language: java
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code LangChain4j/Spring AI, l'injection de contenu
+    provenant d'une source tierce (page web récupérée, document uploadé,
+    résultat d'outil, email) directement dans le contexte du prompt sans
+    délimitation ni marquage de confiance distincte de l'instruction système.
+  patterns:
+    - "PromptTemplate.from(...).apply(Map.of(\"content\", htmlOuTexteRecupereDuWeb)) sans encodage/délimitation explicite du contenu tiers"
+    - "ChatClient.prompt().user(contenuDocumentExterne) où contenuDocumentExterne provient d'un fetch HTTP/scraping non filtré"
+    - "concaténation directe du résultat d'un @Tool (ex: lecture de fichier, réponse API externe) dans le message envoyé au modèle sans balisage XML/JSON isolant les données"
+    - "AiServices avec RAG où le contenu récupéré (retriever) est inséré tel quel dans le system/user prompt sans marqueur explicite \"contenu non fiable\""
+
+message: >
+  Contenu provenant d'une source externe non fiable inséré dans le contexte
+  du prompt sans délimitation ni marquage de confiance — un document, page
+  web ou résultat d'outil compromis peut contenir des instructions cachées
+  interprétées par le modèle (prompt injection indirecte). Isoler le
+  contenu externe par des délimiteurs structurés, appliquer un filtrage et
+  ne jamais l'exécuter comme instruction système.
+
+false_positive_notes:
+  - "Si le contenu externe est systématiquement encodé/échappé et présenté au modèle avec une instruction explicite de le traiter comme donnée et non comme commande, reclasser en `medium`."
+  - "Les sources internes strictement contrôlées (pas de contenu tiers) ne sont pas concernées."
+
+remediation_ref: rules/remediation/indirect-prompt-injection.md
+knowledge_ref: knowledge/llm/indirect-prompt-injection.md

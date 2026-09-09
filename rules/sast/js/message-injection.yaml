@@ -1,0 +1,33 @@
+id: message-injection
+language: js
+category: websocket
+cwe: CWE-20
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage direct du payload d'un message WebSocket (`ws.on('message', ...)`)
+    dans une requête base de données par template literal, ou dans une rediffusion
+    (`broadcast`/`send`) sans validation ni échappement.
+  patterns:
+    - "ws.on('message', (raw) => { ... db.query(`... ${data.*} ...`) ... })"
+    - "ws.on('message', (raw) => { ... broadcast(data.*) ... }) sans échappement"
+    - "JSON.parse(raw) utilisé directement sans validation de schéma (zod/joi/ajv absent)"
+  exclude_if:
+    - "Le message est validé par un schéma (zod.parse, joi.validate, ajv) avant utilisation"
+    - "La requête base de données utilise des paramètres liés (placeholders `?`) au lieu d'un template literal"
+    - "Le contenu rediffusé passe par une fonction d'échappement HTML/JS avant envoi"
+
+message: >
+  Contenu de message WebSocket utilisé sans validation ni échappement — risque
+  d'injection SQL/NoSQL ou XSS diffusé (voir rules/remediation/message-injection.md).
+
+false_positive_notes:
+  - "Si le message provient exclusivement d'un service interne de confiance (pas d'un client externe), le risque est réduit — reclasser en `info`."
+  - "Si la validation de schéma est appliquée dans un middleware amont non visible dans ce fichier, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/message-injection.md
+knowledge_ref: knowledge/websocket/message-injection.md

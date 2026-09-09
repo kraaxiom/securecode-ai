@@ -1,0 +1,34 @@
+id: md5
+language: python
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de hashlib.md5 (ou hashlib.new("md5")) dans un
+    contexte de hachage de mot de passe ou de génération de secret, plutôt
+    que pour un simple checksum non sensible.
+  patterns:
+    - "hashlib.md5($password_var)"
+    - "hashlib.new('md5', $_)"
+    - "hashlib.md5($_).hexdigest()  # assigné à un champ password_hash/token"
+    - "passlib.hash.md5_crypt.hash(_)"
+  exclude_if:
+    - "Le résultat sert uniquement de clé de cache ou d'ETag sur du contenu public non sensible"
+    - "Le hachage est appliqué à un identifiant de déduplication de fichiers non lié à l'authentification"
+
+message: >
+  Utilisation de MD5 (fonction de hachage cassée depuis 2004) pour du
+  contenu sensible — remplacer par Argon2id (mot de passe) ou SHA-256
+  (intégrité) (voir rules/remediation/md5.md).
+
+false_positive_notes:
+  - "Si md5 est utilisé uniquement pour une clé de cache non cryptographique (ex: cache_key = md5(url)), reclasser en `info`."
+  - "Si le code hache un mot de passe utilisateur ou un token de session, la sévérité `medium` reste minimale — envisager `high` si le hash est stocké tel quel sans sel."
+
+remediation_ref: rules/remediation/md5.md
+knowledge_ref: knowledge/crypto/md5.md

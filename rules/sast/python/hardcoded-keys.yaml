@@ -1,0 +1,35 @@
+id: hardcoded-keys
+language: python
+category: crypto
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé cryptographique, un secret HMAC/JWT, ou une clé privée
+    assignée littéralement à une variable ou constante dans le code source
+    Python, plutôt que chargée depuis l'environnement ou un coffre-fort.
+  patterns:
+    - "$VAR = 'literal_string_key_like'  # ex: SECRET_KEY, ENCRYPTION_KEY, API_SECRET, JWT_SECRET"
+    - "AES.new($LITERAL_BYTES, _)"
+    - "Fernet($LITERAL_BYTES)"
+    - "os.environ.setdefault('SECRET_KEY', $LITERAL)"
+    - "-----BEGIN (RSA )?PRIVATE KEY----- présent en dur dans un fichier .py"
+  exclude_if:
+    - "La valeur provient de os.environ[...], os.getenv(...), ou d'un client de gestionnaire de secrets (boto3 secretsmanager, hvac, etc.)"
+    - "La variable est un exemple explicitement marqué comme placeholder dans un fichier de documentation ou de test (ex: tests/fixtures) et non importée par le code applicatif"
+
+message: >
+  Clé cryptographique ou secret codé en dur dans le code source Python —
+  charger depuis une variable d'environnement ou un gestionnaire de secrets
+  (voir rules/remediation/hardcoded-keys.md).
+
+false_positive_notes:
+  - "Si la valeur est manifestement un exemple de documentation (ex: 'your-secret-key-here') non utilisé en exécution réelle, reclasser en `info`."
+  - "Si la clé est déjà révoquée/rotée et que le fichier ne fait que documenter un ancien incident, reclasser en `low`."
+
+remediation_ref: rules/remediation/hardcoded-keys.md
+knowledge_ref: knowledge/crypto/hardcoded-keys.md

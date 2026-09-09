@@ -1,0 +1,38 @@
+id: imagetragick
+language: go
+category: upload
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le traitement d'une image téléversée via un binding Go vers
+    ImageMagick/GraphicsMagick (ex: gographics/imagick) sans policy
+    restrictive ni isolation, exposant à la classe de vulnérabilités
+    ImageTragick.
+  patterns:
+    - "imagick.NewMagickWand()"
+    - "$wand.ReadImageBlob(_)"
+    - "$wand.ReadImageFile(_)"
+    - "exec.Command(\"convert\", _)"
+  exclude_if:
+    - "une policy.xml restrictive désactivant les coders/delegates non nécessaires est chargée avant tout traitement d'image"
+    - "le traitement d'image s'exécute dans un conteneur isolé sans accès réseau ni fichier sensible"
+    - "les formats d'entrée acceptés sont restreints à une liste blanche raster (JPEG, PNG) validée avant appel à la bibliothèque native"
+
+message: >
+  Traitement d'une image téléversée via un binding ImageMagick/
+  GraphicsMagick sans policy restrictive ni isolation — expose à la
+  classe de vulnérabilités ImageTragick (exécution de commande via
+  delegates externes). Restreindre les coders/delegates et isoler le
+  traitement (voir rules/remediation/imagetragick.md).
+
+false_positive_notes:
+  - "Si l'appel exec.Command(\"convert\", ...) ne provient jamais d'un champ contrôlé par l'utilisateur (nom de fichier, métadonnées), le vecteur d'injection direct est écarté, mais le risque delegate ImageTragick via le contenu du fichier reste à vérifier."
+  - "Si la version de la bibliothèque est à jour et la policy restrictive confirmée hors du code source, reclasser en `info` après vérification manuelle."
+
+remediation_ref: rules/remediation/imagetragick.md
+knowledge_ref: knowledge/upload/imagetragick.md

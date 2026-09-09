@@ -1,0 +1,38 @@
+id: http2-rapid-reset
+language: java
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de serveur HTTP/2 (Netty embarqué dans Spring
+    WebFlux, Tomcat/Undertow avec HTTP/2 activé) sans limite sur le nombre de
+    flux (streams) concurrents ni sur le taux de réinitialisation de flux
+    (RST_STREAM) par connexion, exposant l'application à l'attaque HTTP/2
+    Rapid Reset (CVE-2023-44487).
+  patterns:
+    - "server.http2.enabled=true // application.yml sans server.tomcat.max-concurrent-streams-per-connection borné"
+    - "Http2Configuration.Builder() ... .build() // aucune limite maxConcurrentStreams / maxStreamsPerConnection définie"
+    - "HttpServer.create().protocol(HttpProtocol.H2) // Reactor Netty sans configuration de limite de flux ni de rate limiting de RST_STREAM"
+  exclude_if:
+    - "server.tomcat.max-concurrent-streams-per-connection (ou équivalent Undertow/Netty) est explicitement borné à une valeur faible"
+    - "Un reverse proxy/CDN en amont (ex: nginx, Cloudflare) applique déjà un correctif/atténuation Rapid Reset et absorbe la charge avant l'application"
+
+message: >
+  Le serveur HTTP/2 embarqué ne limite pas le nombre de flux concurrents ni
+  le taux de réinitialisation par connexion — un client malveillant peut
+  ouvrir puis annuler massivement des flux (RST_STREAM) pour épuiser les
+  ressources serveur (HTTP/2 Rapid Reset, CVE-2023-44487). Mettre à jour le
+  conteneur HTTP (Tomcat/Netty/Undertow) vers une version corrigée et borner
+  explicitement le nombre de flux concurrents par connexion.
+
+false_positive_notes:
+  - "Si HTTP/2 n'est pas activé sur ce service (HTTP/1.1 uniquement), cette règle ne s'applique pas."
+  - "Si un reverse proxy/CDN en amont absorbe déjà l'intégralité du trafic HTTP/2 externe et applique les atténuations Rapid Reset, la sévérité peut être réduite en `medium`."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

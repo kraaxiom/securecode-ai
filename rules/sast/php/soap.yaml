@@ -1,0 +1,32 @@
+id: soap
+language: php
+category: api
+cwe: CWE-611
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'instanciation d'un parseur XML (DOMDocument, SimpleXML) traitant
+    une entrée SOAP/XML externe sans désactivation explicite de la résolution
+    des entités externes.
+  patterns:
+    - "$doc->loadXML($_)"          # sans resolveExternals=false / substituteEntities=false avant
+    - "simplexml_load_string($_)"  # sans LIBXML_NONET et sans neutralisation DTD
+    - "new SoapServer($wsdl, _)"   # sans cache_wsdl explicite
+  exclude_if:
+    - "resolveExternals et substituteEntities sont explicitement mis à false avant le parsing"
+    - "libxml_disable_entity_loader(true) est appelé avant le chargement (PHP < 8)"
+
+message: >
+  Parseur XML/SOAP sans désactivation explicite des entités externes —
+  risque d'injection XXE (voir rules/remediation/soap.md).
+
+false_positive_notes:
+  - "PHP >= 8.0 désactive la résolution des entités externes par défaut pour libxml — vérifier la version cible avant de maintenir en `high`."
+  - "Si l'entrée XML provient exclusivement d'une source interne de confiance jamais issue d'un tiers, reclasser en `low`."
+
+remediation_ref: rules/remediation/soap.md
+knowledge_ref: knowledge/api/soap.md

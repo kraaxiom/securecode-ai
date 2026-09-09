@@ -1,0 +1,39 @@
+id: prototype-pollution
+language: java
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent Java du prototype pollution JavaScript — liaison de propriétés
+    par réflexion depuis un JSON non fiable (Jackson, Spring
+    @InitBinder/BeanWrapper) sans liste blanche de champs, permettant à un
+    attaquant d'injecter des clés arbitraires ("class.classLoader...", ou des
+    chemins de propriétés imbriquées) qui modifient l'état interne d'objets
+    partagés via réflexion.
+  patterns:
+    - "BeanUtils.populate($bean, $requestParamsMap) ou BeanWrapperImpl.setPropertyValue($_) alimenté par des clés JSON non filtrées, sans liste blanche de propriétés modifiables"
+    - "ObjectMapper configuré avec des DeserializationFeature permissives (FAIL_ON_UNKNOWN_PROPERTIES=false combiné à un binding par réflexion sur des objets partagés/singletons)"
+    - "WebDataBinder Spring (@InitBinder) sans setAllowedFields()/setDisallowedFields() restreignant les propriétés bindables depuis la requête"
+  exclude_if:
+    - "un DataBinder Spring restreint explicitement les champs autorisés via setAllowedFields()"
+    - "la désérialisation cible un DTO immuable dédié (pas de binding par réflexion sur un objet partagé/singleton Spring)"
+
+message: >
+  Liaison de propriétés par réflexion depuis un JSON non fiable sans liste
+  blanche de champs — un attaquant peut injecter des clés arbitraires (ex:
+  class, classLoader) et altérer l'état d'objets partagés (équivalent Java du
+  prototype pollution). Restreindre les champs bindables via
+  WebDataBinder.setAllowedFields() et désérialiser vers des DTO dédiés plutôt
+  que des objets partagés/singletons.
+
+false_positive_notes:
+  - "Si le binding cible systématiquement un DTO immuable créé par requête (pas de singleton Spring partagé), le risque d'impact global est fortement réduit — reclasser en `medium`."
+  - "Jackson récent bloque par défaut le binding de propriétés spéciales comme 'class' sur les objets standards — vérifier la version avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

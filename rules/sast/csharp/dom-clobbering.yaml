@@ -1,0 +1,36 @@
+id: dom-clobbering
+language: csharp
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un rendu Razor de HTML utilisateur non sanitisé (via Html.Raw)
+    susceptible de contenir des attributs `id`/`name` contrôlés par
+    l'attaquant, ouvrant la voie au DOM clobbering côté frontend.
+  patterns:
+    - "@Html.Raw($userContent)  # sans passage préalable par un sanitizer HTML"
+    - "return Content($userContent, \"text/html\")"
+    - "ViewData[\"UserHtml\"] = $userContent  # rendu ensuite via @Html.Raw(ViewData[\"UserHtml\"])"
+  exclude_if:
+    - "$userContent passe par une bibliothèque de sanitisation HTML (ex: HtmlSanitizer, Ganss.XSS) avant Html.Raw"
+    - "les attributs id/name sont explicitement filtrés ou supprimés par le sanitizer configuré"
+    - "le contenu rendu est strictement issu de l'administrateur applicatif (non utilisateur final)"
+
+message: >
+  Du HTML fourni par l'utilisateur est rendu sans sanitisation (Html.Raw) —
+  des attributs id/name contrôlés par l'attaquant peuvent alors entrer en
+  collision avec des variables globales JavaScript attendues côté frontend
+  (DOM clobbering) (voir rules/remediation/dom-clobbering.md).
+
+false_positive_notes:
+  - "Si un sanitizer HTML dédié (HtmlSanitizer, Ganss.XSS) est appliqué en amont et filtre id/name, ce n'est pas exploitable."
+  - "Si le contenu rendu ne provient que d'auteurs de confiance (back-office administrateur), le risque est très réduit."
+  - "Le DOM clobbering nécessite un script frontend qui fait confiance à window.X ou document.getElementById sans validation de type — vérifier le code JS associé."
+
+remediation_ref: rules/remediation/dom-clobbering.md
+knowledge_ref: knowledge/frontend/dom-clobbering.md

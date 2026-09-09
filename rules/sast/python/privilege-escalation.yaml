@@ -1,0 +1,38 @@
+id: privilege-escalation
+language: python
+category: authorization
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint permettant à un utilisateur de modifier son propre
+    rôle/statut de privilège ou celui d'un autre compte à partir de données
+    de requête non filtrées — mise à jour de profil incluant is_staff/
+    is_superuser/role depuis request.POST/request.json sans vérification
+    que l'appelant a lui-même les droits nécessaires pour accorder ce rôle.
+  patterns:
+    - "user.is_staff = request.data.get('is_staff', user.is_staff)"
+    - "user.role = request.json['role']  # sans vérification que request.user est admin"
+    - "UserSerializer(user, data=request.data).save()  # is_superuser inclus dans fields sans read_only"
+
+  exclude_if:
+    - "le champ de privilège est explicitement en lecture seule dans le sérialiseur (read_only=True) ou exclu de la mise à jour"
+    - "une vérification explicite est effectuée avant l'assignation (if not request.user.is_superuser: raise PermissionDenied) pour toute élévation de privilège d'un tiers"
+
+message: >
+  Un champ de privilège (rôle, is_staff, is_superuser) est modifiable à
+  partir de données de requête sans vérification que l'appelant est
+  lui-même autorisé à accorder ce niveau de privilège — escalade de
+  privilèges verticale possible. Exclure ces champs de toute mise à jour
+  en masse et exiger une vérification d'autorisation dédiée (voir
+  rules/remediation/privilege-escalation.md).
+
+false_positive_notes:
+  - "Aucune exception raisonnable : tout champ de privilège modifiable sans contrôle d'autorisation dédié doit être traité comme critique par défaut."
+
+remediation_ref: rules/remediation/privilege-escalation.md
+knowledge_ref: knowledge/authorization/privilege-escalation.md

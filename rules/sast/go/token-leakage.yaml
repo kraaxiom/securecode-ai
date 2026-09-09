@@ -1,0 +1,38 @@
+id: token-leakage
+language: go
+category: llm
+cwe: CWE-522
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé d'API de fournisseur LLM (OpenAI Go SDK, LangChainGo)
+    codée en dur dans le code source Go, ou une journalisation des en-têtes
+    de requête HTTP sortante sans masquage du jeton d'autorisation.
+  patterns:
+    - "openai.NewClient(string_literal)"
+    - "option.WithAPIKey(string_literal)"
+    - "openai.WithToken(string_literal)"
+    - "os.Setenv(\"OPENAI_API_KEY\", string_literal)"
+    - "log.Printf(_, req.Header.Get(\"Authorization\"))"
+    - "fmt.Println(string_concat(_, apiKey, _))"
+  exclude_if:
+    - "la valeur provient de os.Getenv, os.LookupEnv, ou d'un client de secrets (ex: Vault, AWS Secrets Manager SDK)"
+    - "le littéral est un placeholder évident (ex: \"sk-xxxx\", \"YOUR_API_KEY\", chaîne vide)"
+
+message: >
+  Clé d'API de service LLM codée en dur ou en-tête d'autorisation journalisé
+  en clair — charger la clé via os.Getenv ou un gestionnaire de secrets, et
+  masquer systématiquement les en-têtes sensibles avant toute journalisation
+  (voir rules/remediation/token-leakage.md).
+
+false_positive_notes:
+  - "Si la chaîne littérale apparaît dans un fichier _test.go avec une clé factice non fonctionnelle, reclasser en `info`."
+  - "Si la valeur est lue depuis os.Getenv immédiatement avant l'appel au SDK, ce n'est pas une fuite directe — vérifier manuellement le flux complet."
+  - "Si le logger applique déjà un middleware de redaction (ex: httputil.DumpRequest suivi d'un filtre d'en-têtes), reclasser en `low`."
+
+remediation_ref: rules/remediation/token-leakage.md
+knowledge_ref: knowledge/llm/token-leakage.md

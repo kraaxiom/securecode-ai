@@ -1,0 +1,3 @@
+# Formula Injection / CSV Injection (CWE-1236)
+
+Le code vulnérable écrit directement les champs `nom` et `commentaire` fournis par l'utilisateur dans un export CSV, sans vérifier si une valeur commence par un caractère déclencheur de formule (`=`, `+`, `-`, `@`), ce qui permet à un attaquant d'injecter une formule exécutée par le tableur de la victime lors de l'ouverture du fichier. La version corrigée applique une fonction `neutraliserFormule` qui préfixe d'une apostrophe toute valeur commençant par un tel caractère, forçant son interprétation comme texte littéral tout en conservant les exports légitimes inchangés.

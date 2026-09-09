@@ -1,0 +1,41 @@
+id: xxe
+language: python
+category: injections
+cwe: CWE-611
+owasp: A05:2021-Security_Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le parsing XML avec un analyseur autorisant la résolution
+    d'entités externes et du DTD (lxml.etree.parse/fromstring sans
+    resolve_entities=False, xml.etree.ElementTree avec un parser non
+    durci, xml.dom.minidom.parse, xml.sax avec résolution d'entités
+    activée), exposant une vulnérabilité XXE.
+  patterns:
+    - "etree.parse(source)"
+    - "etree.fromstring(data)"
+    - "etree.XMLParser(resolve_entities=True)"
+    - "xml.dom.minidom.parse(source)"
+    - "xml.dom.minidom.parseString(data)"
+    - "ElementTree.parse(source)"
+  exclude_if:
+    - "le parser est explicitement configuré avec resolve_entities=False et no_network=True (lxml) ou defusedxml est utilisé à la place du module xml standard"
+    - "l'entrée XML provient exclusivement d'une source interne fixe, jamais d'un utilisateur"
+
+message: >
+  Parsing XML avec un analyseur autorisant la résolution d'entités externes
+  et de DTD — un attaquant peut exploiter une entité externe pour lire des
+  fichiers locaux, effectuer du SSRF ou un déni de service (entity
+  expansion). Utiliser defusedxml.etree ou configurer explicitement
+  etree.XMLParser(resolve_entities=False, no_network=True) et désactiver
+  le DTD.
+
+false_positive_notes:
+  - "xml.etree.ElementTree (module standard) ne résout pas les entités externes par défaut depuis Python 3.7.1+ pour les CVE connus, mais reste vulnérable à l'expansion d'entités internes (billion laughs) — garder confidence medium si la version Python n'est pas confirmée."
+  - "Si defusedxml remplace explicitement le module xml standard, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

@@ -1,0 +1,3 @@
+# Indirect Prompt Injection
+
+La version vulnérable insère le contenu récupéré depuis une URL externe directement dans le message utilisateur envoyé au modèle, sans marquage de provenance ni délimiteur, tout en exposant des outils actifs comme l'envoi d'email ou l'exécution de code pendant ce traitement, ce qui permet à des instructions cachées dans la page consultée de détourner l'agent (CWE-1427, Improper Neutralization of Input Used for LLM Prompting). La version corrigée marque explicitement le contenu externe comme non fiable via un message système dédié et des balises de délimitation, désactive tout outil actif pendant l'analyse de ce contenu, et fait passer la réponse par une validation de sortie avant de la retourner.

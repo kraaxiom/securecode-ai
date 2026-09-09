@@ -1,0 +1,33 @@
+id: boolean-sqli
+language: js
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: regex
+  description: >
+    Détecte un template literal interpolant une variable dans une clause WHERE
+    d'un appel connection.query()/db.query() (mysql, mysql2, pg), motif
+    classique de l'injection SQL booléenne dans les formulaires de recherche
+    ou de connexion Node.js.
+  patterns:
+    - "\\.(query|execute)\\s*\\(\\s*`[^`]*WHERE[^`]*\\$\\{[^}]+\\}[^`]*`"
+    - "\\.(query|execute)\\s*\\(\\s*['\"][^'\"]*['\"]\\s*\\+\\s*[A-Za-z_][A-Za-z0-9_.]*"
+  exclude_if:
+    - "L'appel utilise un placeholder positionnel (?) ou nommé avec un tableau de paramètres séparé"
+    - "La variable interpolée est une constante applicative interne, pas une entrée req.*/params/body"
+
+message: >
+  Comparaison SQL construite par interpolation/concaténation d'une valeur
+  utilisateur — remplacer par une requête paramétrée (voir
+  rules/remediation/boolean-sqli.md).
+
+false_positive_notes:
+  - "Un template literal statique sans variable interpolée externe n'est pas exploitable."
+  - "Certains query builders (Knex, Sequelize.literal mal utilisé) peuvent afficher une syntaxe similaire tout en échappant en interne — vérifier la documentation de la méthode avant de conclure."
+
+remediation_ref: rules/remediation/boolean-sqli.md
+knowledge_ref: knowledge/injections/boolean-sqli.md

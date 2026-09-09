@@ -1,0 +1,39 @@
+id: alias-abuse
+language: java
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration graphql-java / Netflix DGS où le serveur
+    GraphQL n'impose aucune limite sur le nombre d'alias dans une requête,
+    permettant à un attaquant de multiplier un même champ coûteux des
+    centaines de fois dans une seule requête (contournement du rate
+    limiting par requête).
+  patterns:
+    - "GraphQL.newGraphQL($schema).build() // aucune Instrumentation de type MaxQueryComplexityInstrumentation ou équivalent limitant les alias enregistrée"
+    - "GraphQLSchema.newSchema() ... .build() // sans PreparsedDocumentProvider ni AliasLimitInstrumentation"
+    - "@DgsComponent class $C { ... } // module DGS sans configuration graphql.dgs.graphql-api.max-query-depth / max-alias déclarée dans application.yml"
+  exclude_if:
+    - "Une Instrumentation personnalisée ou MaxQueryComplexityInstrumentation limite explicitement le nombre d'alias/champs par requête"
+    - "Un rate limiting en amont mesure le coût réel de la requête (query cost analysis) plutôt que le nombre de requêtes HTTP"
+
+message: >
+  Le serveur GraphQL n'impose aucune limite sur le nombre d'alias par
+  requête — un attaquant peut dupliquer un même champ coûteux des centaines
+  de fois dans une seule requête HTTP pour contourner le rate limiting basé
+  sur le nombre de requêtes et provoquer un déni de service. Enregistrer une
+  `Instrumentation` limitant le nombre d'alias/champs (ex:
+  `MaxQueryComplexityInstrumentation`, `MaxQueryDepthInstrumentation`) ou une
+  analyse de coût de requête avant exécution.
+
+false_positive_notes:
+  - "Si l'API GraphQL est interne, authentifiée et à faible volume d'utilisateurs de confiance, la sévérité peut être réduite en `low`."
+  - "Si un WAF ou un proxy applique déjà une analyse de complexité de requête GraphQL en amont, vérifier sa couverture avant de reclasser."
+
+remediation_ref: rules/remediation/alias-abuse.md
+knowledge_ref: knowledge/graphql/alias-abuse.md

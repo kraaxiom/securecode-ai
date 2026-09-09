@@ -1,0 +1,38 @@
+id: expression-language-injection
+language: python
+category: injections
+cwe: CWE-917
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'évaluation d'une expression dynamique par un moteur
+    d'expression (simpleeval, asteval non sécurisé, ou eval() utilisé comme
+    moteur d'expression métier) sur une chaîne provenant d'une entrée
+    utilisateur, notamment dans les moteurs de règles/calcul (formules,
+    conditions configurables).
+  patterns:
+    - "simple_eval(var)"
+    - "asteval.Interpreter().eval(var)"
+    - "eval(user_expression, {\"__builtins__\": {}})"
+    - "numexpr.evaluate(var)"
+  exclude_if:
+    - "var est un littéral constant (pas une variable/paramètre)"
+    - "le moteur d'expression restreint explicitement les noms/fonctions autorisés à une liste blanche vérifiée (sandbox stricte documentée)"
+
+message: >
+  Évaluation dynamique d'une expression utilisateur par un moteur
+  d'expression (EL) — même avec __builtins__ restreint, ces moteurs sont
+  fréquemment contournables. Utiliser un évaluateur d'expression
+  mathématique strict et sandboxé (ex: asteval avec liste blanche de
+  symboles) et ne jamais exposer eval() brut, même restreint.
+
+false_positive_notes:
+  - "simpleeval avec une liste de noms/fonctions explicitement vide et validée réduit le risque, mais des contournements documentés existent — ne pas déclasser sous `medium`."
+  - "Si var provient exclusivement d'une configuration interne non modifiable par l'utilisateur, reclasser en `info`."
+
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

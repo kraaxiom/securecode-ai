@@ -1,0 +1,34 @@
+id: weak-encryption
+language: js
+category: database
+cwe: CWE-326
+owasp: A02:2021-Cryptographic-Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de crypto.createHash('md5'/'sha1') pour un mot de
+    passe, ou d'un chiffrement en mode ECB/non authentifié pour des données
+    sensibles.
+  patterns:
+    - "crypto.createHash(\"md5\").update($password)"
+    - "crypto.createHash(\"sha1\").update($password)"
+    - "crypto.createCipheriv(\"aes-256-ecb\", _, _)"
+    - "crypto.createCipheriv(\"des-ecb\", _, _)"
+  exclude_if:
+    - "Le hachage de mot de passe utilise argon2/bcrypt (argon2.hash, bcrypt.hash)"
+    - "md5/sha1 est utilisé pour un usage non sécuritaire (checksum, clé de cache) et non pour un secret"
+
+message: >
+  Algorithme de hachage/chiffrement obsolète pour une donnée sensible —
+  migrer vers argon2id (mots de passe) ou AES-GCM (données) — voir
+  rules/remediation/weak-encryption.md.
+
+false_positive_notes:
+  - "crypto.createHash('sha256') utilisé pour un mot de passe reste insuffisant (hachage rapide sans facteur de coût) — signaler malgré l'algorithme moderne."
+  - "Un usage non sécuritaire de md5/sha1 (ex: hash d'URL pour cache CDN) n'est pas concerné."
+
+remediation_ref: rules/remediation/weak-encryption.md
+knowledge_ref: knowledge/database/weak-encryption.md

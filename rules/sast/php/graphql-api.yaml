@@ -1,0 +1,32 @@
+id: graphql-api
+language: php
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de serveur GraphQL PHP (webonyx/graphql-php,
+    Lighthouse) sans désactivation explicite de l'introspection ni limite de
+    profondeur de requête en production.
+  patterns:
+    - "new GraphQL\\Server\\ServerConfig()" # sans setValidationRules incluant QueryDepth/QueryComplexity
+    - "GraphQL::executeQuery(_, _, _, _, _, _)" # sans validationRules personnalisées
+  exclude_if:
+    - "setValidationRules() inclut DisableIntrospection et/ou QueryDepth/QueryComplexity"
+    - "la configuration vérifie explicitement l'environnement (app()->environment('production')) avant d'activer l'introspection"
+
+message: >
+  Serveur GraphQL configuré sans limite de profondeur/complexité ni
+  désactivation d'introspection en production (voir
+  rules/remediation/graphql-api.md).
+
+false_positive_notes:
+  - "Si le endpoint GraphQL est strictement interne et accessible uniquement via réseau privé authentifié, le risque est réduit — reclasser en `low`."
+  - "Certains frameworks (Lighthouse) appliquent des limites par défaut via configuration YAML séparée : vérifier ce fichier avant de confirmer le finding."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

@@ -1,0 +1,35 @@
+id: weak-session-id
+language: csharp
+category: sessions
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou de jeton à l'aide
+    d'un générateur pseudo-aléatoire non cryptographique, ou à partir de
+    données prévisibles, au lieu de System.Security.Cryptography.
+  patterns:
+    - "new Random().Next(_)" # utilisé pour générer un identifiant de session/token
+    - "Guid.NewGuid().ToString()" # utilisé comme identifiant de session sans autre source d'entropie (dépend du contexte)
+    - "string $sessionId = $userId.ToString() + DateTime.Now.Ticks;" # concaténation prévisible
+    - "string $token = $userId + \"-\" + DateTime.UtcNow.ToString();"
+  exclude_if:
+    - "l'identifiant provient de RandomNumberGenerator.Create() / RandomNumberGenerator.Fill() ou de ASP.NET Core Session/Identity (générateur natif non réimplémenté)"
+    - "la valeur générée n'est pas utilisée comme identifiant de session, jeton d'authentification, ou jeton de réinitialisation (ex: simple ID de corrélation de log non sensible)"
+
+message: >
+  Identifiant de session ou jeton généré avec une source aléatoire non
+  cryptographique ou à partir de données prévisibles — un attaquant pourrait
+  deviner ou reconstituer des identifiants valides (voir
+  rules/remediation/weak-session-id.md).
+
+false_positive_notes:
+  - "System.Random n'est pas cryptographiquement sûr ; ne pas confondre avec RandomNumberGenerator qui l'est — vérifier la classe exacte utilisée avant de conclure."
+  - "Si la génération s'appuie sur le middleware de session ASP.NET Core par défaut (non modifié), ce n'est pas un vrai positif."
+
+remediation_ref: rules/remediation/weak-session-id.md
+knowledge_ref: knowledge/sessions/weak-session-id.md

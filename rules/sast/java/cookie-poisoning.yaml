@@ -1,0 +1,34 @@
+id: cookie-poisoning
+language: java
+category: sessions
+cwe: CWE-565
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de la valeur d'un cookie HTTP comme source de confiance
+    (identité, rôle, prix, état métier) sans vérification d'intégrité (signature
+    HMAC ou session côté serveur), typique d'un Cookie Spring/Servlet lu via
+    HttpServletRequest.getCookies() puis réinjecté dans une décision métier.
+  patterns:
+    - "request.getCookies() -> Cookie.getValue() utilisé directement dans une condition d'autorisation ou un montant"
+    - "@CookieValue(\"$name\") String $var utilisé sans validation ni resigning dans un contrôleur Spring"
+    - "new Cookie($_, $userControlledValue) sans HMAC/signature avant écriture d'un cookie porteur de logique métier"
+  exclude_if:
+    - "la valeur du cookie est uniquement un identifiant de session opaque géré par le conteneur (JSESSIONID)"
+    - "le cookie est vérifié via une signature HMAC ou JWT signé avant usage"
+
+message: >
+  Une valeur de cookie est utilisée comme source de vérité métier sans contrôle
+  d'intégrité — un attaquant peut modifier ce cookie côté client. Signer le
+  cookie (HMAC) ou stocker la donnée sensible côté serveur (session Spring).
+
+false_positive_notes:
+  - "Si le cookie ne contient qu'un identifiant opaque sans signification métier exploitable, reclasser en `low`."
+  - "Si Spring Session avec un backend serveur (Redis) gère l'état, le cookie ne transporte qu'un ID de session signé — vérifier la config avant de remonter."
+
+remediation_ref: rules/remediation/cookie-poisoning.md
+knowledge_ref: knowledge/sessions/cookie-poisoning.md

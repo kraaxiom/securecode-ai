@@ -1,0 +1,35 @@
+id: xml-injection
+language: java
+category: injections
+cwe: CWE-91
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un document XML par concaténation de chaînes
+    incluant une entrée utilisateur non échappée (au lieu d'utiliser une API
+    DOM/JAXB structurée), permettant l'injection de balises ou d'attributs
+    XML supplémentaires.
+  patterns:
+    - "string_concat(\"<\", _, $var, _, \">\")  passé à un parseur XML ou écrit dans une réponse XML"
+    - "StringBuilder.append($var) utilisé pour construire un fragment XML sans échappement (StringEscapeUtils.escapeXml10)"
+  exclude_if:
+    - "$var passe par StringEscapeUtils.escapeXml10/escapeXml11 (Apache Commons Text) avant insertion"
+    - "le document est construit via une API DOM (Document.createElement/setTextContent) qui échappe automatiquement"
+
+message: >
+  Document XML construit par concaténation de chaînes avec une entrée non
+  échappée — un attaquant peut injecter des balises/attributs XML
+  additionnels et altérer la structure du document ; utiliser une API DOM/
+  JAXB structurée ou échapper via StringEscapeUtils.escapeXml10
+  (voir rules/remediation/xml-injection.md).
+
+false_positive_notes:
+  - "La construction via Document.createElement()/setTextContent() échappe nativement le contenu texte et n'est pas concernée."
+  - "Si $var est strictement numérique ou validé par whitelist, le risque d'injection de balise est nul."
+
+remediation_ref: rules/remediation/xml-injection.md
+knowledge_ref: knowledge/injections/xml-injection.md

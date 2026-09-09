@@ -1,0 +1,17 @@
+id: svg-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST
+  target: fonctionnalité d'upload acceptant le format SVG (avatar, logo, pièce jointe)
+  technique: differential-response
+  indicators:
+    - "un fichier SVG contenant uniquement des éléments structurels neutres (pas de script) et un marqueur inerte dans un attribut de métadonnée est servi avec un en-tête Content-Type: image/svg+xml depuis la même origine que l'application, sans passage par une origine isolée ni Content-Disposition: attachment"
+    - "affichage inline du contenu SVG uploadé via un sink DOM, observable par la présence du marqueur inerte structurellement intact dans le document rendu plutôt que neutralisé"
+false_positive_notes:
+  - "Un SVG servi avec Content-Disposition: attachment ou depuis un sous-domaine sans cookies réduit fortement le risque même si le contenu n'est pas sanitisé — documenter le contexte de service."
+remediation_ref: rules/remediation/svg-xss.md
+knowledge_ref: knowledge/xss/svg-xss.md

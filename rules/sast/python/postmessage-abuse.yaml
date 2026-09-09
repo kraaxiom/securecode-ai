@@ -1,0 +1,33 @@
+id: postmessage-abuse
+language: python
+category: frontend
+cwe: CWE-346
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un backend Python qui genere/injecte dans un template un script
+    postMessage cote client sans cible d'origine explicite, ou qui sert une
+    page destinee a recevoir des postMessage sans que le JS genere ne
+    verifie event.origin.
+  patterns:
+    - "render_template contenant `.postMessage(data, '*')` genere cote serveur sans origine cible explicite"
+    - "Template injectant un ecouteur `window.addEventListener('message', ...)` sans validation de event.origin dans le script genere"
+  exclude_if:
+    - "Le script genere utilise une origine cible explicite (pas de joker '*') et verifie event.origin cote reception"
+
+message: >
+  Script postMessage genere cote serveur sans origine cible explicite
+  (utilisation du joker '*'), ou ecouteur sans verification de event.origin
+  — permet a une page tierce malveillante d'envoyer ou d'intercepter des
+  messages destines a l'application. Toujours specifier l'origine cible
+  exacte et valider event.origin a la reception.
+
+false_positive_notes:
+  - "Applicable uniquement si le backend genere effectivement du JS de messagerie cross-window ; sans generation de ce type de script, ce pattern ne s'applique pas."
+
+remediation_ref: rules/remediation/postmessage-abuse.md
+knowledge_ref: knowledge/frontend/postmessage-abuse.md

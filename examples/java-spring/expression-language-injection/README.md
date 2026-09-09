@@ -1,0 +1,3 @@
+# Expression Language Injection (CWE-917)
+
+Le code vulnérable transforme directement le paramètre `expr` fourni par l'utilisateur en expression SpEL évaluée via `parser.parseExpression(expr)`, ce qui permet à un attaquant d'exécuter du code Java arbitraire côté serveur (par exemple via `T(java.lang.Runtime)`). La version corrigée fige l'expression SpEL à une constante définie par le développeur (`#input.length()`) et ne transmet la donnée utilisateur que comme variable du contexte d'évaluation (`context.setVariable`), ce qui empêche toute injection de code tout en conservant un comportement fonctionnel équivalent.

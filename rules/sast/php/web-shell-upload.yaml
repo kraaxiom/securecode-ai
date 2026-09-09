@@ -1,0 +1,34 @@
+id: web-shell-upload
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un dépôt de fichier téléversé directement dans un répertoire du
+    webroot accessible publiquement (chemin contenant public/, www/, htdocs/),
+    sans validation d'extension par liste blanche ni renommage côté serveur,
+    exposant l'application au risque de dépôt et d'exécution de web shell.
+  patterns:
+    - "move_uploaded_file($_FILES[_]['tmp_name'], string_concat(webroot_path_containing('public'), $_FILES[_]['name']))"
+    - "copy($_FILES[_]['tmp_name'], string_concat(webroot_path_containing('www'), _))"
+  exclude_if:
+    - "une liste blanche d'extensions stricte ET une détection de type par contenu (finfo_file/getimagesize) précèdent l'appel"
+    - "le nom de destination est généré aléatoirement côté serveur (pas dérivé du nom client)"
+    - "le répertoire de destination désactive explicitement l'exécution de scripts (documenté en commentaire ou config adjacente)"
+
+message: >
+  Fichier téléversé déposé dans un répertoire public exécutable sans validation
+  stricte ni renommage — risque de dépôt de web shell, voir
+  rules/remediation/web-shell-upload.md.
+
+false_positive_notes:
+  - "Si le serveur web est configuré pour désactiver l'exécution de scripts dans ce répertoire spécifique (ex: directive Nginx dédiée), le risque d'exécution directe est réduit mais reste à documenter."
+  - "Un chemin contenant 'public' par coïncidence lexicale (ex: 'public_data' non servi par le serveur web) peut être un faux positif — vérifier la configuration de routage réel."
+
+remediation_ref: rules/remediation/web-shell-upload.md
+knowledge_ref: knowledge/upload/web-shell-upload.md

@@ -1,0 +1,19 @@
+id: blind-sql-injection
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête ou champ de formulaire injecté dans une clause WHERE/SQL
+  technique: timing-anomaly
+  indicators:
+    - Temps de réponse significativement plus long lorsqu'une condition temporelle est injectée, comparé à une requête de référence identique.
+    - Différence de comportement applicatif (contenu, redirection) entre deux entrées logiquement opposées sans qu'aucune erreur SQL ne soit visible.
+    - Absence de message d'erreur mais variation constante du code HTTP selon la valeur testée.
+false_positive_notes:
+  - Latence réseau ou charge serveur pouvant fausser la mesure de timing ; répéter la mesure plusieurs fois.
+  - Rate limiting ou WAF pouvant introduire un délai artificiel non lié à la base de données.
+remediation_ref: rules/remediation/blind-sql-injection.md
+knowledge_ref: knowledge/injections/blind-sql-injection.md

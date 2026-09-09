@@ -1,0 +1,33 @@
+id: privilege-escalation
+language: java
+category: authorization
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un champ de rôle/permission présent dans une entité bindée directement depuis la
+    requête (voir mass-assignment), ou une fonction d'attribution de rôle qui ne vérifie pas
+    que le rôle demandé est inférieur ou égal au niveau de privilège de l'appelant.
+  patterns:
+    - "@PutMapping(\"/users/{id}/role\") ... user.setRole($requestedRole)  # sans vérification que l'appelant peut accorder ce rôle"
+    - "@PostMapping(\"/team/invite\") ... member.setRole($requestedRole)  # même absence de contrôle"
+  exclude_if:
+    - "la fonction d'attribution de rôle vérifie explicitement que l'appelant est autorisé à accorder le rôle demandé (comparaison de niveau de privilège)"
+    - "le champ de rôle n'est jamais modifiable via une entrée directement contrôlée par l'utilisateur (voir mass-assignment)"
+
+message: >
+  Fonction d'attribution de rôle/permission sans vérification que l'appelant est lui-même
+  autorisé à accorder ce niveau de privilège précis — protéger le champ de rôle contre la
+  modification directe et vérifier le niveau de privilège de l'appelant avant toute
+  attribution (voir rules/remediation/privilege-escalation.md).
+
+false_positive_notes:
+  - "Si l'attribution de rôle est strictement réservée à un endpoint déjà protégé par @PreAuthorize(\"hasRole('ADMIN')\") avec un contrôle supplémentaire de hiérarchie de rôles, vérifier la couverture avant de remonter en critique."
+  - "Les rôles à plat sans hiérarchie (un seul niveau administrateur) simplifient la vérification mais ne suppriment pas le besoin de contrôle explicite."
+
+remediation_ref: rules/remediation/privilege-escalation.md
+knowledge_ref: knowledge/authorization/privilege-escalation.md

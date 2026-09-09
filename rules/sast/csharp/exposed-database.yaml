@@ -1,0 +1,35 @@
+id: exposed-database
+language: csharp
+category: database
+cwe: CWE-284
+owasp: A05:2021-Security-Misconfiguration
+severity: critical
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte une configuration de connexion base de données .NET
+    (appsettings.json, chaîne de connexion Entity Framework/ADO.NET)
+    indiquant une base accessible sans restriction réseau ou avec une
+    authentification faible/absente.
+  patterns:
+    - "\"ConnectionStrings\": { \"Default\": \"Server=0.0.0.0;Database=db;...\" } — host public sans mention de restriction réseau (VNet/NSG) documentée"
+    - "new SqlConnectionStringBuilder { DataSource = host, UserID = \"sa\", Password = \"\" } — connexion sans mot de passe (Password vide) sur un host non localhost"
+    - "docker-compose.yml / appsettings.Production.json exposant le port du SGBD (1433, 3306, 5432) directement sur '0.0.0.0' sans authentification forte ni restriction d'IP"
+  exclude_if:
+    - "la base est accessible uniquement depuis un réseau privé (VNet, NSG restreint, localhost) ET protégée par une authentification forte (pas de mot de passe vide/par défaut)"
+
+message: >
+  Base de données configurée avec un accès réseau non restreint ou une
+  authentification faible/absente — directement exploitable si le port est
+  atteignable depuis Internet. Restreindre l'accès réseau (VNet, NSG, bind
+  localhost/interne uniquement) et exiger une authentification forte pour
+  tout compte de base de données — voir rules/remediation/exposed-database.md.
+
+false_positive_notes:
+  - "Une configuration de développement local (localhost, mot de passe faible dans appsettings.Development.json) n'est pas critique si elle n'atteint jamais un environnement de production — vérifier le contexte du fichier."
+  - "Le binding réseau réel dépend souvent de l'infrastructure (docker-compose, firewall cloud, NSG Azure) non visible dans le seul code applicatif — confirmer avant de classer en `critical`."
+
+remediation_ref: rules/remediation/exposed-database.md
+knowledge_ref: knowledge/database/exposed-database.md

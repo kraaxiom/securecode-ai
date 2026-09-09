@@ -1,0 +1,34 @@
+id: missing-coop
+language: php
+category: headers
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détection au niveau applicatif PHP de l'absence d'envoi de l'en-tête
+    Cross-Origin-Opener-Policy via header(). La vérification exhaustive
+    reste souvent de niveau config/infra (nginx add_header, Apache
+    Header always set, middleware framework) et doit être complétée par
+    un contrôle sur la configuration du serveur web ou du reverse proxy.
+  patterns:
+    - "absence d'appel header('Cross-Origin-Opener-Policy: ...') dans le point d'entrée ou le middleware global"
+    - "absence de directive add_header Cross-Origin-Opener-Policy dans la configuration nginx associée"
+    - "absence de directive Header always set Cross-Origin-Opener-Policy dans la configuration Apache associée"
+  exclude_if:
+    - "l'en-tête Cross-Origin-Opener-Policy est défini globalement au niveau du reverse proxy/CDN en amont de l'application"
+    - "un middleware de sécurité (ex: secure_headers, framework maison) ajoute déjà systématiquement cet en-tête"
+
+message: >
+  En-tête Cross-Origin-Opener-Policy absent des réponses HTTP — la fenêtre
+  reste exposée aux attaques de type tabnabbing (voir rules/remediation/missing-coop.md).
+
+false_positive_notes:
+  - "Si l'en-tête est injecté par un reverse proxy, un CDN ou un middleware framework en amont du code PHP scanné, ce n'est pas un vrai positif au niveau applicatif — vérifier la configuration infra avant de remonter le finding."
+  - "Application n'ouvrant jamais de fenêtres tierces (pas de window.open ni de target=_blank externe) : la sévérité reste basse par défaut."
+
+remediation_ref: rules/remediation/missing-coop.md
+knowledge_ref: knowledge/headers/missing-coop.md

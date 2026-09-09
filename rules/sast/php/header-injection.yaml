@@ -1,0 +1,32 @@
+id: header-injection
+language: php
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'appel à header() avec une chaîne construite par concaténation
+    d'une variable non liée provenant d'une entrée utilisateur, sans
+    suppression préalable des caractères de contrôle CR/LF.
+  patterns:
+    - "header(string_concat(_, $var, _))"
+    - "header(string_interpolation($var))"
+  exclude_if:
+    - "$var passe par preg_replace('/[\\r\\n]/', ...) ou une fonction de filtrage équivalente avant l'appel header()"
+    - "$var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Construction d'un en-tête HTTP par concaténation d'une entrée utilisateur
+  non filtrée — supprimer les caractères \r et \n avant écriture (voir
+  rules/remediation/header-injection.md).
+
+false_positive_notes:
+  - "Si $var est validée en amont par une expression régulière stricte n'autorisant pas \\r ni \\n (ex: whitelist alphanumérique), ce n'est pas exploitable."
+  - "Les versions récentes de PHP (>= 5.1.2) rejettent déjà les injections multi-lignes dans header() — vérifier la version cible avant de remonter en `medium`, ce contrôle reste utile en défense en profondeur."
+
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

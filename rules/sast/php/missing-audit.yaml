@@ -1,0 +1,31 @@
+id: missing-audit
+language: php
+category: database
+cwe: CWE-778
+owasp: A09:2021-Security-Logging-and-Monitoring-Failures
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction d'accès à des données sensibles (profil utilisateur,
+    données personnelles) dans un contrôleur admin sans appel correspondant à
+    une fonction de journalisation d'audit.
+  patterns:
+    - "function getUserProfile($id) { return $this->pdo->query(_)->fetch(); }"
+    - "class AdminController { function show($id) { return User::find($id); } }"
+  exclude_if:
+    - "Un appel à une fonction de journalisation (AuditLog::record, audit()->log) est présent dans le même bloc"
+    - "L'accès est journalisé automatiquement par un middleware/observer d'application déjà en place"
+
+message: >
+  Accès à des données sensibles sans journalisation d'audit visible — voir
+  rules/remediation/missing-audit.md.
+
+false_positive_notes:
+  - "Ce pattern a une confiance faible : la journalisation peut être appliquée par un middleware global non visible dans le fichier analysé."
+  - "Vérifier la présence d'une solution de journalisation native au niveau du SGBD (pgAudit, MySQL Enterprise Audit) avant de conclure à l'absence totale d'audit."
+
+remediation_ref: rules/remediation/missing-audit.md
+knowledge_ref: knowledge/database/missing-audit.md

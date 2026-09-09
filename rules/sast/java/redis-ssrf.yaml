@@ -1,0 +1,34 @@
+id: redis-ssrf
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une connexion réseau (Jedis, Lettuce, socket brut) vers un
+    hôte/port dérivé d'une entrée utilisateur, dans un contexte où le réseau interne héberge
+    une instance Redis potentiellement non authentifiée.
+  patterns:
+    - "new Jedis($userHost, $userPort)"
+    - "RedisClient.create(RedisURI.create($userHost, $userPort))"
+    - "new Socket($userHost, $userPort)  # port pouvant cibler Redis (6379)"
+  exclude_if:
+    - "$userHost/$userPort sont issus exclusivement d'une configuration serveur fixe (pas d'entrée utilisateur)"
+    - "une whitelist stricte limite la destination aux seuls hôtes internes attendus"
+
+message: >
+  Hôte/port de connexion réseau construit à partir d'une entrée utilisateur, pouvant atteindre
+  une instance Redis interne non authentifiée — restreindre les destinations autorisées par
+  whitelist et activer l'authentification/ACL sur Redis (voir
+  rules/remediation/redis-ssrf.md).
+
+false_positive_notes:
+  - "Si l'hôte/port de connexion cache/file est toujours défini en configuration applicative fixe, ce n'est pas exploitable."
+  - "Redis déjà protégé par authentification et segmentation réseau réduit fortement l'impact même en présence de ce pattern."
+
+remediation_ref: rules/remediation/redis-ssrf.md
+knowledge_ref: knowledge/ssrf/redis-ssrf.md

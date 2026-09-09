@@ -1,0 +1,34 @@
+id: jenkins-exposure
+language: config
+category: cicd
+cwe: CWE-16
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte une configuration Jenkins à risque : autorisation globale trop
+    permissive, credentials codés en dur dans un Jenkinsfile, ou console
+    Script accessible aux non-admins.
+  patterns:
+    - "Anyone can do anything"
+    - "sh 'curl -u [A-Za-z0-9_-]+:[A-Za-z0-9!@#$%^&*_-]{6,}"
+    - "withCredentials absent alors qu'un identifiant littéral est utilisé dans un stage sh/bat"
+    - "/script accessible sans restriction de rôle Administer"
+  exclude_if:
+    - "credential référencé via withCredentials(credentialsId: ...) au lieu d'un littéral"
+    - "matrice d'autorisation Role-Based Strategy avec accès anonyme explicitement refusé"
+
+message: >
+  Configuration Jenkins exposant l'instance ou des credentials — accès non
+  authentifié possible, ou secret codé en dur dans un Jenkinsfile. Voir
+  rules/remediation/jenkins-exposure.md.
+
+false_positive_notes:
+  - "Si l'identifiant détecté provient d'un exemple de documentation dans un commentaire, ne pas remonter."
+  - "Un Jenkins accessible uniquement via VPN/allowlist IP réduit le risque réseau mais ne dispense pas de corriger l'autorisation applicative."
+
+remediation_ref: rules/remediation/jenkins-exposure.md
+knowledge_ref: knowledge/cicd/jenkins-exposure.md

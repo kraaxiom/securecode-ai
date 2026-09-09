@@ -1,0 +1,36 @@
+id: cswsh
+language: python
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler WebSocket (Django Channels `AsyncWebsocketConsumer.connect`,
+    `websockets.serve`, Flask-SocketIO `on('connect')`, Tornado `WebSocketHandler.open`)
+    qui accepte la connexion en s'appuyant uniquement sur les cookies de session
+    du navigateur, sans vérifier l'en-tête `Origin` ni exiger de jeton anti-CSRF
+    dédié transmis explicitement par le client.
+  patterns:
+    - "class *(AsyncWebsocketConsumer): def connect(self): ... self.accept() without checking self.scope['headers'] for origin"
+    - "@sock.route(...) def handler(ws): ... without validating request.headers.get('Origin')"
+    - "async def handler(websocket): ... websockets.serve(handler, ...) without validating websocket.request_headers['Origin']"
+    - "class *(tornado.websocket.WebSocketHandler): def open(self): ... without check_origin override or with check_origin returning True unconditionally"
+  exclude_if:
+    - "le handler valide explicitement self.scope['headers'][b'origin'] (ou request.headers['Origin']) contre une allowlist stricte avant self.accept()"
+    - "le handshake exige un jeton CSRF/anti-CSWSH distinct du cookie de session (ex: token transmis en query string et vérifié côté serveur)"
+
+message: >
+  Connexion WebSocket acceptée sur la seule base du cookie de session, sans
+  vérification de l'en-tête Origin ni jeton anti-CSRF dédié — vulnérable au
+  Cross-Site WebSocket Hijacking (voir rules/remediation/cswsh.md).
+
+false_positive_notes:
+  - "Si un reverse proxy en amont (nginx, Traefik) filtre déjà l'Origin avant transmission au worker Python, vérifier sa configuration avant de confirmer en `high`."
+  - "Django Channels avec `AllowedHostsOriginValidator` correctement configuré dans le routing ASGI neutralise ce risque — vérifier `asgi.py`."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

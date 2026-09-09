@@ -1,0 +1,39 @@
+id: web-cache-deception
+language: csharp
+category: modern
+cwe: CWE-524
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un routage ASP.NET Core permissif où une route de contrôleur
+    (ex: `[Route("compte/profil/{**path}")]` ou routage par convention
+    capturant un segment terminal libre) accepte un suffixe d'URL arbitraire
+    ressemblant à une extension statique (`.css`, `.jpg`) sans retourner de
+    404, combiné à une réponse authentifiée sans `Cache-Control: private,
+    no-store` explicite, permettant à un cache/CDN en amont de mettre en
+    cache la page personnalisée sous une URL trompeuse.
+  patterns:
+    - "[Route(\"compte/{action}/{*catchAll}\")] sur un contrôleur [Authorize] sans validation stricte de catchAll ni retour 404 sur suffixe inattendu"
+    - "app.UseStaticFiles() configuré avec un chemin qui chevauche des routes de contrôleur authentifiées, laissant le middleware de fichiers statiques ou le cache décider par extension"
+    - "action authentifiée renvoyant des données utilisateur sans Response.Headers[\"Cache-Control\"] = \"private, no-store\" alors que l'application est déployée derrière un CDN"
+  exclude_if:
+    - "le routeur retourne explicitement 404 sur tout segment de chemin non reconnu après une route authentifiée valide"
+    - "Response.Headers[\"Cache-Control\"] = \"private, no-store\" est fixé explicitement sur toute action [Authorize] renvoyant des données utilisateur, indépendamment du suffixe d'URL"
+
+message: >
+  Route authentifiée acceptant un suffixe d'URL arbitraire ressemblant à une
+  extension statique sans retourner 404, combinée à une réponse sans
+  Cache-Control: private, no-store — un cache/CDN en amont peut mettre en
+  cache la page personnalisée d'un utilisateur et la servir à des visiteurs
+  non authentifiés (voir rules/remediation/web-cache-deception.md).
+
+false_positive_notes:
+  - "Si le cache/CDN est configuré pour ne jamais mettre en cache sur la base de l'extension d'URL mais uniquement sur le Content-Type réel, le risque est neutralisé même sans 404 stricte."
+  - "Si l'application n'est pas placée derrière un cache/CDN partagé (déploiement direct), le risque de web cache deception ne s'applique pas."
+
+remediation_ref: rules/remediation/web-cache-deception.md
+knowledge_ref: knowledge/modern/web-cache-deception.md

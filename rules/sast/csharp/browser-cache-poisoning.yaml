@@ -1,0 +1,37 @@
+id: browser-cache-poisoning
+language: csharp
+category: modern
+cwe: CWE-525
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une action ASP.NET Core renvoyant des données spécifiques à
+    l'utilisateur (profil, solde, tableau de bord) sans en-tête
+    `Cache-Control` restrictif — attribut `[ResponseCache]` mal configuré
+    (`Location = ResponseCacheLocation.Any` ou absence de `NoStore`), ou
+    réponse construite manuellement sans fixer `Response.Headers["Cache-
+    Control"]`.
+  patterns:
+    - "[ResponseCache(Duration = _)] sur une action authentifiée sans NoStore = true ni Location = ResponseCacheLocation.None"
+    - "return View(userProfile); sans context.Response.Headers[\"Cache-Control\"] = \"no-store\" sur un contrôleur [Authorize]"
+    - "Response.Headers[\"Cache-Control\"] = \"public, max-age=3600\" appliqué à une réponse contenant des données utilisateur"
+  exclude_if:
+    - "l'action fixe explicitement [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] ou Response.Headers[\"Cache-Control\"] = \"no-store, private\""
+    - "un middleware global (ex: app.Use(async (ctx, next) => { ctx.Response.Headers[\"Cache-Control\"] = \"no-store\"; await next(); })) applique cette politique à toutes les routes [Authorize]"
+
+message: >
+  Réponse contenant des données spécifiques à l'utilisateur renvoyée sans
+  en-tête Cache-Control restrictif — risque de réutilisation incorrecte par
+  le cache du navigateur, notamment sur des postes partagés (voir
+  rules/remediation/browser-cache-poisoning.md).
+
+false_positive_notes:
+  - "Si un middleware global ou un filtre d'action applique NoStore=true à toutes les routes authentifiées, reclasser en `low`."
+  - "Les données réellement publiques (contenu identique pour tous les utilisateurs, pages anonymes) ne sont pas concernées par ce risque."
+
+remediation_ref: rules/remediation/browser-cache-poisoning.md
+knowledge_ref: knowledge/modern/browser-cache-poisoning.md

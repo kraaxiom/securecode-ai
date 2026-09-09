@@ -1,0 +1,36 @@
+id: regex-dos
+language: python
+category: injections
+cwe: CWE-1333
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte une expression régulière au pattern vulnérable au catastrophic
+    backtracking (groupes quantifiés imbriqués comme (a+)+, (a*)*, (.*)+)
+    appliquée via re.match/re.search/re.fullmatch sur une entrée utilisateur
+    non bornée en longueur.
+  patterns:
+    - "re\\.(match|search|fullmatch)\\(r?[\"'].*\\([^)]*[+*][^)]*\\)[+*].*[\"']\\s*,\\s*\\w+\\)"
+    - "re\\.compile\\(r?[\"'].*\\(\\.\\*\\)\\+.*[\"']\\)"
+    - "re\\.compile\\(r?[\"'].*\\([^)]*\\+[^)]*\\)\\+.*[\"']\\)"
+  exclude_if:
+    - "l'entrée passée à la regex a une longueur strictement bornée (validation de taille max avant l'appel re.*)"
+    - "le pattern ne contient aucun quantificateur imbriqué ambigu"
+
+message: >
+  Expression régulière au pattern vulnérable au catastrophic backtracking
+  appliquée à une entrée non bornée — un attaquant peut provoquer un déni de
+  service (ReDoS) avec une entrée spécialement conçue. Réécrire le pattern
+  sans quantificateurs imbriqués ambigus, borner la longueur de l'entrée, ou
+  utiliser un moteur regex sans backtracking (module `re2`) ou un timeout.
+
+false_positive_notes:
+  - "Un pattern quantifié imbriqué appliqué uniquement à des données internes de taille fixe n'est pas exploitable."
+  - "Python 3.11+ atténue certains cas via des optimisations internes, mais ne les élimine pas tous — ne pas déclasser sans test de charge sur le pattern précis."
+
+remediation_ref: rules/remediation/regex-dos.md
+knowledge_ref: knowledge/injections/regex-dos.md

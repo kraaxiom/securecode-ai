@@ -1,0 +1,34 @@
+id: blind-sql-injection
+language: php
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte la concaténation d'une variable dans une requête SQL passée à une
+    fonction d'exécution (mysqli_query, PDO::query, $pdo->query), utilisée dans
+    un contexte conditionnel (existence/booléen) où le résultat brut n'est pas
+    directement affiché — motif typique de l'injection SQL aveugle.
+  patterns:
+    - "(mysqli_query\\s*\\(|->query\\s*\\()\\s*[^,)]*\\.\\s*\\$[A-Za-z_][A-Za-z0-9_]*"
+    - "\\$[A-Za-z_][A-Za-z0-9_]*\\s*=\\s*.*(fetch|num_rows).*\\bWHERE\\b.*\\.\\s*\\$"
+  exclude_if:
+    - "$var passe par une fonction de cast entier avant la requête (ex: (int)$var, intval($var))"
+    - "La requête utilise déjà un paramètre lié (prepare/execute avec placeholder)"
+
+message: >
+  Concaténation d'une valeur utilisateur dans une requête SQL conditionnelle
+  dont le résultat pilote un comportement binaire (existe/n'existe pas) —
+  remplacer par une requête préparée avec paramètre lié (voir
+  rules/remediation/blind-sql-injection.md).
+
+false_positive_notes:
+  - "Si la variable provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur), ce n'est pas exploitable — reclasser en `info`."
+  - "Si la requête est déjà exécutée via prepare()/execute() avec un placeholder nommé ou positionnel, il s'agit d'un faux positif de détection textuelle."
+
+remediation_ref: rules/remediation/blind-sql-injection.md
+knowledge_ref: knowledge/injections/blind-sql-injection.md

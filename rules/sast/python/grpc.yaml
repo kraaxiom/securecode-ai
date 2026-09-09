@@ -1,0 +1,33 @@
+id: grpc
+language: python
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un serveur gRPC Python (grpc.server) demarre sans interceptor
+    d'authentification, ou avec des credentials de canal insecure_channel en
+    production.
+  patterns:
+    - "grpc.server(futures.ThreadPoolExecutor(...)) demarre sans interceptors=[auth_interceptor] et sans server_credentials (add_insecure_port utilise en production)"
+    - "grpc.insecure_channel($_) utilise pour un service exposant des donnees sensibles hors environnement de developpement local"
+    - "Servicer implementant une methode RPC sans verification de metadata d'authentification (context.invocation_metadata())"
+  exclude_if:
+    - "grpc.secure_channel / add_secure_port avec des credentials TLS est utilise, et un interceptor verifie l'authentification sur chaque appel"
+
+message: >
+  Serveur ou canal gRPC sans authentification ni chiffrement (insecure_port/
+  insecure_channel) en dehors d'un contexte de developpement local — expose
+  les appels RPC a une interception ou un acces non authentifie. Utiliser
+  des credentials TLS (secure_channel/secure_port) et un interceptor
+  d'authentification sur chaque methode.
+
+false_positive_notes:
+  - "insecure_channel utilise uniquement en boucle localhost pour des tests automatises n'est pas exploitable en production — verifier le contexte de deploiement."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

@@ -1,0 +1,12 @@
+id: xxe
+category: injections
+cwe: CWE-611
+type: rasp
+guard:
+  sink: parsing d'un document XML fourni par l'utilisateur via une API de parseur XML (DocumentBuilder, lxml, XMLReader, XmlDocument)
+  block_condition: le document XML soumis contient une déclaration DOCTYPE ou ENTITY référençant une ressource externe (SYSTEM/PUBLIC) alors que le parseur n'a pas explicitement désactivé la résolution d'entités externes
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

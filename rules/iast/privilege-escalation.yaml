@@ -1,0 +1,15 @@
+id: privilege-escalation
+category: authorization
+cwe: CWE-269
+type: iast
+instrumentation:
+  hook_points:
+    - "php: méthode de contrôleur modifiant le champ role/permission d'un utilisateur (mise à jour de profil, attribution de rôle) sans comparaison entre le rôle demandé et le niveau de privilège de l'appelant"
+    - "js: handler Express/NestJS d'attribution ou de modification de rôle exécutant l'écriture en base sans vérifier que le rôle cible est inférieur ou égal au rôle de l'appelant"
+    - "python: vue Django/FastAPI de gestion d'équipe/rôle persistant un changement de permission sans dépendance de vérification hiérarchique de rôle"
+    - "java: méthode de service Spring modifiant les autorités (GrantedAuthority) d'un utilisateur sans @PreAuthorize vérifiant le niveau de privilège relatif de l'appelant"
+  taint_check: "valeur de rôle/permission fournie par le client (source) atteignant la persistance du rôle d'un compte (sink) sans passer par une vérification comparant ce rôle au niveau de privilège du contexte d'authentification de l'appelant"
+  trigger_condition: "le rôle d'un compte est modifié en base alors que le chemin d'exécution observé ne compare jamais le rôle demandé au rôle de l'appelant, ou ne revalide/n'invalide jamais la session existante après le changement"
+severity: critical
+remediation_ref: rules/remediation/privilege-escalation.md
+knowledge_ref: knowledge/authorization/privilege-escalation.md

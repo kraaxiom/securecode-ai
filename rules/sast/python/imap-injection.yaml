@@ -1,0 +1,37 @@
+id: imap-injection
+language: python
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une commande IMAP (recherche, sélection de
+    dossier) par interpolation directe d'une variable non échappée, passée
+    à imaplib.IMAP4.search()/uid()/select() sans encodage littéral IMAP
+    (guillemets/literal syntax), permettant l'injection de commandes IMAP
+    additionnelles.
+  patterns:
+    - "imap.search(None, f'(FROM \"{var}\")')"
+    - "imap.select(f\"{folder}\")"
+    - "imap.uid(\"SEARCH\", \"HEADER SUBJECT \" + var)"
+  exclude_if:
+    - "var est encodé via la syntaxe littérale IMAP ({n}\\r\\n...) ou échappé strictement (guillemets doublés, suppression des CR/LF)"
+    - "var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Commande IMAP construite par interpolation directe d'une variable non
+  échappée — un attaquant peut injecter des méta-caractères IMAP
+  (guillemets, parenthèses, CRLF) pour altérer la commande exécutée sur le
+  serveur de messagerie. Utiliser la syntaxe littérale IMAP ({n}\\r\\n) ou
+  échapper strictement guillemets et retours à la ligne avant insertion.
+
+false_positive_notes:
+  - "Si var est un identifiant numérique (UID) casté en int() avant utilisation, le risque est neutralisé."
+  - "Vérifier que la variable provient bien d'une entrée externe avant de confirmer en `medium`."
+
+remediation_ref: rules/remediation/imap-injection.md
+knowledge_ref: knowledge/injections/imap-injection.md

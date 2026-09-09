@@ -1,0 +1,18 @@
+id: dom-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET
+  target: fragment d'URL (location.hash), paramètre de requête, ou message postMessage traité côté client
+  technique: differential-response
+  indicators:
+    - "modification observable du DOM (nouvel élément, attribut, ou changement de contenu structurel) corrélée à une valeur de marqueur unique placée dans location.hash/search sans qu'aucune requête réseau correspondante n'ait été émise vers le serveur, révélant un traitement purement côté client"
+    - "un gestionnaire d'événement message répond à un postMessage envoyé depuis une origine différente de celle de la page cible, sans rejet ni filtrage observable"
+    - "présence d'un nouvel élément DOM structurellement inattendu après navigation vers une URL contenant un marqueur inerte dans le fragment, sans corrélation avec le contenu servi par le HTML initial"
+false_positive_notes:
+  - "Un framework SPA avec binding sécurisé peut afficher la valeur du marqueur en texte échappé sans que cela constitue une vulnérabilité — vérifier que le marqueur est interprété comme markup, pas comme texte."
+remediation_ref: rules/remediation/dom-xss.md
+knowledge_ref: knowledge/xss/dom-xss.md

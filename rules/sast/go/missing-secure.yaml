@@ -1,0 +1,34 @@
+id: missing-secure
+language: go
+category: sessions
+cwe: CWE-614
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un littéral http.Cookie{} ou une configuration gorilla/sessions
+    n'activant pas explicitement Secure sur un cookie de session destiné à
+    la production.
+  patterns:
+    - "http.Cookie{ Name: $name, Value: $value, _ }" # Secure absent du littéral
+    - "http.Cookie{ _, Secure: false, _ }"
+    - "store.Options = &sessions.Options{ _ }" # Secure absent
+    - "store.Options = &sessions.Options{ Secure: false, _ }"
+  exclude_if:
+    - "Secure: true est explicitement présent dans le même littéral"
+    - "le champ Secure: false est visiblement conditionné par une variable d'environnement de développement (ex: if os.Getenv(\"ENV\") == \"dev\")"
+
+message: >
+  Cookie créé sans champ Secure (ou avec Secure: false) — ce cookie de
+  session pourrait être transmis en clair sur une connexion HTTP non
+  chiffrée (voir rules/remediation/missing-secure.md).
+
+false_positive_notes:
+  - "Si Secure: false est explicitement limité à un chemin de code de développement local, ce n'est pas un risque en production — reclasser en `info`."
+  - "Go ne définit pas Secure par défaut à true : l'absence du champ dans le littéral doit être traitée comme Secure: false."
+
+remediation_ref: rules/remediation/missing-secure.md
+knowledge_ref: knowledge/sessions/missing-secure.md

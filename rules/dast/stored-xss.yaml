@@ -1,0 +1,17 @@
+id: stored-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: POST
+  target: champ persisté (commentaire, avis, profil, message) affiché ultérieurement à d'autres utilisateurs
+  technique: differential-response
+  indicators:
+    - "un marqueur unique inerte soumis dans un champ persisté est restitué, lors d'une requête ultérieure distincte (nouvelle session ou nouvel utilisateur), sans encodage des caractères structurants HTML, confirmant une persistance non neutralisée plutôt qu'une simple réflexion"
+    - "le marqueur soumis via un éditeur de contenu riche est restitué avec sa structure de balisage interprétée telle quelle plutôt qu'affichée comme texte littéral"
+false_positive_notes:
+  - "Un champ dont l'affichage est strictement limité à l'auteur (pas de consultation par un tiers) réduit la gravité mais ne supprime pas le finding — reclasser prudemment, pas d'exclusion automatique."
+remediation_ref: rules/remediation/stored-xss.md
+knowledge_ref: knowledge/xss/stored-xss.md

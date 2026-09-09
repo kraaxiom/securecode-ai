@@ -1,0 +1,19 @@
+id: mass-assignment
+category: authorization
+cwe: CWE-915
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+type: dast
+test:
+  method: POST|PUT|PATCH
+  target: endpoint de création/mise à jour de ressource (ex. /users, /profile, /orders) acceptant un corps JSON/formulaire lié à un modèle interne
+  technique: differential-response
+  indicators:
+    - "l'ajout d'un champ non présent dans le formulaire d'origine (ex. rôle, statut, drapeau interne, solde) dans le corps de la requête modifie effectivement cet attribut côté serveur, visible dans une lecture ultérieure de la ressource"
+    - "la réponse ou une requête de lecture subséquente reflète la valeur du champ injecté alors que l'interface utilisateur ne propose jamais de le modifier"
+    - "absence de rejet (400/422) de la requête malgré la présence de champs non documentés dans le schéma d'entrée attendu"
+false_positive_notes:
+  - "champ effectivement modifiable par l'utilisateur par conception (ex. préférences non sensibles) : vérifier la nature du champ avant conclusion"
+  - "l'ORM ignore silencieusement le champ additionnel sans erreur ni effet : absence de changement d'état confirmée nécessaire avant de conclure"
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

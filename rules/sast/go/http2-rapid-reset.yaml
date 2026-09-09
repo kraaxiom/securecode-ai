@@ -1,0 +1,36 @@
+id: http2-rapid-reset
+language: go
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Go exposant HTTP/2 (via `golang.org/x/net/http2` ou
+    `http.Server` avec TLS activant HTTP/2 implicitement) sans limite
+    configurée sur le nombre de flux concurrents (`MaxConcurrentStreams`),
+    laissant le serveur vulnérable à une rafale de `RST_STREAM` (HTTP/2
+    Rapid Reset).
+  patterns:
+    - "http2.Server{} instancié sans MaxConcurrentStreams défini à une valeur basse"
+    - "http2.ConfigureServer(srv, &http2.Server{}) sans limite de flux concurrents ni de taux de nouvelles connexions"
+    - "http.Server{} avec TLSConfig activant HTTP/2 par défaut, déployé sans reverse proxy limitant le taux de RST_STREAM par connexion"
+  exclude_if:
+    - "un reverse proxy en amont (nginx, Envoy) limite explicitement le taux de RST_STREAM ou de nouvelles requêtes par connexion HTTP/2"
+    - "MaxConcurrentStreams est explicitement plafonné à une valeur basse et surveillée dans la configuration du serveur http2.Server"
+
+message: >
+  Serveur HTTP/2 sans limite de flux concurrents/réinitialisés par
+  connexion — vulnérable à une attaque de déni de service par HTTP/2 Rapid
+  Reset (rafale de RST_STREAM) (voir
+  rules/remediation/http2-rapid-reset.md).
+
+false_positive_notes:
+  - "Cette faiblesse dépend fortement de la configuration d'infrastructure (reverse proxy, CDN) qui échappe souvent au code source seul — confirmer via revue de configuration serveur."
+  - "Si le service n'est jamais exposé directement en HTTP/2 côté client (uniquement HTTP/1.1 en interne), le risque ne s'applique pas."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

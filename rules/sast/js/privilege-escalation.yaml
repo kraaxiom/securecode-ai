@@ -1,0 +1,29 @@
+id: privilege-escalation
+language: js
+category: authorization
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la mise à jour d'un champ de rôle directement depuis req.body
+    (findByIdAndUpdate(_, { role: req.body.role })) sans vérification
+    préalable du droit de l'appelant à accorder ce rôle.
+  patterns:
+    - "Model.findByIdAndUpdate($_, { role: req.body.role }, _) sans appel préalable à canGrantRole(_)"
+  exclude_if:
+    - "Un appel à canGrantRole(req.user, req.body.role) ou équivalent précède l'appel ORM et retourne une erreur si non autorisé"
+
+message: >
+  Attribution de rôle/privilège directement depuis une entrée utilisateur
+  sans vérifier le droit de l'appelant à accorder ce niveau — voir
+  rules/remediation/privilege-escalation.md.
+
+false_positive_notes:
+  - "Recoupe le pattern mass-assignment si le champ role transite via une mise à jour générique — vérifier lequel des deux findings est le plus précis pour éviter la duplication."
+
+remediation_ref: rules/remediation/privilege-escalation.md
+knowledge_ref: knowledge/authorization/privilege-escalation.md

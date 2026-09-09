@@ -1,0 +1,18 @@
+id: http-parameter-pollution
+category: injections
+cwe: CWE-235
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: GET
+  target: paramètre de requête (query string) ou champ form-data dupliqué avec des valeurs distinctes
+  technique: differential-response
+  indicators:
+    - différence de comportement applicatif observée entre l'envoi d'un seul paramètre et l'envoi du même nom dupliqué avec des valeurs contradictoires
+    - contournement observé d'un contrôle de validation ou d'une règle métier lorsque le paramètre est dupliqué, comparé au comportement avec une seule occurrence
+  false_positive_notes:
+    - certains frameworks fusionnent volontairement les paramètres dupliqués (ex: tableaux) sans que cela constitue une vulnérabilité
+    - confirmer que la divergence d'interprétation impacte réellement un contrôle de sécurité ou une logique sensible
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

@@ -1,0 +1,29 @@
+id: markdown-xss
+language: csharp
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une insertion de contenu utilisateur dans une page HTML/DOM sans échappement contextuel (xss via rendu markdown).
+  patterns:
+    - "@Html.Raw($var) dans une vue Razor sans encodage"
+    - "Response.Write(string_concat(_, $var, _)) sans HttpUtility.HtmlEncode"
+    - "innerHTML assigné côté Blazor via MarkupString($var) non nettoyé"
+  exclude_if:
+    - "$var passe par HttpUtility.HtmlEncode ou AntiXssEncoder avant Html.Raw"
+    - "$var provient d'une constante interne, pas d'une entrée utilisateur"
+
+message: >
+  XSS via rendu Markdown détecté — échapper systématiquement toute donnée utilisateur avant insertion dans le HTML/DOM, ou utiliser l'échappement contextuel automatique du framework (voir rules/remediation/markdown-xss.md).
+
+false_positive_notes:
+  - "Si le moteur de rendu applique un échappement contextuel automatique (Razor par défaut, html/template, askama/tera par défaut) et qu'aucun mécanisme de contournement (Html.Raw, template.HTML, |safe) n'est utilisé, ce n'est pas exploitable."
+  - "Si la valeur est strictement interne et non dérivée d'une entrée utilisateur, reclasser en `info`."
+
+remediation_ref: rules/remediation/markdown-xss.md
+knowledge_ref: knowledge/xss/markdown-xss.md

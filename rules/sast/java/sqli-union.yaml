@@ -1,0 +1,36 @@
+id: sqli-union
+language: java
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête SQL concaténée exécutée via Statement/JdbcTemplate où
+    la chaîne assemblée permet l'injection d'une clause UNION SELECT
+    additionnelle (typiquement dans des filtres, recherches ou tris).
+  patterns:
+    - "Statement.executeQuery(string_concat(\"SELECT\", _, $var, _))"
+    - "JdbcTemplate.queryForList(string_concat(_, $var, _))"
+    - "Statement.executeQuery(string_concat(_, \"ORDER BY\", $var))"
+    - "Session.createNativeQuery(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "$var provient d'une whitelist de colonnes/valeurs autorisées (enum, switch exhaustif)"
+    - "$var est validé par une regex stricte de type ^[a-zA-Z0-9_]+$ avant concaténation"
+
+message: >
+  Concaténation d'une valeur non fiable dans une requête SQL exposant un
+  vecteur d'injection UNION — utiliser un PreparedStatement paramétré et ne
+  jamais injecter la clause SELECT/colonnes depuis une entrée utilisateur
+  (voir rules/remediation/sqli-union.md).
+
+false_positive_notes:
+  - "Si le nombre et le type de colonnes sont fixés côté serveur et que seule une valeur scalaire liée varie, il n'y a pas de vecteur UNION exploitable."
+  - "Les requêtes de reporting internes sans entrée utilisateur ne sont pas concernées — vérifier l'origine de $var."
+
+remediation_ref: rules/remediation/sqli-union.md
+knowledge_ref: knowledge/injections/sqli-union.md

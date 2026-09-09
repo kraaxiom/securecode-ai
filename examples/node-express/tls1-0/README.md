@@ -1,0 +1,3 @@
+## Protocole TLS 1.0 (et 1.1) activé (CWE-326)
+
+Le code vulnérable configure un agent HTTPS avec `secureProtocol: 'TLSv1_method'`, imposant un protocole officiellement déprécié par la RFC 8996, ne supportant pas les suites de chiffrement authentifiées modernes et exclu des référentiels de conformité comme PCI-DSS depuis 2018. La correction remplace ce protocole figé par `minVersion: 'TLSv1.2'` et `maxVersion: 'TLSv1.3'`, garantissant que seules des versions modernes de TLS sont négociées avec le fournisseur tiers. Les intégrations partenaires encore limitées à TLS 1.0 doivent être identifiées et migrées avant toute coupure définitive du support legacy.

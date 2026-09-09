@@ -1,0 +1,3 @@
+# Générateur aléatoire non cryptographique
+
+`vulnerable.rs` génère un token de réinitialisation de mot de passe avec un générateur pseudo-aléatoire statistique (`SmallRng`) initialisé avec une graine fixe, rendant la séquence produite reproductible et prévisible pour un attaquant, ce qui correspond à CWE-338 (Use of Cryptographically Weak Pseudo-Random Number Generator). `fixed.rs` remplace ce générateur par `OsRng`, un CSPRNG puisant son entropie dans le système d'exploitation, produisant un token de 128 bits d'entropie minimale sans graine fixe. Cette correction applique la recommandation de `rules/remediation/weak-random.md` : utiliser systématiquement un CSPRNG fourni par la plateforme et ne jamais fixer de graine pour des valeurs à usage sécuritaire.

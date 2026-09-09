@@ -1,0 +1,39 @@
+id: svg-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération ou l'upload d'un fichier SVG contenant une entrée
+    utilisateur non filtrée, servi avec un Content-Type permissif
+    (image/svg+xml sans en-tête Content-Disposition:attachment ni
+    sanitisation des balises <script>/gestionnaires d'événements
+    on*), typique d'une route Flask/Django gérant l'upload/génération de
+    SVG.
+  patterns:
+    - "svg_content = f\"<svg>...<text>{var}</text></svg>\""
+    - "response = Response(svg_data, mimetype=\"image/svg+xml\")"
+    - "open(f\"uploads/{filename}.svg\", \"wb\").write(request.files[\"file\"].read())"
+  exclude_if:
+    - "le SVG est servi avec Content-Disposition: attachment (forçant le téléchargement plutôt que le rendu inline)"
+    - "le contenu SVG est passé par un nettoyeur dédié (bleach avec whitelist stricte de balises SVG, sans script/on*) avant d'être servi"
+
+message: >
+  Fichier SVG contenant une entrée utilisateur non filtrée, servi avec un
+  type MIME permettant son rendu inline par le navigateur — un SVG peut
+  embarquer <script> ou des gestionnaires d'événements (onload) exécutant
+  du JavaScript (XSS via SVG). Nettoyer le SVG avec une whitelist stricte de
+  balises/attributs, ou forcer le téléchargement via
+  Content-Disposition: attachment.
+
+false_positive_notes:
+  - "Un SVG généré exclusivement à partir de données internes (pas d'entrée utilisateur) n'est pas concerné."
+  - "Servir le fichier avec Content-Disposition: attachment neutralise le rendu inline dans la plupart des navigateurs, réduisant fortement le risque."
+
+remediation_ref: rules/remediation/svg-xss.md
+knowledge_ref: knowledge/xss/svg-xss.md

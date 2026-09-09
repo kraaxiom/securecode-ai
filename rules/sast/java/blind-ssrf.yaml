@@ -1,0 +1,34 @@
+id: blind-ssrf
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête sortante déclenchée par une entrée utilisateur dans un contexte
+    asynchrone (`@Async`, job/worker, traitement de webhook) où le résultat de la requête
+    n'est jamais renvoyé à l'appelant, combinée à l'absence de whitelist de destination.
+  patterns:
+    - "@Async ... restTemplate.postForObject($webhookUrl, ...)"
+    - "executorService.submit(() -> httpClient.send(HttpRequest.newBuilder(URI.create($url))..., ...))"
+    - "documentBuilderFactory.newDocumentBuilder().parse($xmlInput)  # sans désactivation des entités externes"
+  exclude_if:
+    - "$url/$webhookUrl est validé contre une whitelist de destinations avant l'appel"
+    - "le parseur XML désactive explicitement DOCTYPE et les entités externes (setFeature FEATURE_SECURE_PROCESSING / disallow-doctype-decl)"
+
+message: >
+  Requête réseau sortante asynchrone ou traitement de document déclenché par une entrée
+  utilisateur sans retour d'information observable — appliquer les mêmes contrôles qu'une
+  SSRF classique (whitelist, validation IP) et désactiver la résolution d'entités externes
+  dans les parseurs XML (voir rules/remediation/blind-ssrf.md).
+
+false_positive_notes:
+  - "Si la destination du job asynchrone est toujours interne et fixe (pas dérivée d'une entrée utilisateur), reclasser en `info`."
+  - "Un parseur XML utilisant déjà une factory sécurisée (DocumentBuilderFactory avec FEATURE_SECURE_PROCESSING) neutralise ce vecteur."
+
+remediation_ref: rules/remediation/blind-ssrf.md
+knowledge_ref: knowledge/ssrf/blind-ssrf.md

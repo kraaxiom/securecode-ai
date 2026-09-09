@@ -1,0 +1,36 @@
+id: cswsh
+language: rust
+category: websocket
+cwe: CWE-352
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handshake WebSocket (tokio-tungstenite `accept_async`, ou
+    actix-web-actors `ws::WsResponseBuilder::start`/`ws::start`) qui accepte la
+    connexion en s'appuyant uniquement sur les cookies de session HTTP, sans
+    vérifier l'en-tête `Origin` de la requête d'upgrade ni exiger de jeton
+    anti-CSRF distinct transmis explicitement par le client.
+  patterns:
+    - "async fn handle_connection(stream: TcpStream) { let ws_stream = accept_async(stream).await.unwrap(); ... } sans lecture de req.headers().get(\"Origin\") dans le callback accept_hdr_async"
+    - "accept_async(stream) utilisé directement au lieu de accept_hdr_async(stream, callback) qui permettrait de valider l'Origin"
+    - "ws::start(MyWs { .. }, &req, stream) (actix-web-actors) sans vérification préalable de req.headers().get(\"Origin\") dans le handler HTTP"
+    - "impl Actor for MyWs { fn started(&mut self, ctx: &mut Self::Context) { ... } } qui authentifie uniquement via un cookie de session Actix sans jeton dédié"
+  exclude_if:
+    - "accept_hdr_async(stream, callback) est utilisé et le callback compare l'en-tête Origin à une allowlist stricte avant de retourner Ok(response)"
+    - "le handshake HTTP exige un jeton anti-CSWSH distinct du cookie de session (ex: transmis en query string et vérifié dans le handler avant ws::start)"
+
+message: >
+  Connexion WebSocket acceptée sur la seule base du cookie de session, sans
+  vérification de l'en-tête Origin ni jeton anti-CSRF dédié — vulnérable au
+  Cross-Site WebSocket Hijacking (voir rules/remediation/cswsh.md).
+
+false_positive_notes:
+  - "Si un reverse proxy en amont (nginx, Traefik) filtre déjà l'Origin avant transmission au binaire Rust, vérifier sa configuration avant de confirmer en `high`."
+  - "Un middleware actix-web appliqué globalement (ex: middleware personnalisé validant Origin avant que la requête n'atteigne le handler ws::start) neutralise ce risque — vérifier la chaîne de middlewares."
+
+remediation_ref: rules/remediation/cswsh.md
+knowledge_ref: knowledge/websocket/cswsh.md

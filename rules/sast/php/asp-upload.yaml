@@ -1,0 +1,35 @@
+id: asp-upload
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Généralise la classe de vulnérabilité "upload de fichier exécutable"
+    (illustrée ici pour IIS/ASP.NET) telle qu'elle apparaîtrait dans une base
+    de code PHP: écriture d'un fichier téléversé via move_uploaded_file()
+    sans liste blanche d'extension ni vérification de la signature binaire,
+    dans un répertoire servi par le serveur web.
+  patterns:
+    - "move_uploaded_file($_FILES[_]['tmp_name'], _)"
+    - "move_uploaded_file(_, string_concat(_, $_FILES[_]['name'], _))"
+  exclude_if:
+    - "une liste blanche stricte d'extensions est vérifiée avant l'appel"
+    - "la signature binaire réelle du fichier est vérifiée (finfo_file, getimagesize) avant l'appel"
+    - "le répertoire de destination est hors du webroot ou l'exécution de scripts y est désactivée"
+
+message: >
+  Upload de fichier sans validation de contenu ni de destination — risque
+  d'exécution de code si le fichier atterrit dans un répertoire interprété
+  (voir rules/remediation/asp-upload.md).
+
+false_positive_notes:
+  - "Cette règle PHP est une généralisation du pattern ASP/IIS documenté dans knowledge/upload/asp-upload.md ; elle ne détecte pas de code IIS spécifique."
+  - "Si le répertoire de destination est confirmé hors webroot avec exécution désactivée, la sévérité peut être réduite."
+
+remediation_ref: rules/remediation/asp-upload.md
+knowledge_ref: knowledge/upload/asp-upload.md

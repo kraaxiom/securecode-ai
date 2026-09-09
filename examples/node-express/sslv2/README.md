@@ -1,0 +1,3 @@
+## Protocole SSLv2 activé (CWE-326)
+
+Le code vulnérable configure le serveur HTTPS avec `secureProtocol: 'SSLv2_method'`, forçant l'utilisation d'un protocole publié en 1995 et officiellement interdit par la RFC 6176 depuis 2011, exposé notamment à l'attaque DROWN via des serveurs partageant une même clé RSA. La correction retire toute référence à SSLv2 et configure une plage de versions modernes avec `minVersion: 'TLSv1.2'` et `maxVersion: 'TLSv1.3'`, garantissant qu'aucun client ne peut négocier un protocole obsolète. Un scan externe (SSL Labs, testssl.sh) doit ensuite confirmer l'absence de SSLv2/SSLv3 négociable sur l'hôte.

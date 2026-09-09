@@ -1,0 +1,34 @@
+id: session-replay
+language: csharp
+category: sessions
+cwe: CWE-294
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de jeton (JWT ou jeton à usage unique comme un
+    lien de réinitialisation de mot de passe) qui ne vérifie pas l'expiration
+    ni ne marque le jeton comme consommé après utilisation.
+  patterns:
+    - "new TokenValidationParameters { ValidateLifetime = false, _ }"
+    - "new TokenValidationParameters { _ }" # ValidateLifetime absent
+    - "async Task ResetPassword($token, _) { _ }" # sans marquage du token comme utilisé (ex: pas d'UPDATE/appel _repository.MarkUsed)
+    - "_userManager.ResetPasswordAsync($user, $token, $newPassword)" # token réutilisable sans vérification d'unicité applicative
+  exclude_if:
+    - "ValidateLifetime = true est explicitement défini dans les mêmes TokenValidationParameters"
+    - "le token à usage unique est marqué consommé (colonne used_at, suppression, ou équivalent) immédiatement après une utilisation réussie"
+
+message: >
+  Jeton d'authentification ou de réinitialisation validé sans contrôle
+  d'expiration ou sans mécanisme anti-rejeu — un jeton intercepté pourrait
+  être réutilisé par un attaquant (voir rules/remediation/session-replay.md).
+
+false_positive_notes:
+  - "ASP.NET Core Identity gère nativement l'expiration et l'usage unique de certains tokens (data protection tokens) ; ne signaler que les implémentations manuelles qui désactivent ces contrôles."
+  - "Si ValidateLifetime est activé au niveau global de la configuration JWT et non redéfini localement, ce n'est pas un vrai positif."
+
+remediation_ref: rules/remediation/session-replay.md
+knowledge_ref: knowledge/sessions/session-replay.md

@@ -1,0 +1,3 @@
+## Indirect Prompt Injection (CWE-1427)
+
+Le code vulnérable récupère le contenu d'une page web et l'insère directement dans le message envoyé au modèle sans aucun marquage de provenance, tout en laissant des outils à fort impact (envoi d'e-mail, exécution de code) actifs pendant cette analyse, ce qui permet à des instructions cachées dans une source externe de détourner l'agent. La correction délimite explicitement le contenu externe par des balises de provenance non fiable dans un message système dédié, désactive tout outil pendant la phase de lecture, et revalide la sortie du modèle côté application avant toute utilisation ultérieure.

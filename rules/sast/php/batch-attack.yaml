@@ -1,0 +1,30 @@
+id: batch-attack
+language: php
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un traitement de corps de requête sous forme de tableau JSON
+    (batching GraphQL) sans vérification de la taille du tableau avant
+    traitement.
+  patterns:
+    - "if (is_array($body) && array_is_list($body)) { foreach ($body as $op) { GraphQL::executeQuery(...) } } sans vérification de count($body)"
+  exclude_if:
+    - "count($body) est comparé à une constante maximale avant la boucle foreach"
+    - "Le batching est explicitement désactivé (aucun traitement de tableau)"
+
+message: >
+  Traitement d'un batch de requêtes GraphQL sans limite de taille — risque
+  d'amplification et de contournement du rate limiting (voir rules/remediation/batch-attack.md).
+
+false_positive_notes:
+  - "Si le nombre d'opérations est plafonné en amont par un reverse-proxy ou un middleware non visible ici, vérifier manuellement avant de remonter en `medium`."
+  - "Sur une API interne à faible trafic, le risque est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

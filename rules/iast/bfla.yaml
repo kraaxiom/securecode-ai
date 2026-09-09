@@ -1,0 +1,15 @@
+id: bfla
+category: authorization
+cwe: CWE-862
+type: iast
+instrumentation:
+  hook_points:
+    - "php: point d'entrée de contrôleur/route associé à une action sensible (admin, suppression, changement d'état) sans décorateur/middleware de rôle"
+    - "js: handler de route Express/NestJS exécutant une action privilégiée sans middleware de vérification de rôle en amont de la logique métier"
+    - "python: vue Django/FastAPI exposant une action sensible sans dépendance/décorateur de permission explicite"
+    - "java: méthode de contrôleur Spring annotée pour une route sensible sans @PreAuthorize/@Secured correspondant au niveau de privilège requis"
+  taint_check: "requête authentifiée (source: contexte d'identité/rôle de la session) atteignant l'exécution d'une action sensible (sink) sans passer par un point de vérification de rôle explicite entre les deux"
+  trigger_condition: "l'action sensible s'exécute alors que le rôle du contexte d'identité courant n'a jamais été comparé au rôle requis par cette action dans le chemin d'exécution observé"
+severity: high
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

@@ -1,0 +1,36 @@
+id: browser-cache-poisoning
+language: rust
+category: modern
+cwe: CWE-525
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse actix-web/axum contenant des données spécifiques à
+    l'utilisateur (profil, solde, session) construite sans en-tête
+    `Cache-Control` restrictif, ou avec une valeur trop permissive
+    (`public`, absence de `no-store`).
+  patterns:
+    - "HttpResponse::Ok().json(user_data) sans .insert_header((\"Cache-Control\", \"no-store\"))"
+    - "async fn account(...) -> impl Responder { HttpResponse::Ok().body(profile_html) } sans en-tête Cache-Control"
+    - "HttpResponse::Ok().insert_header((\"Cache-Control\", \"public, max-age=3600\")) sur un handler exposant des données de session/utilisateur"
+    - "axum: Response::builder() sans header(CACHE_CONTROL, \"no-store\") sur une route authentifiée renvoyant des données privées"
+  exclude_if:
+    - "la réponse fixe explicitement Cache-Control: no-store (ou private, no-cache) sur tout handler exposant des données utilisateur"
+    - "un middleware/tower Layer global applique cette politique de cache à toutes les routes authentifiées"
+
+message: >
+  Réponse actix-web/axum contenant des données spécifiques à l'utilisateur
+  renvoyée sans en-tête Cache-Control restrictif — risque de réutilisation
+  incorrecte par le cache du navigateur, notamment sur des postes partagés
+  (voir rules/remediation/browser-cache-poisoning.md).
+
+false_positive_notes:
+  - "Si un middleware/tower Layer (ex: SetResponseHeaderLayer) applique déjà Cache-Control: no-store à toutes les routes authentifiées, reclasser en `low`."
+  - "Les données réellement publiques (contenu identique pour tous les utilisateurs, assets statiques versionnés) ne sont pas concernées par ce risque."
+
+remediation_ref: rules/remediation/browser-cache-poisoning.md
+knowledge_ref: knowledge/modern/browser-cache-poisoning.md

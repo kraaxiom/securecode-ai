@@ -1,0 +1,36 @@
+id: web-shell-upload
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un upload de fichier generaliste (Flask/Django/FastAPI) sans
+    aucune combinaison de controles (whitelist d'extension, verification de
+    magic bytes, stockage hors webroot, renommage), permettant le depot puis
+    l'execution d'un webshell Python/CGI/WSGI.
+  patterns:
+    - "file.save(os.path.join(app.static_folder, file.filename)) - ecriture directe dans un dossier servi statiquement, nom original conserve, aucune whitelist"
+    - "open(os.path.join(UPLOAD_DIR, filename), 'wb') sans validation d'extension ni de contenu, UPLOAD_DIR dans le webroot"
+    - "default_storage.save(filename, content) (Django) avec MEDIA_ROOT accessible en execution WSGI/CGI"
+  exclude_if:
+    - "Whitelist d'extension stricte + verification magic bytes + renommage uuid + stockage hors webroot sont tous presents"
+
+message: >
+  Upload de fichier sans aucun controle combine (extension, contenu,
+  emplacement) - un attaquant peut deposer un script Python/CGI executable et
+  l'invoquer directement s'il atterrit dans un repertoire interprete par le
+  serveur applicatif. Combiner whitelist d'extension, verification du
+  contenu reel (magic bytes), renommage aleatoire du fichier et stockage
+  strictement hors de tout repertoire executable (idealement un stockage
+  objet dedie).
+
+false_positive_notes:
+  - "Si le repertoire de destination n'est jamais expose/execute par le serveur applicatif (ex: bucket S3 prive sans acces direct), le risque d'execution est neutralise meme sans tous les controles - mais le CWE-434 reste applicable pour d'autres abus (stockage, quota)."
+
+remediation_ref: rules/remediation/web-shell-upload.md
+knowledge_ref: knowledge/upload/web-shell-upload.md

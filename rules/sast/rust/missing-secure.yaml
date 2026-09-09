@@ -1,0 +1,34 @@
+id: missing-secure
+language: rust
+category: sessions
+cwe: CWE-614
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une construction de cookie ou une configuration de
+    SessionMiddleware sans appel explicite à .secure(true), sur un cookie de
+    session destiné à la production.
+  patterns:
+    - "Cookie::build($name, $value)._finish()" # .secure(_) absent de la chaîne
+    - "Cookie::build($name, $value).secure(false)._finish()"
+    - "SessionMiddleware::builder($store, $key)._build()" # .cookie_secure(_) absent
+    - "SessionMiddleware::builder($store, $key).cookie_secure(false)._build()"
+  exclude_if:
+    - ".secure(true) ou .cookie_secure(true) est présent dans la même chaîne d'appels"
+    - "le champ secure(false) est visiblement conditionné par une variable de configuration de développement (ex: cfg!(debug_assertions))"
+
+message: >
+  Cookie construit sans .secure(true) (ou avec secure(false)) — ce cookie de
+  session pourrait être transmis en clair sur une connexion HTTP non
+  chiffrée (voir rules/remediation/missing-secure.md).
+
+false_positive_notes:
+  - "Si secure(false) est explicitement limité à un chemin de code de développement local (cfg!(debug_assertions)), ce n'est pas un risque en production — reclasser en `info`."
+  - "Ni actix-web ni axum/tower-sessions n'activent Secure par défaut sur un CookieBuilder brut : l'absence de l'appel doit être traitée comme un vrai positif."
+
+remediation_ref: rules/remediation/missing-secure.md
+knowledge_ref: knowledge/sessions/missing-secure.md

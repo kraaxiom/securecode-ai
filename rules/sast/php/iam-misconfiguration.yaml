@@ -1,0 +1,35 @@
+id: iam-misconfiguration
+language: php
+category: cloud
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Vérification config/IaC : détecte des policies IAM (AWS/Azure/GCP) avec
+    wildcards larges, des rôles administrateur attribués à des service
+    accounts applicatifs, ou des trust policies (AssumeRole) trop permissives,
+    dans les fichiers Terraform/ARM/Bicep/JSON d'un dépôt.
+  patterns:
+    - "policy IAM: \"Action\": \"*\" ET/OU \"Resource\": \"*\" avec \"Effect\": \"Allow\""
+    - "terraform/arm: rôle \"Owner\"/\"Admin\"/\"*Contributor\" attribué à un service account/managed identity applicatif"
+    - "AssumeRolePolicyDocument avec \"Principal\": \"*\" sans condition (ExternalId, MFA, source IP)"
+    - "clé d'accès statique (access_key/secret_key) codée en dur au lieu d'un rôle/identité fédérée"
+  exclude_if:
+    - "le compte concerné est un compte humain administrateur break-glass documenté avec MFA obligatoire"
+    - "le wildcard est restreint par une condition IAM stricte (aws:PrincipalOrgID, source VPC, session tag) réduisant significativement la portée réelle"
+
+message: >
+  Permissions IAM excessives détectées (wildcard, rôle admin sur un service
+  account, trust policy trop ouverte) — appliquer le principe du moindre
+  privilège (voir rules/remediation/iam-misconfiguration.md).
+
+false_positive_notes:
+  - "Un rôle administrateur attribué à un compte humain avec MFA et accès break-glass documenté est acceptable — le risque concerne surtout les service accounts/rôles applicatifs automatisés."
+  - "Une policy wildcard scoping strictement à un service précis (ex: `s3:Get*` sur un seul bucket nommé) est moins critique qu'un wildcard global — ajuster la sévérité après lecture du scope réel."
+
+remediation_ref: rules/remediation/iam-misconfiguration.md
+knowledge_ref: knowledge/cloud/iam-misconfiguration.md

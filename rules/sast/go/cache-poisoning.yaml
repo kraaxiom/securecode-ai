@@ -1,0 +1,36 @@
+id: cache-poisoning
+language: go
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage d'en-têtes non normalisés (`X-Forwarded-Host`,
+    `X-Forwarded-Scheme`, `X-Forwarded-Proto`) pour générer une réponse
+    (redirection, URL absolue rendue dans le HTML) dans un serveur net/http
+    déployé derrière un cache/CDN, sans que ces en-têtes ne fassent partie
+    de la clé de cache.
+  patterns:
+    - "host := r.Header.Get(\"X-Forwarded-Host\"); http.Redirect(w, r, fmt.Sprintf(\"https://%s/...\", host), http.StatusFound)"
+    - "proto := r.Header.Get(\"X-Forwarded-Proto\") utilisé pour construire une URL absolue rendue dans un template sans validation contre une allowlist de hosts"
+    - "r.Header.Get(\"X-Forwarded-Host\") assigné directement à r.Host ou utilisé pour reconstruire l'URL sans passer par une liste de hosts autorisés"
+  exclude_if:
+    - "l'en-tête est validé contre une allowlist stricte de hosts autorisés avant usage (comparaison explicite à une liste de constantes/config)"
+    - "le cache/CDN en amont est configuré pour inclure cet en-tête dans sa clé de cache (Vary: X-Forwarded-Host), neutralisant l'empoisonnement"
+
+message: >
+  En-tête non fiable (X-Forwarded-Host/Proto) utilisé pour générer une
+  réponse mise en cache sans validation ni inclusion dans la clé de cache —
+  un attaquant peut empoisonner le cache et servir du contenu malveillant à
+  tous les visiteurs suivants (voir rules/remediation/cache-poisoning.md).
+
+false_positive_notes:
+  - "Si le service Go n'est pas placé derrière un cache/CDN partagé (déploiement direct), le risque d'empoisonnement de cache partagé ne s'applique pas, bien que l'open redirect reste possible."
+  - "Si le reverse proxy en amont (nginx, Envoy) réécrit/supprime systématiquement ces en-têtes avant transmission, le risque est neutralisé côté transport — vérifier la configuration avant de confirmer."
+
+remediation_ref: rules/remediation/cache-poisoning.md
+knowledge_ref: knowledge/modern/cache-poisoning.md

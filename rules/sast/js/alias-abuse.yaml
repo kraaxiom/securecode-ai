@@ -1,0 +1,29 @@
+id: alias-abuse
+language: js
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une instanciation d'ApolloServer (ou serveur GraphQL équivalent)
+    sans plugin limitant le nombre d'alias par requête.
+  patterns:
+    - "new ApolloServer({ typeDefs, resolvers, ... }) sans maxAliasesPlugin dans plugins"
+  exclude_if:
+    - "plugins inclut maxAliasesPlugin (@escape.tech/graphql-armor-max-aliases) ou équivalent"
+    - "Un middleware custom compte et limite le nombre d'alias avant exécution de la requête"
+
+message: >
+  Serveur GraphQL sans limite du nombre d'alias par requête — risque d'abus
+  d'alias pour bruteforce ou déni de service (voir rules/remediation/alias-abuse.md).
+
+false_positive_notes:
+  - "Si la limite est configurée via un middleware amont (API gateway) non visible dans ce fichier, vérifier manuellement avant de remonter en `medium`."
+  - "Sur une API interne non exposée publiquement, le risque est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/alias-abuse.md
+knowledge_ref: knowledge/graphql/alias-abuse.md

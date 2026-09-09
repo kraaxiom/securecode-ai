@@ -1,0 +1,40 @@
+id: asp-upload
+language: csharp
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'enregistrement d'un IFormFile téléversé (ASP.NET Core) ou d'un
+    HttpPostedFile (ASP.NET classique/WebForms) sur disque sans validation
+    stricte de l'extension, sans vérification de la signature binaire, et/ou
+    en conservant le nom de fichier fourni par le client.
+  patterns:
+    - "$file.CopyToAsync(_)"
+    - "$file.CopyTo(_)"
+    - "$file.SaveAs($path)"
+    - "File.WriteAllBytes(string_concat(_, $file.FileName, _), _)"
+    - "Path.Combine(_, $file.FileName)"
+  exclude_if:
+    - "l'extension est validée par une liste blanche stricte (ex: comparaison exacte à un tableau d'extensions autorisées) avant l'appel à CopyToAsync/SaveAs"
+    - "le nom de fichier de destination est généré côté serveur (ex: Guid.NewGuid()) et ne réutilise jamais $file.FileName"
+    - "la signature binaire réelle du fichier est vérifiée (lecture des premiers octets comparés à une table de magic bytes) avant écriture"
+    - "le répertoire de destination est hors de wwwroot et protégé par un web.config retirant les handlers d'exécution"
+
+message: >
+  Enregistrement d'un fichier téléversé (IFormFile/HttpPostedFile) sans
+  validation stricte de l'extension ni vérification du contenu réel, avec
+  conservation possible du nom fourni par le client — risque d'upload d'un
+  fichier exécutable par IIS (.aspx, .ashx, .cshtml) dans un répertoire servi
+  (voir rules/remediation/asp-upload.md).
+
+false_positive_notes:
+  - "Si le contrôleur applique déjà une liste blanche d'extensions stricte et un renommage aléatoire avant l'appel à CopyToAsync, reclasser en `info`."
+  - "Si le fichier est stocké dans un Blob Storage externe ou un répertoire non servi par IIS avec exécution de scripts désactivée, le risque d'exécution directe est fortement réduit — vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/asp-upload.md
+knowledge_ref: knowledge/upload/asp-upload.md

@@ -1,0 +1,35 @@
+id: batch-attack
+language: python
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint GraphQL Python acceptant un batch d'opérations (tableau
+    JSON en entrée) sans limite sur sa taille, typiquement via une vue Django/
+    Flask personnalisée qui itère sur `request.json` s'il s'agit d'une liste,
+    ou une configuration Strawberry/Ariadne avec le batching activé par défaut.
+  patterns:
+    - "if isinstance(request.json, list): [schema.execute(op) for op in request.json] sans limite de longueur"
+    - "ariadne.graphql() ou ariadne.explorer avec batching activé sans max_batch_size configuré"
+    - "GraphQLView.as_view(batch=True) (graphene-django) sans middleware limitant la taille du batch"
+  exclude_if:
+    - "une vérification explicite `len(request.json) <= N` (avec N raisonnable, ex: <= 10) est effectuée avant traitement"
+    - "le batching est désactivé explicitement (batch=False) ou non exposé par la configuration du serveur"
+
+message: >
+  Endpoint GraphQL acceptant un batch d'opérations sans limite de taille — un
+  attaquant peut soumettre des centaines de tentatives (ex: bruteforce
+  d'identifiants) en une seule requête HTTP, contournant le rate-limiting
+  (voir rules/remediation/batch-attack.md).
+
+false_positive_notes:
+  - "Si un rate-limiting est appliqué au niveau de chaque opération individuelle du batch (et non seulement au niveau HTTP), le risque est réduit."
+  - "Certaines API internes de confiance utilisent le batching pour l'efficacité légitime — vérifier le contexte d'authentification avant de remonter en `high`."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

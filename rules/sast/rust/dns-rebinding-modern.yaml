@@ -1,0 +1,37 @@
+id: dns-rebinding-modern
+language: rust
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un client HTTP (`reqwest::Client`) ou une connexion socket bas
+    niveau (`tokio::net::TcpStream::connect`) construite à partir d'un nom
+    d'hôte fourni par l'utilisateur, sans revalider l'adresse IP résolue
+    contre une allowlist juste avant l'établissement de la connexion —
+    laissant une fenêtre où le DNS peut être re-résolu vers une IP interne
+    entre la validation et la connexion effective (TOCTOU DNS rebinding).
+  patterns:
+    - "reqwest::Client::new().get(user_supplied_url).send().await sans resolver personnalisé ni vérification de l'IP résolue contre une allowlist"
+    - "tokio::net::TcpStream::connect(user_supplied_host).await sans épingler (pin) l'IP résolue au moment de la validation initiale"
+    - "validation du host effectuée séparément de la résolution DNS réelle (ex: vérif regex sur la chaîne host, puis reqwest résout à nouveau le DNS lors de l'appel)"
+  exclude_if:
+    - "un resolver personnalisé (ex: reqwest::dns::Resolve custom, ou hickory-resolver) résout une seule fois l'IP, la valide contre une allowlist, puis épingle cette IP pour la connexion effective"
+    - "le client est configuré avec une allowlist stricte d'IP/CIDR de destination appliquée au niveau du connecteur (pas seulement sur la chaîne de caractères du host)"
+
+message: >
+  Client HTTP/TCP Rust qui résout et se connecte à un hôte fourni par
+  l'utilisateur sans épingler l'IP validée — vulnérable au DNS rebinding, un
+  attaquant peut faire pointer le DNS vers une ressource interne après la
+  vérification initiale (voir rules/remediation/dns-rebinding-modern.md).
+
+false_positive_notes:
+  - "Si le service Rust tourne dans un environnement réseau isolé sans accès à des ressources internes sensibles, l'impact réel est réduit."
+  - "reqwest ne permet pas nativement d'épingler l'IP résolue sans resolver custom — l'absence de resolver custom est un signal fort, pas une confirmation automatique d'exploitabilité."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

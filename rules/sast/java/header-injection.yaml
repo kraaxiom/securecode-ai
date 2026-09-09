@@ -1,0 +1,36 @@
+id: header-injection
+language: java
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'une entrée utilisateur non validée comme valeur
+    d'en-tête HTTP sortant (réponse serveur ou requête client via
+    HttpClient/RestTemplate/WebClient), sans neutralisation des caractères
+    de contrôle.
+  patterns:
+    - "HttpServletResponse.setHeader($name, $var)"
+    - "HttpServletResponse.addHeader($name, $var)"
+    - "HttpHeaders.set($name, $var)"
+    - "RestTemplate exchange avec HttpHeaders.add($name, $var)"
+  exclude_if:
+    - "$var passe par une validation de charset restreint (ex: uniquement alphanumérique) avant assignation"
+    - "$var est un littéral constant"
+
+message: >
+  En-tête HTTP construit à partir d'une entrée utilisateur non validée —
+  un attaquant peut injecter des caractères de contrôle ou des en-têtes
+  additionnels ; valider strictement le format attendu de la valeur avant
+  de l'assigner à un en-tête (voir rules/remediation/header-injection.md).
+
+false_positive_notes:
+  - "Les valeurs d'en-tête standard générées par le framework (Content-Type, etc.) sans entrée utilisateur ne sont pas concernées."
+  - "Une validation par regex stricte du format attendu (ex: token alphanumérique) neutralise le risque."
+
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

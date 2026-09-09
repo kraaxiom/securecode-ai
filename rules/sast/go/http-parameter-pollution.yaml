@@ -1,0 +1,28 @@
+id: http-parameter-pollution
+language: go
+category: injections
+cwe: CWE-235
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un usage non sécurisé d'une entrée utilisateur pouvant conduire à pollution de paramètres http (hpp).
+  patterns:
+    - "r.URL.Query()[$key] utilisé sans gérer les valeurs multiples pour le même paramètre"
+  exclude_if:
+    - "la valeur est validée par liste blanche ou échappée via la fonction dédiée de la stdlib/du framework avant usage"
+    - "$var provient d'une constante interne (pas d'entrée utilisateur), non exploitable"
+
+message: >
+  Pollution de paramètres HTTP (HPP) détectée — valider/échapper strictement toute entrée utilisateur avant usage dans ce contexte (voir rules/remediation/http-parameter-pollution.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une liste blanche stricte ou échappée via l'API dédiée du framework avant usage, ce n'est pas exploitable."
+  - "Si $var provient d'une constante interne (pas d'entrée utilisateur), reclasser en `info`."
+  - "Peut générer des faux positifs si le framework désambiguïse déjà les paramètres dupliqués de façon sûre et documentée."
+
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

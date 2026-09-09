@@ -1,0 +1,35 @@
+id: weak-tls
+language: python
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration TLS côté client/serveur Python (module ssl,
+    requests, urllib3) affaiblie par la désactivation de la vérification
+    ou par des suites de chiffrement non-AEAD/faibles.
+  patterns:
+    - "ssl.SSLContext(_); context.check_hostname = False"
+    - "ssl.SSLContext(_); context.verify_mode = ssl.CERT_NONE"
+    - "requests.get(_, verify=False)"
+    - "context.set_ciphers('DEFAULT:@SECLEVEL=0')"
+    - "context.set_ciphers($_)  # chaîne contenant RC4, DES, EXPORT, ou NULL"
+  exclude_if:
+    - "verify=False est utilisé uniquement dans un environnement de test local explicitement isolé (ex: fixture pytest ciblant localhost), jamais en code applicatif de production"
+
+message: >
+  Configuration TLS affaiblie (vérification désactivée ou suites de
+  chiffrement non-AEAD) — réactiver la vérification de certificat et
+  restreindre les suites aux algorithmes AEAD modernes (AES-GCM,
+  ChaCha20-Poly1305) (voir rules/remediation/weak-tls.md).
+
+false_positive_notes:
+  - "Si verify=False est contrôlé par une variable d'environnement strictement limitée au mode développement local et absente en production, reclasser en `low`."
+  - "Si set_ciphers() ne contient que des suites AEAD modernes malgré une syntaxe inhabituelle, ce n'est pas exploitable — vérifier manuellement avant de remonter."
+
+remediation_ref: rules/remediation/weak-tls.md
+knowledge_ref: knowledge/crypto/weak-tls.md

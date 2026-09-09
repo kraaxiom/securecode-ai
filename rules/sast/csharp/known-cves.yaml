@@ -1,0 +1,34 @@
+id: known-cves
+language: csharp
+category: supply-chain
+cwe: CWE-1104
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: high
+confidence_default: high
+
+match:
+  type: dependency-scan
+  description: >
+    Détecte dans les *.csproj, packages.config ou packages.lock.json des
+    versions de paquets NuGet figées correspondant à des CVE publiées connues
+    (nécessite une base CVE à jour type GitHub Advisory Database/OSV).
+  patterns:
+    - "*.csproj: <PackageReference Include=\"paquet\" Version=\"X.Y.Z\" /> où (paquet, X.Y.Z) correspond à une entrée de la base CVE/OSV pour l'écosystème NuGet"
+    - "packages.config: <package id=\"paquet\" version=\"X.Y.Z\" .../> dans une plage vulnérable connue (ex: Newtonsoft.Json<13.0.1, System.Text.Encodings.Web<4.7.2)"
+    - "packages.lock.json: version résolue figée dans une plage vulnérable connue sans contrainte de version minimale de sécurité"
+  exclude_if:
+    - "un correctif backporté est documenté (changelog interne) rendant la CVE non exploitable malgré le numéro de version"
+    - "le paquet vulnérable est référencé uniquement dans un projet de test (*.Tests.csproj) et n'atteint jamais un assembly déployé en production"
+
+message: >
+  Dépendance NuGet figée à une version associée à une CVE publiée connue.
+  Mettre à jour vers une version corrigée et intégrer un scan continu (dotnet
+  list package --vulnerable, Dependabot) — voir
+  rules/remediation/known-cves.md.
+
+false_positive_notes:
+  - "Vérifier que la CVE s'applique réellement à l'API utilisée dans le code (certaines CVE ne touchent qu'une fonctionnalité optionnelle non référencée)."
+  - "Une CVE 'low' sur un composant non exposé en frontière de confiance peut être reclassée en `medium`."
+
+remediation_ref: rules/remediation/known-cves.md
+knowledge_ref: knowledge/supply-chain/known-cves.md

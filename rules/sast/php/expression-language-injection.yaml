@@ -1,0 +1,37 @@
+id: expression-language-injection
+language: php
+category: injections
+cwe: CWE-917
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte la construction d'un template ou d'une expression évaluée
+    dynamiquement (Twig::createTemplate, eval, call_user_func sur une chaîne)
+    à partir d'une chaîne concaténée avec une variable non liée. Un pattern
+    ast-pattern n'est pas réaliste ici car ces API acceptent une chaîne libre
+    dont la structure n'est pas typée par un AST propre à l'évaluation EL —
+    la détection regex sur la construction de la chaîne source est plus fiable.
+  patterns:
+    - "createTemplate\\s*\\(\\s*[\"'].*\\.\\s*\\$"
+    - "createTemplate\\s*\\(\\s*\\$\\w+\\s*\\.\\s*\\$"
+    - "\\beval\\s*\\(\\s*.*\\$_(GET|POST|REQUEST|COOKIE)"
+  exclude_if:
+    - "La chaîne passée à createTemplate/eval est un littéral constant sans concaténation de variable"
+    - "La variable utilisateur est passée uniquement via le tableau de contexte de render(), jamais dans la source du template"
+
+message: >
+  Construction dynamique d'une expression ou d'un template évalué avec une
+  entrée utilisateur concaténée — passer la donnée en variable de contexte
+  plutôt que dans le code source évalué (voir
+  rules/remediation/expression-language-injection.md).
+
+false_positive_notes:
+  - "Si la variable concaténée provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur), le risque n'est pas exploitable — reclasser en `info`."
+  - "Si le code utilise un moteur de template en mode sandbox strict avec liste blanche de fonctions/attributs, le risque réel doit être réévalué manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

@@ -1,0 +1,12 @@
+id: time-based-sqli
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: exécution d'une requête SQL construite par concaténation à partir d'une entrée utilisateur
+  block_condition: la requête exécutée contient un appel à une fonction de délai (SLEEP, BENCHMARK, WAITFOR DELAY, pg_sleep) introduit par une donnée taintée
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/time-based-sqli.md
+knowledge_ref: knowledge/injections/time-based-sqli.md

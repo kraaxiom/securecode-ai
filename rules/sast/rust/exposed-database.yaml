@@ -1,0 +1,36 @@
+id: exposed-database
+language: rust
+category: database
+cwe: CWE-284
+owasp: A05:2021-Security-Misconfiguration
+severity: critical
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte une configuration de connexion base de données Rust (URL de
+    connexion sqlx, DATABASE_URL diesel, variables d'environnement)
+    indiquant une base accessible sans restriction réseau ou avec une
+    authentification faible/absente.
+  patterns:
+    - "PgPoolOptions::new().connect(\"postgres://user@0.0.0.0:5432/db\") — host public sans mention de restriction réseau (VPC/security group) documentée"
+    - "diesel::Connection::establish(\"postgres://postgres:@host/db\") — connexion sans mot de passe (identifiants vides) sur un host non localhost"
+    - "docker-compose.yml exposant le port du SGBD (5432, 3306, 27017) directement sur '0.0.0.0' sans authentification forte ni restriction d'IP"
+  exclude_if:
+    - "la base est accessible uniquement depuis un réseau privé (VPC, security group restreint, localhost) ET protégée par une authentification forte (pas de mot de passe vide/par défaut)"
+
+message: >
+  Base de données configurée avec un accès réseau non restreint ou une
+  authentification faible/absente — directement exploitable si le port est
+  atteignable depuis Internet. Restreindre l'accès réseau (VPC, security
+  group, bind localhost/interne uniquement) et exiger une authentification
+  forte pour tout compte de base de données — voir
+  rules/remediation/exposed-database.md.
+
+false_positive_notes:
+  - "Une configuration de développement local (localhost, mot de passe faible dans un .env.dev) n'est pas critique si elle n'atteint jamais un environnement de production — vérifier le contexte du fichier."
+  - "Le binding réseau réel dépend souvent de l'infrastructure (docker-compose, firewall cloud) non visible dans le seul code applicatif — confirmer avant de classer en `critical`."
+
+remediation_ref: rules/remediation/exposed-database.md
+knowledge_ref: knowledge/database/exposed-database.md

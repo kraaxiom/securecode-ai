@@ -1,0 +1,28 @@
+id: zip-slip
+language: js
+category: file-inclusion
+cwe: CWE-22
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une boucle d'extraction d'archive qui construit le chemin de sortie par concaténation directe du nom d'entrée sans normalisation ni vérification du répertoire de destination.
+  patterns:
+    - "zip.extractAllTo($dest, _)"
+    - "path.join($destDir, $entry.entryName)"
+  exclude_if:
+    - "Le chemin de chaque entrée est résolu en forme canonique et vérifié comme sous-chemin strict du répertoire de destination avant écriture"
+    - "La bibliothèque d'extraction utilisée applique nativement ces contrôles (documentation vérifiée)"
+
+message: >
+  Extraction d'archive sans validation du chemin de chaque entrée — risque d'écriture hors du répertoire de destination (Zip Slip), voir rules/remediation/zip-slip.md.
+
+false_positive_notes:
+  - "Si chaque entrée est validée par résolution canonique + vérification de préfixe strict avant écriture, reclasser en `info`."
+  - "Si la bibliothèque d'extraction est connue pour appliquer ces contrôles nativement (à vérifier au cas par cas selon la version), le risque est réduit."
+
+remediation_ref: rules/remediation/zip-slip.md
+knowledge_ref: knowledge/file-inclusion/zip-slip.md

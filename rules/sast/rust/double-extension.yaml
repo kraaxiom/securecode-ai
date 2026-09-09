@@ -1,0 +1,35 @@
+id: double-extension
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'extension de fichier téléversé basée sur
+    str::contains ou str::ends_with appliqué au nom complet du fichier
+    plutôt que sur l'extension finale extraite via Path::extension,
+    permettant un contournement par double extension.
+  patterns:
+    - "$filename.contains($ext)"
+    - "$filename.ends_with($ext)"
+    - "$filename.find($ext)"
+  exclude_if:
+    - "l'extension est extraite avec Path::new($filename).extension() puis comparée strictement à une liste blanche"
+    - "le nom de fichier est rejeté si $filename.matches('.').count() est supérieur à 1"
+
+message: >
+  Validation d'extension par contains/ends_with sur le nom de fichier
+  complet — contournable par un nom du type "shell.jsp.png". Utiliser
+  Path::extension() sur le nom nettoyé et rejeter les noms à extensions
+  multiples (voir rules/remediation/double-extension.md).
+
+false_positive_notes:
+  - "Si ends_with/contains est appliqué sur le résultat de Path::extension (donc l'extension déjà isolée), ce n'est pas vulnérable — reclasser en `info`."
+  - "Si le serveur applicatif ne délègue jamais l'exécution sur la base d'une extension intermédiaire, l'impact réel dépend de la chaîne de déploiement complète."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

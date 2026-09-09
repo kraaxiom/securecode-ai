@@ -1,0 +1,12 @@
+id: stacked-query-sqli
+category: injections
+cwe: CWE-89
+type: rasp
+guard:
+  sink: exécution d'une requête SQL construite par concaténation sur une connexion/driver autorisant plusieurs instructions séparées par point-virgule
+  block_condition: la requête exécutée contient un séparateur d'instruction suivi d'un second mot-clé SQL (INSERT/UPDATE/DELETE/DROP/ALTER) provenant d'une donnée taintée
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/stacked-query-sqli.md
+knowledge_ref: knowledge/injections/stacked-query-sqli.md

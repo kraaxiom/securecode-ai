@@ -1,0 +1,35 @@
+id: metadata-azure
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un SSRF exploitable pour atteindre le service de métadonnées
+    Azure (169.254.169.254, endpoint Instance Metadata Service) — requête
+    HTTP sortante vers une URL utilisateur non filtrée dans un contexte
+    s'exécutant potentiellement sur Azure (VM, App Service, AKS).
+  patterns:
+    - "requests.get($user_url)"
+    - "requests.get($user_url, headers=_)"
+  exclude_if:
+    - "$user_url est validé contre une liste blanche fermée de domaines externes avant l'appel"
+    - "la résolution IP du host est explicitement rejetée si elle appartient à 169.254.0.0/16 avant l'envoi de la requête"
+    - "l'application vérifie et rejette systématiquement l'en-tête Metadata:true dans les requêtes sortantes qu'elle construit elle-même"
+
+message: >
+  Requête HTTP sortante vers une URL contrôlée par l'utilisateur sans
+  exclusion explicite de la plage 169.254.0.0/16 — un attaquant peut
+  atteindre l'Instance Metadata Service Azure et obtenir un jeton d'accès
+  Managed Identity. Bloquer les plages IP privées/link-local avant toute
+  requête sortante (voir rules/remediation/metadata-azure.md).
+
+false_positive_notes:
+  - "Si l'application ne s'exécute jamais sur une ressource Azure (confirmé), l'impact spécifique Azure ne s'applique pas — traiter via la règle ssrf-classique générique."
+
+remediation_ref: rules/remediation/metadata-azure.md
+knowledge_ref: knowledge/ssrf/metadata-azure.md

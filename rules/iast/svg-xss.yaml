@@ -1,0 +1,19 @@
+id: svg-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "tous langages: point de réception d'un fichier uploadé (multipart/form-data) avec type MIME/extension .svg comme source"
+    - "tous langages: fonction de stockage/service de fichier statique déterminant le Content-Type de réponse comme relais"
+    - "js: innerHTML / insertAdjacentHTML utilisé pour un affichage inline de SVG comme sink"
+  taint_check: >
+    Trace un fichier SVG uploadé par un utilisateur depuis sa réception jusqu'à son service direct
+    au navigateur (Content-Type image/svg+xml) ou son insertion inline dans le DOM.
+  trigger_condition: >
+    Fichier SVG marqué non fiable atteignant un point de service ou d'insertion DOM sans passage
+    par une étape de sanitisation XML dédiée (suppression des balises script, gestionnaires
+    d'événements, schémas javascript:), ou servi depuis l'origine de l'application sans isolation.
+severity: high
+remediation_ref: rules/remediation/svg-xss.md
+knowledge_ref: knowledge/xss/svg-xss.md

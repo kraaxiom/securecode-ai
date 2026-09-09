@@ -1,0 +1,36 @@
+id: infinite-redemption
+language: go
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une opération de rachat/récompense (points fidélité, cashback,
+    ticket-cadeau) en Go qui ne marque pas la ressource comme consommée de
+    façon atomique avant de délivrer le bénéfice, permettant un rachat
+    répété de la même ressource (rejeu, requêtes concurrentes).
+  patterns:
+    - "reward, _ := db.GetReward(id); if !reward.Redeemed { GrantBenefit(reward); reward.Redeemed = true; db.Save(reward) } — bénéfice accordé AVANT le marquage comme consommé, et sans transaction atomique"
+    - "func RedeemPoints(userID string, points int) error { if user.Points >= points { GiveReward(user); user.Points -= points; db.Save(user) } } — ordre inversé (récompense avant déduction) et sans SELECT ... FOR UPDATE"
+    - "code de réduction à usage unique vérifié par une simple lecture (SELECT ... WHERE code=$1 AND used=false) suivie d'une requête UPDATE séparée, sans transaction ni verrou"
+  exclude_if:
+    - "le marquage 'consommé'/la déduction du solde est effectué de façon atomique (UPDATE conditionnel WHERE used = false, ou transaction avec SELECT ... FOR UPDATE) STRICTEMENT AVANT l'octroi du bénéfice, dans la même transaction"
+
+message: >
+  Ressource de rachat (points, coupon, ticket) marquée comme consommée après
+  l'octroi du bénéfice, ou sans transaction atomique — un attaquant peut
+  déclencher des requêtes concurrentes ou rejouer l'opération pour racheter
+  la même ressource indéfiniment. Marquer la ressource comme consommée de
+  façon atomique (UPDATE conditionnel) AVANT d'accorder le bénéfice, dans une
+  transaction unique — voir rules/remediation/infinite-redemption.md.
+
+false_positive_notes:
+  - "Si l'octroi du bénéfice est lui-même idempotent (rejouer l'opération ne produit aucun effet supplémentaire, ex: attribution d'un rôle déjà présent), le risque réel est réduit malgré l'ordre des opérations."
+  - "Une ressource à usage illimité par conception (récompense renouvelable) n'est pas concernée."
+
+remediation_ref: rules/remediation/infinite-redemption.md
+knowledge_ref: knowledge/business-logic/infinite-redemption.md

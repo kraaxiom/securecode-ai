@@ -1,0 +1,12 @@
+id: imap-injection
+category: injections
+cwe: CWE-93
+type: rasp
+guard:
+  sink: fonction de construction/exécution de commande IMAP (imap_search, imaplib.IMAP4.search, Folder.search)
+  block_condition: la commande IMAP construite dynamiquement contient un caractère CR/LF ou une séquence de terminaison de commande provenant d'une entrée non neutralisée
+  action: block
+  fail_mode: fail-closed
+severity: medium
+remediation_ref: rules/remediation/imap-injection.md
+knowledge_ref: knowledge/injections/imap-injection.md

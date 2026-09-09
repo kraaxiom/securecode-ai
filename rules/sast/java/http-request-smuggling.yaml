@@ -1,0 +1,37 @@
+id: http-request-smuggling
+language: java
+category: injections
+cwe: CWE-444
+owasp: A03:2021-Injection
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une divergence potentielle de traitement des en-têtes
+    Content-Length/Transfer-Encoding lorsque l'application construit
+    manuellement une requête HTTP brute (socket bas niveau) ou relaie des
+    en-têtes bruts entre un proxy applicatif et un backend sans
+    normalisation.
+  patterns:
+    - "Socket.getOutputStream().write construisant manuellement une requête HTTP avec Content-Length et Transfer-Encoding tous deux définis à partir d'une entrée externe"
+    - "proxy applicatif relayant HttpServletRequest.getHeader(\"Transfer-Encoding\") et getHeader(\"Content-Length\") sans validation vers un backend"
+  exclude_if:
+    - "l'application utilise exclusivement un client/serveur HTTP standard (HttpClient, Servlet API) qui rejette nativement les requêtes ambiguës"
+    - "aucune construction manuelle de requête HTTP brute n'est présente"
+
+message: >
+  Construction ou relais de requête HTTP brute laissant coexister
+  Content-Length et Transfer-Encoding sans normalisation stricte — un
+  attaquant peut exploiter une divergence d'interprétation entre le
+  frontal et le backend (request smuggling) ; utiliser exclusivement des
+  bibliothèques HTTP standard et rejeter les requêtes ambiguës en frontal
+  (voir rules/remediation/http-request-smuggling.md).
+
+false_positive_notes:
+  - "La majorité des applications Java utilisant le Servlet API standard (Tomcat/Jetty) ne sont pas concernées car le conteneur rejette déjà les requêtes ambiguës — cette règle cible surtout les proxys/gateways applicatifs custom."
+  - "Détection à faible confiance : nécessite toujours une revue manuelle de l'architecture réseau (présence de proxy intermédiaire, reverse proxy)."
+
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

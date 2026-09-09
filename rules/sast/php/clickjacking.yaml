@@ -1,0 +1,31 @@
+id: clickjacking
+language: php
+category: frontend
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence d'en-tête `X-Frame-Options` ou de directive CSP
+    `frame-ancestors` dans les points de sortie de réponse HTML (contrôleurs,
+    bootstrap applicatif).
+  patterns:
+    - "header('X-Frame-Options: _')" # absence de cet appel dans le fichier bootstrap/middleware global
+    - "response()->header('X-Frame-Options', _)"
+  exclude_if:
+    - "un middleware global (Laravel, Symfony) ajoute X-Frame-Options ou frame-ancestors à toutes les réponses"
+    - "un reverse proxy/CDN documenté ajoute déjà l'en-tête pour toutes les routes"
+
+message: >
+  Absence d'en-tête anti-framing (X-Frame-Options ou CSP frame-ancestors) sur
+  les réponses HTML sensibles — voir rules/remediation/clickjacking.md.
+
+false_positive_notes:
+  - "API renvoyant exclusivement du JSON (jamais de HTML rendu) : non applicable, reclasser en `info`."
+  - "En-tête ajouté au niveau serveur web (nginx/Apache) ou CDN hors du code applicatif : vérifier la configuration infra avant de confirmer."
+
+remediation_ref: rules/remediation/clickjacking.md
+knowledge_ref: knowledge/frontend/clickjacking.md

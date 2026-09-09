@@ -1,0 +1,34 @@
+id: mime-bypass
+language: csharp
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé basée uniquement sur la
+    propriété ContentType déclarée par le client dans la requête
+    multipart (IFormFile.ContentType), sans vérification du contenu réel.
+  patterns:
+    - "$file.ContentType == $mime"
+    - "$file.ContentType.Contains($mime)"
+    - "$allowedTypes.Contains($file.ContentType)"
+  exclude_if:
+    - "le type réel du fichier est déterminé côté serveur à partir du contenu (ex: lecture de signature binaire, bibliothèque de détection dédiée) en complément de ContentType"
+    - "une incohérence entre extension déclarée, ContentType déclaré et contenu détecté côté serveur entraîne un rejet explicite"
+
+message: >
+  Validation d'un fichier téléversé basée uniquement sur $file.ContentType
+  (valeur entièrement contrôlée par le client, falsifiable) — combiner
+  avec une détection du type réel basée sur le contenu et une liste
+  blanche d'extensions (voir rules/remediation/mime-bypass.md).
+
+false_positive_notes:
+  - "Si ContentType n'est utilisé qu'à titre indicatif (log, UX) et que la décision d'acceptation repose sur une détection de signature côté serveur, ce n'est pas exploitable — reclasser en `info`."
+  - "Si le framework applique déjà une validation de contenu systématique en amont (rare), vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

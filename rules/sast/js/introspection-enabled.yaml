@@ -1,0 +1,31 @@
+id: introspection-enabled
+language: js
+category: graphql
+cwe: CWE-200
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une instanciation d'ApolloServer/Yoga sans `introspection: false`
+    conditionné à l'environnement de production, ou avec introspection
+    explicitement forcée à `true`.
+  patterns:
+    - "new ApolloServer({ typeDefs, resolvers, ... }) sans introspection: !isProd (ou équivalent conditionnel)"
+    - "new ApolloServer({ ..., introspection: true }) sans condition d'environnement"
+  exclude_if:
+    - "introspection est défini via une expression conditionnelle liée à NODE_ENV/process.env"
+    - "Un plugin ApolloServerPluginLandingPageDisabled (ou équivalent) est actif en production"
+
+message: >
+  Introspection GraphQL potentiellement active en production — fuite du
+  schéma complet de l'API (voir rules/remediation/introspection-enabled.md).
+
+false_positive_notes:
+  - "Si le fichier analysé est explicitement un fichier de configuration de développement, ce n'est pas applicable."
+  - "Si l'API est interne et non exposée à Internet, le risque est réduit — reclasser en `info`."
+
+remediation_ref: rules/remediation/introspection-enabled.md
+knowledge_ref: knowledge/graphql/introspection-enabled.md

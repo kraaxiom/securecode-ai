@@ -1,0 +1,3 @@
+## Model Inversion (CWE-200)
+
+Le code vulnérable expose un endpoint d'inférence sur un modèle fine-tuné avec des données internes sensibles sans aucune limite de volume ni de structure de requêtes, ce qui permet à un attaquant de reconstruire progressivement des données mémorisées par interrogation répétée et méthodique. La correction applique une limitation de débit stricte par clé API et une détection des patterns de requêtes évoquant une reconstruction progressive, en complément de mesures en amont comme la confidentialité différentielle et les tests de mémorisation avant mise en production.

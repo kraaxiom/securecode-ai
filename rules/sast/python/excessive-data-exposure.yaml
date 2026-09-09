@@ -1,0 +1,34 @@
+id: excessive-data-exposure
+language: python
+category: api
+cwe: CWE-213
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une reponse API qui serialise un objet complet (tous ses champs)
+    sans whitelist explicite, exposant potentiellement des champs internes
+    non destines au client (mot de passe hashe, tokens, champs internes).
+  patterns:
+    - "fields = '__all__' (Django REST serializer) sur un modele contenant des champs sensibles"
+    - "jsonify(model_to_dict(obj)) sans filtrer les champs avant serialisation"
+    - "return json.dumps(user.__dict__) exposant tous les attributs de l'objet ORM"
+  exclude_if:
+    - "Une liste explicite de champs (fields = ['id', 'name', ...]) est utilisee, excluant les champs sensibles"
+    - "Un DTO/schema dedie (Pydantic response_model en FastAPI) ne contient que les champs destines au client"
+
+message: >
+  Serialisation complete d'un objet metier sans whitelist de champs — expose
+  potentiellement des donnees internes non destinees au client (hash de mot
+  de passe, jetons, champs techniques), meme si l'interface ne les affiche
+  pas. Definir explicitement les champs exposes (fields=[...] ou un schema de
+  reponse dedie) plutot que de serialiser l'objet complet.
+
+false_positive_notes:
+  - "Si le modele serialise ne contient par construction aucun champ sensible, le risque est faible — reclasser en `low`."
+
+remediation_ref: rules/remediation/excessive-data-exposure.md
+knowledge_ref: knowledge/api/excessive-data-exposure.md

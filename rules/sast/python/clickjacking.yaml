@@ -1,0 +1,33 @@
+id: clickjacking
+language: python
+category: frontend
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte l'absence d'en-tete X-Frame-Options ou de directive
+    frame-ancestors CSP sur les reponses HTTP d'une application Python,
+    permettant l'incrustation de la page dans un iframe malveillant.
+  patterns:
+    - "XFrameOptionsMiddleware absent des MIDDLEWARE (settings.py Django) ou X_FRAME_OPTIONS = 'ALLOWALL'"
+    - "response.headers non complete par 'X-Frame-Options': 'DENY'/'SAMEORIGIN' (Flask/FastAPI) sur des pages sensibles (formulaires, actions)"
+    - "Content-Security-Policy defini sans directive frame-ancestors"
+  exclude_if:
+    - "X-Frame-Options: DENY/SAMEORIGIN ou une directive CSP frame-ancestors restrictive est presente (globalement ou par middleware)"
+
+message: >
+  Absence d'en-tete anti-clickjacking (X-Frame-Options ou CSP
+  frame-ancestors) — la page peut etre incrustee dans un iframe invisible sur
+  un site malveillant, trompant l'utilisateur pour lui faire cliquer sur des
+  actions non voulues. Ajouter X-Frame-Options: DENY (ou SAMEORIGIN) et/ou
+  une directive frame-ancestors dans la CSP.
+
+false_positive_notes:
+  - "Django active XFrameOptionsMiddleware (SAMEORIGIN) par defaut — ne remonter que si le middleware est explicitement retire ou X_FRAME_OPTIONS = 'ALLOWALL' est defini."
+
+remediation_ref: rules/remediation/clickjacking.md
+knowledge_ref: knowledge/frontend/clickjacking.md

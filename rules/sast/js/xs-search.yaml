@@ -1,0 +1,32 @@
+id: xs-search
+language: js
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Express de recherche/filtrage en GET sur des données
+    sensibles, sans vérification d'origine ni Cross-Origin-Resource-Policy,
+    chargeable via une balise cross-origin passive (img/script/fetch no-cors).
+  patterns:
+    - "app.get('/search'|'/filter', handler) calling searchRecords(req.query.*) without checking req.headers.origin"
+    - "search route handler without res.set('Cross-Origin-Resource-Policy', 'same-origin')"
+  exclude_if:
+    - "la route exige POST avec vérification d'origine (req.headers.origin === ALLOWED_ORIGIN) ou jeton CSRF"
+    - "res.set('Cross-Origin-Resource-Policy', 'same-origin') est présent sur la réponse"
+
+message: >
+  Endpoint de recherche accessible en GET sans vérification d'origine —
+  exploitable via des requêtes cross-origin passives pour inférer le contenu
+  des résultats (XS-Search), voir rules/remediation/xs-search.md.
+
+false_positive_notes:
+  - "Si les résultats ne contiennent aucune donnée sensible/privée par utilisateur, reclasser en `low`."
+  - "Si le temps/la taille de réponse sont normalisés indépendamment du volume de résultats, le risque d'inférence est réduit."
+
+remediation_ref: rules/remediation/xs-search.md
+knowledge_ref: knowledge/modern/xs-search.md

@@ -1,0 +1,30 @@
+id: privilege-escalation
+language: php
+category: authorization
+cwe: CWE-269
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'assignation directe d'un champ de rôle depuis une entrée
+    utilisateur ($user->role = $request->input('role')) sans vérification
+    préalable du droit de l'appelant à accorder ce rôle.
+  patterns:
+    - "$user->role = $request->input('role') sans appel préalable à canGrantRole(_) ni vérification de rôle de l'appelant"
+    - "$user->is_admin = $request->input('is_admin')"
+  exclude_if:
+    - "Un appel à une fonction de vérification (canGrantRole, Gate::authorize) précède l'assignation"
+
+message: >
+  Attribution de rôle/privilège directement depuis une entrée utilisateur
+  sans vérifier le droit de l'appelant à accorder ce niveau — voir
+  rules/remediation/privilege-escalation.md.
+
+false_positive_notes:
+  - "Recoupe le pattern mass-assignment si le champ role transite via un update() global — vérifier lequel des deux findings est le plus précis pour éviter la duplication."
+
+remediation_ref: rules/remediation/privilege-escalation.md
+knowledge_ref: knowledge/authorization/privilege-escalation.md

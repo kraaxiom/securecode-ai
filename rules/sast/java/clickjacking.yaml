@@ -1,0 +1,36 @@
+id: clickjacking
+language: java
+category: frontend
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence de l'en-tête X-Frame-Options ou de la directive
+    frame-ancestors CSP dans la configuration de sécurité Spring
+    (HttpSecurity.headers()), laissant l'application embarquable dans une
+    iframe malveillante.
+  patterns:
+    - "HttpSecurity.headers().frameOptions().disable() désactivant explicitement la protection anti-framing"
+    - "SecurityFilterChain sans configuration frameOptions().deny()/.sameOrigin() ni directive CSP frame-ancestors"
+    - "absence de header X-Frame-Options ajouté manuellement dans un filtre HTTP custom"
+  exclude_if:
+    - "frameOptions().deny() ou .sameOrigin() est configuré, ou une directive CSP frame-ancestors restrictive est présente"
+    - "l'application expose intentionnellement un widget destiné à être embarqué, avec une liste blanche de frame-ancestors documentée"
+
+message: >
+  L'application ne configure pas de protection contre le clickjacking
+  (X-Frame-Options ou CSP frame-ancestors) — elle peut être embarquée dans une
+  iframe malveillante pour tromper l'utilisateur. Configurer
+  headers().frameOptions().deny() (Spring Security) ou une directive CSP
+  frame-ancestors 'self'.
+
+false_positive_notes:
+  - "Spring Security active X-Frame-Options: DENY par défaut — seule une désactivation explicite (frameOptions().disable()) est réellement vulnérable."
+  - "Si l'application est un widget conçu pour être embarqué avec une liste blanche stricte de domaines, ce n'est pas un défaut de sécurité."
+
+remediation_ref: rules/remediation/clickjacking.md
+knowledge_ref: knowledge/frontend/clickjacking.md

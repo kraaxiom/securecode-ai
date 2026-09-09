@@ -1,0 +1,31 @@
+id: workflow-bypass
+language: php
+category: business-logic
+cwe: CWE-841
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint d'étape finale (activation, confirmation) qui met à
+    jour un statut sans vérifier l'état d'avancement réel de la ressource en
+    base.
+  patterns:
+    - "function activateAccount($request) { $user->update([\"status\" => \"active\"]); }"
+    - "function confirmOrder($request) { $order->update([\"status\" => \"confirmed\"]); }"
+  exclude_if:
+    - "Une vérification explicite de l'état courant précède la mise à jour (ex: if (!in_array($newStatus, TRANSITIONS[$current])) abort)"
+    - "Une machine à états dédiée (package/state machine) valide la transition avant l'affectation"
+
+message: >
+  Transition d'état finale appliquée sans vérification des étapes
+  préalables côté serveur — voir rules/remediation/workflow-bypass.md.
+
+false_positive_notes:
+  - "Si l'action est idempotente et sans impact métier significatif, la sévérité peut être réduite."
+  - "Une vérification de transition effectuée dans un middleware/décorateur en amont de la fonction peut ne pas apparaître dans le même bloc."
+
+remediation_ref: rules/remediation/workflow-bypass.md
+knowledge_ref: knowledge/business-logic/workflow-bypass.md

@@ -1,0 +1,3 @@
+# Data Poisoning (CWE-349)
+
+La version vulnérable ingère automatiquement dans le pipeline de fine-tuning des exemples issus des retours utilisateurs, sans vérifier la provenance des sources ni détecter d'anomalies statistiques, et réintègre ces données au modèle sans comparaison avec un jeu de référence. La correction valide la provenance et l'intégrité de chaque source (empreinte/signature), isole les données issues du feedback utilisateur pour un échantillonnage humain avant réintégration, et compare les performances du modèle à un jeu de référence fixe après chaque cycle d'entraînement pour détecter une dérive suspecte.

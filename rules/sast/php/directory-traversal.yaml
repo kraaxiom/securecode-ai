@@ -1,0 +1,29 @@
+id: directory-traversal
+language: php
+category: file-inclusion
+cwe: CWE-22
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une opération de fichier (lecture/écriture/listing) construite par concaténation directe d'un paramètre utilisateur, sans normalisation ni vérification d'appartenance au répertoire racine.
+  patterns:
+    - "fopen(string_concat(_, $var, _), _)"
+    - "file_get_contents(string_concat(_, $var, _))"
+    - "readfile(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var passe par realpath()/path.resolve() suivi d'une vérification startsWith(baseDir + separator)"
+    - "$var est filtré par une whitelist explicite de valeurs autorisées"
+
+message: >
+  Chemin de fichier construit à partir d'une entrée utilisateur sans normalisation/vérification de répertoire racine — voir rules/remediation/directory-traversal.md.
+
+false_positive_notes:
+  - "Si le chemin résultant est systématiquement revérifié via realpath()/path.resolve() avec contrôle de préfixe strict, reclasser en `info`."
+  - "Si la valeur provient d'une whitelist fermée côté serveur (pas d'entrée libre), ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/directory-traversal.md
+knowledge_ref: knowledge/file-inclusion/directory-traversal.md

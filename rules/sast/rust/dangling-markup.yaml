@@ -1,0 +1,36 @@
+id: dangling-markup
+language: rust
+category: modern
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée utilisateur insérée dans un fragment HTML via
+    `format!`/`write!` puis renvoyée telle quelle dans `HttpResponse::Ok().body(html)`
+    (actix-web) ou `Html(body)` (axum), sans passer par un moteur de template
+    avec échappement automatique (askama, tera avec autoescape) ni par une
+    fonction d'échappement HTML explicite.
+  patterns:
+    - "let html = format!(\"<div>{}</div>\", user_input); HttpResponse::Ok().content_type(\"text/html\").body(html)"
+    - "axum: Html(format!(\"...{}...\", user_input)) sans passer par askama::Template ou une fonction d'échappement (ex: html_escape::encode_text)"
+    - "write!(buf, \"<a href=\\\"{}\\\">\", user_controlled_url).unwrap() sans validation/échappement du contenu de l'attribut"
+  exclude_if:
+    - "le contenu inséré provient exclusivement d'une source interne de confiance (pas d'entrée utilisateur directe ou indirecte)"
+    - "le rendu passe par un moteur de template avec autoescape activé (askama par défaut, tera avec autoescape) ou une fonction d'échappement HTML explicite (html_escape, v_htmlescape) est appliquée avant insertion"
+
+message: >
+  Donnée utilisateur insérée dans un fragment HTML via format!/write! sans
+  échappement, puis renvoyée directement dans la réponse HTTP — un attaquant
+  peut injecter une balise non fermée pour exfiltrer le contenu de la page
+  sans exécution de JavaScript (voir rules/remediation/dangling-markup.md).
+
+false_positive_notes:
+  - "Une CSP stricte (base-uri et object-src restreints) limite l'impact mais ne neutralise pas totalement le dangling markup si img-src/form-action restent permissifs."
+  - "Si askama ou tera sont utilisés avec autoescape actif pour tout le rendu HTML (pas de `|safe` explicite), reclasser en `low`."
+
+remediation_ref: rules/remediation/dangling-markup.md
+knowledge_ref: knowledge/modern/dangling-markup.md

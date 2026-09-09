@@ -1,0 +1,31 @@
+id: service-worker-abuse
+language: js
+category: frontend
+cwe: CWE-494
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte `navigator.serviceWorker.register(url)` où `url` est dérivée
+    d'une variable non constante (paramètre de requête, entrée utilisateur),
+    ou un scope déclaré à la racine (`{ scope: '/' }`) sans justification.
+  patterns:
+    - "navigator.serviceWorker.register(url)" # où url provient de location.search / paramètre de fonction
+    - "navigator.serviceWorker.register(_, { scope: '/' })"
+  exclude_if:
+    - "l'URL passée à register() est une chaîne littérale codée en dur"
+    - "le scope '/' est explicitement commenté/justifié par un besoin applicatif documenté couvrant toute l'app"
+
+message: >
+  Enregistrement de service worker avec une URL non constante, ou scope
+  racine non justifié — voir rules/remediation/service-worker-abuse.md.
+
+false_positive_notes:
+  - "Si la variable url est en réalité une constante réassignée une seule fois au chargement du module (pas issue d'une requête), reclasser en `info` après vérification."
+  - "Application monopage où le scope racine est le comportement attendu et documenté : reclasser en `low`."
+
+remediation_ref: rules/remediation/service-worker-abuse.md
+knowledge_ref: knowledge/frontend/service-worker-abuse.md

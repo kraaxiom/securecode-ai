@@ -1,0 +1,19 @@
+id: mutation-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "js: appel à une bibliothèque de sanitisation HTML (source de la valeur jugée sûre)"
+    - "js: innerHTML / insertAdjacentHTML comme sink de réinsertion DOM"
+    - "js: cycles parse → serialize → reparse (outerHTML, DOMParser) comme points de ré-instrumentation"
+  taint_check: >
+    Trace une valeur sanitisée à travers chaque aller-retour chaîne HTML ↔ DOM jusqu'à son
+    insertion finale, en comparant la structure avant/après chaque passage.
+  trigger_condition: >
+    Une valeur marquée comme sanitisée subit un nouveau passage par un sink DOM (innerHTML,
+    insertAdjacentHTML) après un cycle de sérialisation/réinsertion sans re-sanitisation à cette
+    étape, ou la bibliothèque de sanitisation utilisée est signalée comme obsolète.
+severity: high
+remediation_ref: rules/remediation/mutation-xss.md
+knowledge_ref: knowledge/xss/mutation-xss.md

@@ -1,0 +1,35 @@
+id: introspection-enabled
+language: go
+category: graphql
+cwe: CWE-200
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur gqlgen déployé sans désactivation de l'introspection
+    en environnement de production (extension `extension.Introspection`
+    activée sans condition d'environnement), ou avec le Playground/GraphiQL
+    monté sur une route accessible sans vérification de configuration.
+  patterns:
+    - "srv.Use(extension.Introspection{}) enregistré sans condition sur os.Getenv(\"ENV\") ou config.IsProduction()"
+    - "playground.Handler(\"GraphQL\", \"/query\") monté via http.Handle(\"/\", ...) sans vérification d'environnement avant d'exposer la route"
+    - "handler.NewDefaultServer(schema) (qui active l'introspection par défaut) déployé tel quel sans désactivation explicite en production"
+  exclude_if:
+    - "l'introspection est explicitement désactivée en production via srv.Use(extension.Introspection{}) conditionné par if !isProduction, ou retirée du serveur"
+    - "le montage du playground est conditionné par un flag d'environnement (ex: if cfg.Env == \"dev\") empêchant son activation en production"
+
+message: >
+  Introspection GraphQL (extension.Introspection) et/ou Playground
+  potentiellement actifs en production sans condition d'environnement — un
+  attaquant peut cartographier l'intégralité du schéma de l'API, y compris
+  des champs non documentés (voir rules/remediation/introspection-enabled.md).
+
+false_positive_notes:
+  - "Si le déploiement de production utilise une configuration distincte qui désactive explicitement extension.Introspection et le playground, la présence du code seule ne suffit pas à conclure — vérifier la configuration de déploiement."
+  - "Une API strictement interne sans données sensibles exposées via le schéma réduit l'impact réel — reclasser en `info` si confirmé."
+
+remediation_ref: rules/remediation/introspection-enabled.md
+knowledge_ref: knowledge/graphql/introspection-enabled.md

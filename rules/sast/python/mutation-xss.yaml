@@ -1,0 +1,38 @@
+id: mutation-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'une bibliothèque de sanitisation HTML
+    (bleach.clean, nh3, lxml.html.clean.Cleaner) suivie d'un second passage
+    de parsing/sérialisation HTML (re-sérialisation avec lxml.html,
+    BeautifulSoup) susceptible d'introduire une mutation qui réintroduit un
+    vecteur XSS lors du re-parsing par le navigateur — pattern
+    sanitize-puis-reparse.
+  patterns:
+    - "clean_html = bleach.clean(var); output = lxml.html.fromstring(clean_html)"
+    - "sanitized = nh3.clean(var); BeautifulSoup(sanitized, \"html.parser\").prettify()"
+    - "cleaner.clean_html(var); etree.tostring(...)"
+  exclude_if:
+    - "aucune re-sérialisation/re-parsing n'est effectuée après la sanitisation (le résultat de clean() est utilisé directement)"
+    - "la bibliothèque de sanitisation est appelée en dernière étape avant l'envoi au client, sans transformation ultérieure"
+
+message: >
+  Contenu HTML sanitisé puis re-parsé/re-sérialisé par une seconde
+  bibliothèque HTML — cette double transformation peut réintroduire une
+  charge XSS via une divergence d'interprétation entre parsers (mutation
+  XSS). Appliquer la sanitisation en toute dernière étape, juste avant
+  l'envoi au client, sans transformation HTML ultérieure.
+
+false_positive_notes:
+  - "Si la sanitisation (bleach/nh3) est la dernière opération avant l'envoi de la réponse, il n'y a pas de risque de mutation ultérieure."
+  - "Le risque dépend fortement des versions précises des bibliothèques utilisées — confirmer par test avant de remonter la sévérité."
+
+remediation_ref: rules/remediation/mutation-xss.md
+knowledge_ref: knowledge/xss/mutation-xss.md

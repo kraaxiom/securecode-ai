@@ -1,0 +1,34 @@
+id: embedding-poisoning
+language: java
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code LangChain4j/Spring AI utilisant un EmbeddingStore,
+    l'ajout de vecteurs/documents à l'index vectoriel à partir de contenu
+    externe non fiable (upload utilisateur, scraping web) sans validation ni
+    isolation par tenant/source, permettant d'empoisonner les résultats de
+    similarité vectorielle.
+  patterns:
+    - "EmbeddingStore.add(embedding, textSegment) appelé directement avec un contenu issu d'une source externe non fiable, sans étape de validation"
+    - "EmbeddingStoreIngestor.builder(_).documentSplitter(_).build().ingest(_) sur des documents uploadés publiquement sans scan de contenu ni filtrage"
+    - "VectorStore.add(List<Document>) (Spring AI) alimenté par un flux utilisateur sans namespace/filtre de métadonnées d'isolation"
+    - "absence de contrôle d'accès par métadonnée (tenant_id, source_trust_level) lors de l'indexation vectorielle"
+
+message: >
+  Ajout de contenu à l'index vectoriel sans validation ni isolation par
+  source — un attaquant peut injecter des vecteurs malveillants pour
+  empoisonner les résultats de recherche par similarité (embedding
+  poisoning) et influencer les réponses générées en aval (RAG).
+
+false_positive_notes:
+  - "Si l'ingestion applique un filtrage de contenu (scan antivirus, détection de contenu toxique) et une isolation stricte par métadonnées de confiance, reclasser en `low`."
+  - "Les index alimentés uniquement par des sources internes contrôlées présentent un risque réduit."
+
+remediation_ref: rules/remediation/embedding-poisoning.md
+knowledge_ref: knowledge/llm/embedding-poisoning.md

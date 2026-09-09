@@ -1,0 +1,35 @@
+id: tool-injection
+language: python
+category: llm
+cwe: CWE-1427
+owasp: LLM06:2025-Excessive-Agency
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des paramètres d'outil (tool call) générés par le LLM et transmis
+    directement à une opération sensible (requête SQL, commande shell, appel
+    HTTP, accès fichier) sans validation de type/valeur côté application.
+  patterns:
+    - "json.loads(tool_call.function.arguments) puis passage direct des valeurs à cursor.execute(), subprocess.run(), open(), requests.request() sans validation de schéma"
+    - "@tool def query_db(sql: str): cursor.execute(sql) — le modèle génère directement la requête SQL exécutée"
+    - "getattr(module, tool_call.function.name)(**json.loads(tool_call.function.arguments)) sans allowlist de noms de fonctions autorisées"
+  exclude_if:
+    - "les arguments du tool call sont validés par un schéma strict (pydantic/jsonschema) avec typage et bornes AVANT exécution, et les opérations sensibles utilisent des requêtes paramétrées/allowlist"
+
+message: >
+  Arguments générés par le LLM transmis directement à une opération sensible
+  sans validation applicative — un contenu manipulé (prompt injection) peut
+  faire exécuter des paramètres arbitraires. Valider strictement le schéma et
+  les valeurs de chaque argument d'outil (pydantic), utiliser des requêtes
+  paramétrées, et restreindre les outils exécutables à une allowlist connue —
+  voir rules/remediation/tool-injection.md.
+
+false_positive_notes:
+  - "Si le tool call ne peut porter que sur un identifiant validé contre une allowlist fermée (enum), le risque est fortement réduit — reclasser en `low`."
+  - "La validation de type seule (pydantic) sans validation de valeur métier (ex: bornes, autorisation) laisse un risque résiduel `medium`."
+
+remediation_ref: rules/remediation/tool-injection.md
+knowledge_ref: knowledge/llm/tool-injection.md

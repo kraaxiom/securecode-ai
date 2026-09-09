@@ -1,0 +1,33 @@
+id: command-injection
+language: js
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: regex
+  description: >
+    Détecte l'appel à child_process.exec()/execSync() avec un template
+    literal ou une concaténation de chaîne incluant une variable non
+    constante — l'usage d'exec() invoque un shell, contrairement à execFile().
+  patterns:
+    - "child_process\\.exec(Sync)?\\s*\\(\\s*`[^`]*\\$\\{[^}]+\\}[^`]*`"
+    - "\\bexec(Sync)?\\s*\\(\\s*['\"][^'\"]*['\"]\\s*\\+\\s*[A-Za-z_][A-Za-z0-9_.]*"
+  exclude_if:
+    - "L'appel utilise execFile()/execFileSync() ou spawn() avec des arguments passés en tableau distinct"
+    - "La variable interpolée est une constante applicative interne, pas une entrée req.*/params/body"
+
+message: >
+  Concaténation ou interpolation d'une valeur utilisateur dans une commande
+  shell exécutée via child_process.exec() — remplacer par execFile()/spawn()
+  avec arguments en tableau, sans interpréteur shell (voir
+  rules/remediation/command-injection.md).
+
+false_positive_notes:
+  - "Un template literal sans variable interpolée provenant d'une entrée externe n'est pas exploitable."
+  - "Si la variable est validée par une liste blanche stricte (ex: net.isIP()) avant l'appel, le risque résiduel est faible — vérifier manuellement avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

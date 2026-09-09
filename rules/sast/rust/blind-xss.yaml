@@ -1,0 +1,28 @@
+id: blind-xss
+language: rust
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une insertion de contenu utilisateur dans une page HTML/DOM sans échappement contextuel (xss aveugle (blind xss)).
+  patterns:
+    - "format!(\"<div>{}</div>\", $var) injecté dans une réponse HTML sans échappement (askama |safe, maud PreEscaped)"
+    - "PreEscaped($var) ou Markup::from_str($var) sur une entrée utilisateur non nettoyée"
+  exclude_if:
+    - "le moteur de template (askama, tera, maud) échappe automatiquement $var et aucun filtre |safe / PreEscaped n'est appliqué"
+    - "$var provient d'une constante interne, pas d'une entrée utilisateur"
+
+message: >
+  XSS aveugle (blind XSS) détecté — échapper systématiquement toute donnée utilisateur avant insertion dans le HTML/DOM, ou utiliser l'échappement contextuel automatique du framework (voir rules/remediation/blind-xss.md).
+
+false_positive_notes:
+  - "Si le moteur de rendu applique un échappement contextuel automatique (Razor par défaut, html/template, askama/tera par défaut) et qu'aucun mécanisme de contournement (Html.Raw, template.HTML, |safe) n'est utilisé, ce n'est pas exploitable."
+  - "Si la valeur est strictement interne et non dérivée d'une entrée utilisateur, reclasser en `info`."
+
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

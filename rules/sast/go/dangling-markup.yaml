@@ -1,0 +1,37 @@
+id: dangling-markup
+language: go
+category: modern
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée utilisateur insérée dans une réponse HTML via
+    `fmt.Fprintf`/`fmt.Sprintf`/écriture directe sur `http.ResponseWriter`,
+    ou via un cast explicite en `template.HTML`/`template.HTMLAttr` dans
+    `html/template`, contournant l'échappement automatique et permettant
+    l'injection d'une balise non fermée qui capture le contenu suivant.
+  patterns:
+    - "fmt.Fprintf(w, \"<div>%s</div>\", userInput) sans passer par html/template"
+    - "template.HTML(userInput) ou template.HTMLAttr(userInput) appliqué à une donnée issue de r.URL.Query() ou r.FormValue()"
+    - "w.Write([]byte(userInput)) directement sur http.ResponseWriter sans échappement HTML préalable"
+  exclude_if:
+    - "le contenu marqué template.HTML provient exclusivement d'une source interne de confiance (pas d'entrée utilisateur directe ou indirecte)"
+    - "une politique CSP stricte avec base-uri et object-src restreints est en place ET le contenu est filtré contre les caractères < > \" avant conversion en template.HTML"
+
+message: >
+  Donnée utilisateur insérée dans le HTML sans passer par l'échappement
+  automatique de `html/template` (écriture brute, `template.HTML`) — un
+  attaquant peut injecter une balise non fermée pour exfiltrer le contenu
+  de la page sans exécution de JavaScript (voir
+  rules/remediation/dangling-markup.md).
+
+false_positive_notes:
+  - "Une CSP stricte limite l'impact mais ne neutralise pas totalement le dangling markup si les directives img-src/form-action restent permissives."
+  - "Si le contenu passé en template.HTML est systématiquement passé par un sanitizer (ex: bluemonday) qui supprime les balises non fermées, reclasser en `low`."
+
+remediation_ref: rules/remediation/dangling-markup.md
+knowledge_ref: knowledge/modern/dangling-markup.md

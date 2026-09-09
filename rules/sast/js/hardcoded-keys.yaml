@@ -1,0 +1,35 @@
+id: hardcoded-keys
+language: js
+category: crypto
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un secret/clé cryptographique assigné à une constante sous forme
+    de littéral de chaîne, utilisé ensuite dans une fonction de chiffrement,
+    de signature JWT ou de configuration de session.
+  patterns:
+    - "const *_KEY = string_literal"
+    - "const *_SECRET = string_literal"
+    - "jwt.sign(_, string_literal, _)"
+    - "crypto.createHmac(_, string_literal)"
+    - "crypto.createCipheriv(_, string_literal, _)"
+  exclude_if:
+    - "la valeur littérale est immédiatement réassignée depuis process.env et non un secret réellement en dur"
+    - "la constante est un identifiant public non secret (nom d'algorithme, IV public documenté)"
+
+message: >
+  Secret/clé cryptographique codé en dur dans le code source — déplacer vers
+  un coffre-fort de secrets ou une variable d'environnement injectée à
+  l'exécution (voir rules/remediation/hardcoded-keys.md).
+
+false_positive_notes:
+  - "Une valeur d'exemple clairement marquée dans un fichier `.env.example` ou de documentation n'est pas un finding exploitable."
+  - "Vérifier que la chaîne littérale a une entropie suffisante pour être un vrai secret et non un simple label ou nom de champ."
+
+remediation_ref: rules/remediation/hardcoded-keys.md
+knowledge_ref: knowledge/crypto/hardcoded-keys.md

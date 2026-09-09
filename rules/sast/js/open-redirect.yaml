@@ -1,0 +1,33 @@
+id: open-redirect
+language: js
+category: frontend
+cwe: CWE-601
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte `res.redirect(...)` ou `window.location = ...` construits
+    directement à partir d'un paramètre de requête client sans validation
+    contre une liste blanche de chemins/domaines.
+  patterns:
+    - "res.redirect(req.query._)"
+    - "res.redirect(req.body._)"
+    - "window.location = new URLSearchParams(location.search).get(_)"
+    - "window.location.href = _" # valeur dérivée directement d'un paramètre utilisateur
+  exclude_if:
+    - "la valeur est vérifiée contre un Set/tableau statique de chemins autorisés avant redirection"
+    - "la valeur est validée via une fonction dédiée (ex: isSafeUrl) vérifiant explicitement l'hôte par égalité stricte"
+
+message: >
+  Redirection construite à partir d'un paramètre client sans validation —
+  risque de redirection ouverte (voir rules/remediation/open-redirect.md).
+
+false_positive_notes:
+  - "Paramètre systématiquement mappé vers un identifiant interne côté serveur avant résolution en URL : non applicable, reclasser en `info`."
+  - "Vérification par startsWith('/') seule est insuffisante (contournable par //evil.com), ne pas fermer le finding sur cette seule base."
+
+remediation_ref: rules/remediation/open-redirect.md
+knowledge_ref: knowledge/frontend/open-redirect.md

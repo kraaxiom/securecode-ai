@@ -1,0 +1,36 @@
+id: double-spending
+language: python
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une opération financière/de crédit (débit de solde, utilisation
+    de crédit, remboursement) sans idempotence ni verrouillage transactionnel,
+    permettant à des requêtes concurrentes ou rejouées de faire dépenser deux
+    fois la même ressource.
+  patterns:
+    - "def process_payment(user_id, amount): balance = get_balance(user_id); ...; set_balance(user_id, balance-amount) — sans clé d'idempotence ni transaction atomique/verrou de ligne"
+    - "endpoint /api/withdraw / /api/transfer (Flask/FastAPI) sans clé d'idempotence (Idempotency-Key) et sans select_for_update()/transaction sérialisable, permettant un rejeu ou une requête concurrente de débiter deux fois"
+    - "traitement de webhook de paiement (Stripe/PayPal) créditant un compte sans vérification qu'un event_id n'a pas déjà été traité (absence de table/registre d'idempotence)"
+  exclude_if:
+    - "une clé d'idempotence unique est vérifiée/enregistrée avant traitement (contrainte UNIQUE en base ou registre dédié) ET la mise à jour du solde est protégée par select_for_update()/transaction atomique"
+
+message: >
+  Opération financière sans idempotence ni verrouillage transactionnel — des
+  requêtes concurrentes ou un rejeu (retry réseau, replay de webhook) peuvent
+  faire créditer/débiter deux fois la même ressource. Imposer une clé
+  d'idempotence unique persistée en base et protéger la mise à jour du solde
+  par select_for_update()/transaction sérialisable — voir
+  rules/remediation/double-spending.md.
+
+false_positive_notes:
+  - "Un traitement de paiement délégué entièrement à un prestataire (Stripe Checkout géré côté fournisseur) sans logique de solde locale peut ne pas être concerné — vérifier où se situe la logique de crédit."
+  - "La présence d'une contrainte UNIQUE sur l'ID de transaction en base suffit à couvrir le rejeu même sans verrou de ligne explicite dans le code applicatif."
+
+remediation_ref: rules/remediation/double-spending.md
+knowledge_ref: knowledge/business-logic/double-spending.md

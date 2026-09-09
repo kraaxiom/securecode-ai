@@ -1,0 +1,31 @@
+id: race-condition
+language: php
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une séquence lire-puis-écrire (check-then-act) sur une ressource
+    partagée critique (stock, quota, tentative de connexion) sans transaction
+    ni verrouillage.
+  patterns:
+    - "->query(string_concat(\"SELECT stock FROM\", _)); ... ->exec(string_concat(\"UPDATE\", _, \"stock = stock -\", _))"
+    - "->query(string_concat(\"SELECT attempts FROM\", _)); ... ->exec(string_concat(\"UPDATE\", _, \"attempts = attempts +\", _))"
+  exclude_if:
+    - "La séquence est encapsulée dans beginTransaction()/commit() avec SELECT ... FOR UPDATE"
+    - "La mise à jour utilise une opération atomique conditionnelle (UPDATE ... WHERE stock > 0) sans lecture préalable séparée"
+
+message: >
+  Séquence lire-modifier-écrire non atomique sur une ressource critique —
+  risque de condition de concurrence (voir rules/remediation/race-condition.md).
+
+false_positive_notes:
+  - "Une contrainte CHECK en base combinée à une clause WHERE conditionnelle dans l'UPDATE peut suffire même sans FOR UPDATE explicite."
+  - "Ressources non critiques (compteurs d'affichage, statistiques) ne justifient pas une sévérité `high`."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

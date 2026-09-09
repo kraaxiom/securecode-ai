@@ -1,0 +1,39 @@
+id: xs-leaks
+language: rust
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une réponse actix-web/axum qui expose des différences
+    observables cross-origin liées à l'état d'authentification
+    (redirection selon l'état de connexion, code de statut différent,
+    en-têtes `X-Frame-Options`/`Content-Security-Policy: frame-ancestors`
+    absents sur des routes sensibles autorisant leur inclusion en iframe
+    cross-origin, absence de `Cross-Origin-Opener-Policy`/`Cross-Origin-
+    Resource-Policy`).
+  patterns:
+    - "handler de tableau de bord sans .insert_header((\"Cross-Origin-Opener-Policy\", \"same-origin\")) sur une route authentifiée sensible"
+    - "route sensible sans en-tête X-Frame-Options ni Content-Security-Policy: frame-ancestors, permettant l'inclusion en iframe cross-origin"
+    - "handler qui renvoie HttpResponse::Found() (302) uniquement si l'utilisateur est connecté vs HttpResponse::Ok() (200) sinon, sans normalisation de la réponse observable cross-origin"
+  exclude_if:
+    - "les en-têtes Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy et frame-ancestors/X-Frame-Options sont explicitement fixés via un middleware/tower Layer sur les routes sensibles"
+    - "la route ne contient aucune information dont la présence/absence pourrait révéler l'état d'authentification ou des données spécifiques à l'utilisateur"
+
+message: >
+  Réponse actix-web/axum sensible sans en-têtes d'isolation cross-origin
+  (X-Frame-Options/frame-ancestors, Cross-Origin-Opener-Policy,
+  Cross-Origin-Resource-Policy) — un site malveillant peut observer des
+  effets de bord révélant l'état d'authentification ou des données de
+  l'utilisateur (voir rules/remediation/xs-leaks.md).
+
+false_positive_notes:
+  - "Si un middleware/tower Layer global applique déjà ces en-têtes à toutes les réponses, reclasser en `low`."
+  - "Les XS-Leaks nécessitent souvent une confirmation par test dynamique (mesure de timing/taille) ; la revue statique identifie l'absence de contrôle, pas l'exploitabilité confirmée."
+
+remediation_ref: rules/remediation/xs-leaks.md
+knowledge_ref: knowledge/modern/xs-leaks.md

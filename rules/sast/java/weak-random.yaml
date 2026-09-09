@@ -1,0 +1,33 @@
+id: weak-random
+language: java
+category: crypto
+cwe: CWE-338
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de java.util.Random (ou Math.random()) pour générer
+    un token, une clé, un identifiant de session ou tout secret nécessitant
+    une entropie cryptographique, à la place de java.security.SecureRandom.
+  patterns:
+    - 'new Random().nextInt(_) // résultat affecté à une variable *token*/*session*/*key*/*otp*'
+    - 'new Random().nextBytes(_) // buffer réutilisé comme clé ou IV'
+    - 'Math.random() // utilisé pour générer un token/identifiant/secret'
+    - 'ThreadLocalRandom.current().nextInt(_) // utilisé pour un secret'
+  exclude_if:
+    - "java.util.Random est utilisé pour une logique non sécuritaire (mélange d'une liste d'affichage, jitter de retry, simulation) sans lien avec un secret"
+
+message: >
+  Générateur pseudo-aléatoire non cryptographique utilisé pour une valeur
+  sensible — remplacer par java.security.SecureRandom
+  (voir rules/remediation/weak-random.md).
+
+false_positive_notes:
+  - "Si la valeur générée n'est jamais utilisée comme secret, identifiant de session ou clé (ex: simple ID de test A/B), reclasser en `info`."
+  - "Vérifier que le résultat n'est pas immédiatement rehaché par un KDF cryptographique compensant la faible entropie initiale."
+
+remediation_ref: rules/remediation/weak-random.md
+knowledge_ref: knowledge/crypto/weak-random.md

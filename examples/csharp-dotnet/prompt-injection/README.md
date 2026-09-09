@@ -1,0 +1,3 @@
+# Prompt Injection (CWE-1427)
+
+La version vulnérable construit le prompt envoyé au modèle en concaténant directement l'entrée utilisateur au prompt système sous forme de texte brut, sans séparation structurelle des rôles, puis exécute automatiquement tout appel d'outil renvoyé par le modèle sans validation ni contrôle de privilège. La correction utilise la séparation structurée des rôles (system/user) fournie par l'API du LLM, traite systématiquement la sortie du modèle comme non fiable avant toute action, restreint les outils exposés selon le principe du moindre privilège, et journalise les échanges.

@@ -1,0 +1,33 @@
+id: dom-clobbering
+language: python
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un template Python (Jinja2/Django) qui rend du HTML fourni par
+    l'utilisateur sans echappement ni assainissement (mark_safe/|safe),
+    ouvrant la voie a une injection de balises id=/name= exploitant le DOM
+    clobbering cote client une fois la page rendue.
+  patterns:
+    - "{{ user_html|safe }} (Jinja2) rendant un contenu HTML utilisateur non assaini, incluant potentiellement des attributs id/name arbitraires"
+    - "mark_safe(user_supplied_html) (Django) sans passage prealable par un assainisseur HTML (bleach, nh3)"
+  exclude_if:
+    - "Le contenu HTML utilisateur est assaini via bleach.clean() / nh3 avec une whitelist stricte de balises/attributs avant d'etre marque safe"
+
+message: >
+  HTML fourni par l'utilisateur rendu sans assainissement (mark_safe/|safe)
+  — permet l'injection de balises avec id/name arbitraires qui peuvent
+  ecraser (clobber) des variables globales JS attendues par le code client,
+  detournant sa logique. Assainir tout HTML utilisateur avec une
+  bibliotheque dediee (bleach, nh3) avant de le marquer comme sur.
+
+false_positive_notes:
+  - "Si le HTML n'est jamais fourni par un utilisateur (contenu 100% interne/statique), ce pattern ne s'applique pas."
+
+remediation_ref: rules/remediation/dom-clobbering.md
+knowledge_ref: knowledge/frontend/dom-clobbering.md

@@ -1,0 +1,35 @@
+id: double-extension
+language: go
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'extension de fichier téléversé basée sur
+    strings.Contains ou strings.HasSuffix appliqué au nom complet, plutôt
+    que sur l'extension finale extraite via filepath.Ext, permettant un
+    contournement par double extension.
+  patterns:
+    - "strings.Contains($header.Filename, $ext)"
+    - "strings.HasSuffix($header.Filename, $ext)"
+    - "strings.Index($header.Filename, $ext)"
+  exclude_if:
+    - "l'extension est extraite avec filepath.Ext($header.Filename) puis comparée strictement à une liste blanche"
+    - "le nom de fichier est rejeté si strings.Count($header.Filename, \".\") est supérieur à 1"
+
+message: >
+  Validation d'extension par Contains/HasSuffix sur le nom de fichier
+  complet — contournable par un nom du type "shell.php.jpg". Utiliser
+  filepath.Ext() sur le nom nettoyé et rejeter les noms à extensions
+  multiples (voir rules/remediation/double-extension.md).
+
+false_positive_notes:
+  - "Si HasSuffix/Contains est appliqué sur le résultat de filepath.Ext (donc déjà l'extension isolée), ce n'est pas vulnérable — reclasser en `info`."
+  - "Si le serveur ne mappe jamais d'extension intermédiaire à un interpréteur, l'impact dépend fortement de la configuration du reverse proxy en amont."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

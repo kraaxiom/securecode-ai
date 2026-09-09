@@ -1,0 +1,35 @@
+id: graphql-api
+language: python
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une configuration de serveur GraphQL Python (Graphene, Strawberry,
+    Ariadne) sans limitation de profondeur/complexite de requete ni
+    desactivation de l'introspection en production, exposant a des requetes
+    couteuses ou a une divulgation excessive du schema.
+  patterns:
+    - "graphene.Schema(...) instancie sans validation_rules limitant la profondeur (depth_limit_validator absent)"
+    - "GraphQLView.as_view(schema=schema, graphiql=True) actif en production (introspection/playground exposes)"
+    - "strawberry.Schema(...) sans limite de complexite de requete configuree"
+  exclude_if:
+    - "Une regle de limitation de profondeur/complexite (depth_limit_validator, cost analysis) est appliquee"
+    - "graphiql=True / introspection ne sont actifs qu'en environnement de developpement (DEBUG=True)"
+
+message: >
+  Serveur GraphQL sans limite de profondeur/complexite de requete, ou avec
+  introspection/playground actifs en production — expose a des requetes
+  imbriquees couteuses (deni de service) et a une divulgation excessive du
+  schema interne. Limiter la profondeur des requetes et desactiver
+  l'introspection/graphiql en production.
+
+false_positive_notes:
+  - "Une API GraphQL interne, non exposee publiquement et derriere authentification forte, presente un risque reduit — reclasser en `low` selon le contexte d'exposition."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

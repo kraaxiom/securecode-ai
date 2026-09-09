@@ -1,0 +1,19 @@
+id: bfla
+category: authorization
+cwe: CWE-862
+owasp: A01:2021-Broken Access Control
+severity: high
+type: dast
+test:
+  method: GET|POST|PUT|DELETE
+  target: endpoint de fonctionnalité sensible (ex. /admin/*, action de gestion) invoqué directement sans passer par l'interface utilisateur qui le masque
+  technique: differential-response
+  indicators:
+    - "un compte avec un rôle standard obtient un statut de succès en appelant directement un endpoint réservé à un rôle supérieur, alors que l'interface ne propose pas cette action pour ce rôle"
+    - "l'endpoint répond de façon identique (structure, statut) qu'il soit appelé par un compte administrateur ou un compte standard, alors que l'action exécutée est sensible"
+    - "absence de code 401/403 malgré un jeton d'authentification valide mais de rôle insuffisant"
+false_positive_notes:
+  - "fonctionnalité effectivement ouverte à tous les rôles authentifiés par conception : vérifier la matrice de permissions avant conclusion"
+  - "différence de réponse due à un état métier (ressource inexistante) plutôt qu'à un contrôle de rôle"
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

@@ -1,0 +1,32 @@
+id: memory-poisoning
+language: php
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une écriture automatique en mémoire persistante d'agent à partir
+    de faits extraits d'une réponse du modèle, sans confirmation explicite de
+    l'utilisateur ni cloisonnement par tenant vérifiable.
+  patterns:
+    - "$memoryStore->append($userId, $extractedFacts) sans appel préalable à userConfirms($userId, ...)"
+    - "$memoryStore->get($userId) réinjecté directement dans un message système sans passage par revalidate()"
+  exclude_if:
+    - "L'écriture est précédée d'une confirmation explicite de l'utilisateur (ex: userConfirms())"
+    - "La clé mémoire est scopée par tenant (ex: tenantScopedKey()) et le contenu réinjecté est revalidé"
+
+message: >
+  Écriture ou réinjection de mémoire persistante sans confirmation
+  utilisateur ni revalidation — risque de compromission durable de l'agent
+  (voir rules/remediation/memory-poisoning.md).
+
+false_positive_notes:
+  - "Si la mémoire n'est utilisée qu'en lecture pour de la personnalisation non sensible (préférence UI), le risque est réduit."
+  - "Vérifier si un mécanisme de suppression/édition par l'utilisateur existe malgré l'absence de confirmation à l'écriture."
+
+remediation_ref: rules/remediation/memory-poisoning.md
+knowledge_ref: knowledge/llm/memory-poisoning.md

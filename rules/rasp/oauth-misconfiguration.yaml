@@ -1,0 +1,15 @@
+id: oauth-misconfiguration
+category: auth
+cwe: CWE-287
+type: rasp
+guard:
+  sink: fonction de traitement du callback d'autorisation OAuth/OIDC (échange du code contre un jeton)
+  block_condition: >
+    Le paramètre state (ou nonce en OIDC) reçu au callback est absent ou ne correspond pas
+    à la valeur émise par le serveur pour cette requête d'autorisation, ou le redirect_uri
+    associé à l'échange ne correspond pas exactement à une valeur enregistrée en liste blanche.
+  action: block
+  fail_mode: fail-closed   # accepter un callback sans state valide ou avec un redirect_uri non exact expose directement au vol du code d'autorisation ; blocage strict recommandé par défaut
+severity: high
+remediation_ref: rules/remediation/oauth-misconfiguration.md
+knowledge_ref: knowledge/auth/oauth-misconfiguration.md

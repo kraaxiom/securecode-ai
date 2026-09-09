@@ -1,0 +1,35 @@
+id: code-injection
+language: php
+category: injections
+cwe: CWE-94
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'appel à eval(), create_function(), assert() utilisé comme
+    évaluateur de code, ou unserialize() sur une source de données non fiable,
+    avec un argument construit à partir d'une variable non constante.
+  patterns:
+    - "eval(string_concat(_, $var, _))"
+    - "eval($var)"
+    - "create_function(_, $var)"
+    - "unserialize($var)"
+  exclude_if:
+    - "$var est un littéral constant défini dans le code source (pas une entrée utilisateur)"
+    - "unserialize() est appelé avec l'option allowed_classes explicitement restreinte à une liste blanche sûre"
+
+message: >
+  Évaluation ou désérialisation dynamique d'une valeur potentiellement
+  contrôlée par l'utilisateur — remplacer par une structure déclarative ou
+  une liste blanche de fonctions/classes autorisées (voir
+  rules/remediation/code-injection.md).
+
+false_positive_notes:
+  - "Si $var est entièrement constituée de littéraux constants du code source, ce n'est pas exploitable — reclasser en `info`."
+  - "unserialize() avec allowed_classes => false ou une liste blanche stricte réduit fortement le risque — vérifier la configuration avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

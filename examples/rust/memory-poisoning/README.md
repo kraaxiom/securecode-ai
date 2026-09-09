@@ -1,0 +1,3 @@
+# Memory Poisoning (CWE-349)
+
+Le code vulnérable écrit automatiquement en mémoire persistante tout fait déduit par le modèle pendant la conversation, sans confirmation utilisateur, puis réinjecte cette mémoire comme contexte de confiance dans les sessions futures — un contenu conversationnel malveillant peut ainsi implanter une compromission durable. La correction distingue les faits "proposés" (non confirmés, jamais réinjectés) des faits "confirmés" par l'utilisateur, cloisonne strictement la mémoire par utilisateur, et offre une interface de consultation/suppression des entrées mémoire. Élimine la classe de vulnérabilité CWE-349 (Acceptance of Extraneous Untrusted Data With Trust).

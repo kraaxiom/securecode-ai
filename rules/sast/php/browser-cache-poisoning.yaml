@@ -1,0 +1,33 @@
+id: browser-cache-poisoning
+language: php
+category: modern
+cwe: CWE-525
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route/vue affichant des données utilisateur (profil, solde,
+    panier, session) sans émission explicite de l'en-tête Cache-Control:
+    no-store, ou avec un Cache-Control public appliqué globalement.
+  patterns:
+    - "function handles user/session data AND no header('Cache-Control: no-store...') call in scope"
+    - "header('Cache-Control: public, max-age=' . _)"
+    - "route matching /login|logout|profile|account|password/ without header('Cache-Control: no-store')"
+  exclude_if:
+    - "la réponse ne contient aucune donnée utilisateur/session (ressource strictement statique)"
+    - "un middleware global applique déjà no-store sur toutes les routes authentifiées"
+
+message: >
+  Réponse contenant potentiellement des données sensibles sans Cache-Control:
+  no-store — risque de persistance dans le cache navigateur local (voir
+  rules/remediation/browser-cache-poisoning.md).
+
+false_positive_notes:
+  - "Si la route est publique et ne contient aucune donnée par utilisateur, reclasser en `info`."
+  - "Si le framework (ex: middleware Laravel) applique déjà no-store globalement sur les routes authentifiées, ne pas remonter."
+
+remediation_ref: rules/remediation/browser-cache-poisoning.md
+knowledge_ref: knowledge/modern/browser-cache-poisoning.md

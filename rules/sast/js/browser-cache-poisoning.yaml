@@ -1,0 +1,33 @@
+id: browser-cache-poisoning
+language: js
+category: modern
+cwe: CWE-525
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler Express/Node répondant avec des données utilisateur
+    (profil, session) sans en-tête Cache-Control: no-store, ou une route
+    login/logout sans directive empêchant sa mise en cache.
+  patterns:
+    - "res.render(_, {..., user: _, ...}) without prior res.set('Cache-Control', 'no-store'...)"
+    - "res.json({..., user: _, ...}) without prior res.set('Cache-Control', 'no-store'...)"
+    - "route path matching /login|logout|account|profile/ without res.set('Cache-Control', 'no-store')"
+  exclude_if:
+    - "helmet() ou un middleware équivalent applique déjà no-store globalement sur les routes concernées"
+    - "la réponse ne contient aucune donnée utilisateur/session"
+
+message: >
+  Réponse contenant potentiellement des données sensibles sans Cache-Control:
+  no-store — risque de persistance dans le cache navigateur local (voir
+  rules/remediation/browser-cache-poisoning.md).
+
+false_positive_notes:
+  - "Vérifier si un middleware global (helmet, cache-control custom) couvre déjà la route avant de remonter."
+  - "Les routes strictement statiques/publiques sans donnée utilisateur peuvent être reclassées en `info`."
+
+remediation_ref: rules/remediation/browser-cache-poisoning.md
+knowledge_ref: knowledge/modern/browser-cache-poisoning.md

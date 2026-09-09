@@ -1,0 +1,37 @@
+id: cookie-poisoning
+language: csharp
+category: sessions
+cwe: CWE-565
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation directe d'une valeur de cookie (Request.Cookies) pour
+    une décision d'autorisation ou métier (rôle, ID utilisateur, prix) sans
+    vérification de signature/intégrité (Data Protection API, HMAC) ni
+    revalidation côté serveur.
+  patterns:
+    - "Request.Cookies[$key].Value" # utilisé directement dans une condition d'autorisation
+    - "HttpContext.Request.Cookies[$key]" # sans passage par IDataProtector.Unprotect
+    - "if (_.Cookies[$key] == $role_or_id)"
+    - "var $var = Request.Cookies[$key].Value; ... Authorize($var)"
+  exclude_if:
+    - "la valeur du cookie est déchiffrée/vérifiée via IDataProtector.Unprotect ou équivalent avant usage"
+    - "la valeur du cookie est un identifiant opaque revérifié en base de données (pas de rôle/prix stocké directement)"
+    - "le cookie provient du middleware d'authentification ASP.NET Identity (.AspNetCore.Identity.Application) et n'est pas relu manuellement"
+
+message: >
+  Valeur de cookie utilisée directement pour une décision de sécurité ou
+  métier sans signature ni vérification d'intégrité — un attaquant peut
+  modifier son propre cookie pour s'octroyer des privilèges ou altérer un
+  état applicatif (voir rules/remediation/cookie-poisoning.md).
+
+false_positive_notes:
+  - "Si la valeur est protégée via Microsoft.AspNetCore.DataProtection (IDataProtector) avant lecture, le risque d'altération est neutralisé — reclasser en `info`."
+  - "Si le cookie ne contient qu'un identifiant de session opaque géré par ASP.NET Core Session/Identity et que le rôle réel est relu en base à chaque requête, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/cookie-poisoning.md
+knowledge_ref: knowledge/sessions/cookie-poisoning.md

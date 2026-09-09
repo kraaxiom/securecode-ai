@@ -1,0 +1,35 @@
+id: browser-storage-leak
+language: python
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte un backend Python (Flask/Django/FastAPI) qui injecte une donnee
+    sensible (token de session, secret, donnee personnelle) directement dans
+    un template HTML rendu, destinee a etre stockee cote client en
+    localStorage/sessionStorage par le JS de la page.
+  patterns:
+    - "render_template($_, api_secret=$_) (Flask) exposant un secret dans le HTML/JS genere cote client"
+    - "context = {'jwt_secret': $_} passe a un template Django rendu cote navigateur"
+    - "Injection d'un token long-duree ou d'une cle privee dans un <script> genere serveur, destine a un stockage localStorage"
+  exclude_if:
+    - "Seul un jeton de courte duree, a usage unique (ex: token CSRF), est injecte dans le template"
+    - "La donnee injectee n'est pas sensible (preference d'affichage, texte public)"
+
+message: >
+  Donnee sensible injectee cote serveur dans un template destine a un
+  stockage navigateur (localStorage/sessionStorage) — ce stockage est
+  accessible a tout script JS de la page (y compris via XSS) et persiste
+  sans expiration. Eviter d'exposer des secrets/tokens long-duree cote
+  client ; preferer un cookie HttpOnly ou un token de courte duree.
+
+false_positive_notes:
+  - "Si la donnee injectee est deja publique par nature (config non sensible), reclasser en `low`."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

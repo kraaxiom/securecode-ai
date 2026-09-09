@@ -1,0 +1,34 @@
+id: api-key-leakage
+language: go
+category: api
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé API ou un secret codé en dur dans le code source Go
+    (constante ou variable littérale) au lieu d'être chargé depuis une
+    variable d'environnement ou un gestionnaire de secrets.
+  patterns:
+    - "const $var = \"$literal_key\""
+    - "var $var string = \"$literal_key\""
+    - "req.Header.Set(\"Authorization\", \"$literal_key\")"
+    - "apiKey := \"$literal_key\""
+  exclude_if:
+    - "la valeur provient de os.Getenv($_) ou d'un gestionnaire de secrets (Vault, AWS Secrets Manager SDK)"
+    - "le littéral est un exemple factice clairement non fonctionnel (ex: \"your-api-key-here\")"
+
+message: >
+  Clé API ou secret codé en dur dans le code source Go — remplacer par
+  os.Getenv() ou un gestionnaire de secrets dédié
+  (voir rules/remediation/api-key-leakage.md).
+
+false_positive_notes:
+  - "Si la chaîne est utilisée uniquement dans un fichier de test avec une clé factice, reclasser en `info`."
+  - "Vérifier que la constante n'est pas simplement le nom d'une variable d'environnement (ex: const ApiKeyEnvVar = \"API_KEY\") avant de remonter en `high`."
+
+remediation_ref: rules/remediation/api-key-leakage.md
+knowledge_ref: knowledge/api/api-key-leakage.md

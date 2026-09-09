@@ -1,0 +1,39 @@
+id: http-parameter-pollution
+language: python
+category: injections
+cwe: CWE-235
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de request.args.get()/request.form.get() (qui ne
+    retourne que la première valeur d'un paramètre dupliqué) dans un
+    contexte de décision de sécurité (contrôle d'accès, montant financier),
+    alors qu'un composant en amont (proxy, WAF) pourrait interpréter une
+    autre occurrence du même paramètre — source de contournement par
+    pollution de paramètres.
+  patterns:
+    - "role = request.args.get(\"role\"); if role == \"admin\": ..."
+    - "amount = request.form.get(\"amount\")"
+    - "request.args.getlist(\"id\")[0]"
+  exclude_if:
+    - "le paramètre est validé après extraction par un schéma strict qui rejette les doublons (ex: vérification explicite de request.args.getlist(key) de longueur 1)"
+    - "le paramètre ne participe à aucune décision de sécurité ou financière"
+
+message: >
+  Extraction d'un paramètre HTTP potentiellement dupliqué sans vérifier
+  l'absence de doublons, dans un contexte sensible (autorisation, montant) —
+  différents composants de la chaîne (proxy, application) peuvent
+  interpréter des occurrences différentes du même paramètre, permettant un
+  contournement de contrôle. Rejeter explicitement les paramètres dupliqués
+  ou documenter/aligner le comportement entre tous les composants.
+
+false_positive_notes:
+  - "La majorité des usages de request.args.get() sur des paramètres non sensibles (pagination, tri) ne présentent aucun risque réel — cette règle cible les contextes d'autorisation/financiers."
+  - "Si l'infrastructure (WAF, proxy) est configurée pour rejeter les paramètres dupliqués, le risque est atténué."
+
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

@@ -1,0 +1,15 @@
+id: csv-injection
+category: injections
+cwe: CWE-1236
+type: iast
+instrumentation:
+  hook_points:
+    - "php: fputcsv() / implode(',', ...) pour export"
+    - "python: csv.writer.writerow"
+    - "java: OpenCSV CSVWriter.writeNext / Apache POI cell.setCellValue"
+    - "node: json2csv / fast-csv write"
+  taint_check: Suivi de la donnée depuis une source utilisateur (formulaire, base de données alimentée par l'utilisateur) jusqu'à un sink d'écriture de cellule CSV/Excel sans préfixation neutralisante.
+  trigger_condition: Une valeur taintée commençant par =, +, -, @, tab ou CR atteint le sink d'écriture CSV sans préfixe d'échappement (ex. apostrophe) ajouté.
+severity: medium
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

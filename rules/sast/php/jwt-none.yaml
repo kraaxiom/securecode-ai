@@ -1,0 +1,29 @@
+id: jwt-none
+language: php
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un décodage JWT utilisé pour une décision d'authentification
+    sans vérification de signature (json_decode manuel du payload base64,
+    ou bibliothèque configurée pour accepter l'algorithme 'none').
+  patterns:
+    - "json_decode(base64_decode(explode('.', $token)[1]))"
+    - "JWT::decode($_, new Key($_, 'none'))"
+  exclude_if:
+    - "Le décodage n'est utilisé qu'à des fins de journalisation/debug, jamais pour une décision d'accès"
+
+message: >
+  Décodage JWT sans vérification de signature utilisé pour une décision
+  applicative — voir rules/remediation/jwt-none.md.
+
+false_positive_notes:
+  - "Si le résultat du décodage n'influence aucune décision d'authentification/autorisation (ex: extraction d'un claim non sensible pour affichage), reclasser en `info`."
+
+remediation_ref: rules/remediation/jwt-none.md
+knowledge_ref: knowledge/auth/jwt-none.md

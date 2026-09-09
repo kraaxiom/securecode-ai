@@ -1,0 +1,33 @@
+id: double-extension
+language: javascript
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'extension de fichier téléversé basée sur
+    String.includes()/indexOf() sur le nom complet plutôt que sur
+    path.extname() ou une extraction équivalente de la dernière extension,
+    permettant un contournement par double extension.
+  patterns:
+    - "file.originalname.includes(string_literal_extension)"
+    - "filename.indexOf(string_literal_extension) !== -1"
+    - "regex_without_end_anchor.test(file.originalname)"
+  exclude_if:
+    - "l'extension est extraite via path.extname() et comparée par égalité stricte à une liste blanche (Set/array)"
+    - "le nom de fichier stocké est entièrement régénéré côté serveur (crypto.randomBytes ou équivalent)"
+
+message: >
+  Validation d'extension par recherche de sous-chaîne, contournable par double
+  extension (ex: shell.php.jpg) — voir rules/remediation/double-extension.md.
+
+false_positive_notes:
+  - "Un fileFilter multer qui régénère systématiquement le nom stocké neutralise l'impact même si la validation de l'extension déclarée est faible."
+  - "Une regex ancrée en fin de chaîne (`/\\.jpg$/`) n'est pas vulnérable à cette technique."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

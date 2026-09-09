@@ -1,0 +1,38 @@
+id: xs-search
+language: go
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint de recherche/filtrage net/http authentifié dont la
+    taille ou le temps de réponse varie de façon observable selon le nombre
+    de résultats trouvés, et qui ne fixe pas d'en-tête interdisant son
+    inclusion cross-origin (`Cross-Origin-Resource-Policy`,
+    `X-Frame-Options`), permettant une mesure indirecte depuis un site
+    tiers.
+  patterns:
+    - "func searchHandler(w http.ResponseWriter, r *http.Request) { json.NewEncoder(w).Encode(results) } sans w.Header().Set(\"Cross-Origin-Resource-Policy\", \"same-origin\")"
+    - "handler de recherche dont la taille de réponse HTML varie significativement selon le nombre de résultats, accessible sans vérification de l'en-tête Sec-Fetch-Site"
+    - "endpoint /api/search authentifié sans limitation du taux ni normalisation du temps de réponse, exposant une variation mesurable selon les résultats"
+  exclude_if:
+    - "l'en-tête Cross-Origin-Resource-Policy: same-origin (ou same-site) est fixé sur l'endpoint de recherche"
+    - "le handler vérifie l'en-tête Sec-Fetch-Site (via r.Header.Get(\"Sec-Fetch-Site\")) et rejette les requêtes cross-site sur les endpoints de recherche sensibles"
+
+message: >
+  Endpoint de recherche authentifié sans en-tête d'isolation cross-origin ni
+  vérification de Sec-Fetch-Site — un site malveillant peut mesurer des
+  différences observables (taille, temps de réponse) pour déduire terme par
+  terme le contenu des résultats de recherche de la victime (voir
+  rules/remediation/xs-search.md).
+
+false_positive_notes:
+  - "Si un middleware Go global applique Cross-Origin-Resource-Policy à toutes les réponses authentifiées, reclasser en `low`."
+  - "La confirmation de l'exploitabilité réelle nécessite une mesure dynamique (timing/taille) ; la revue statique signale l'absence de contrôle préventif."
+
+remediation_ref: rules/remediation/xs-search.md
+knowledge_ref: knowledge/modern/xs-search.md

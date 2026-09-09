@@ -1,0 +1,3 @@
+## RAG Poisoning (CWE-349)
+
+Le code vulnérable crawle et indexe dans la base vectorielle le contenu de n'importe quelle URL fournie, sans vérifier la provenance ni scanner le document pour détecter des motifs d'instructions cachées, ce qui permet à un attaquant d'insérer du contenu malveillant qui sera plus tard récupéré et traité comme une source fiable par le modèle. La correction restreint l'ingestion aux sources listées dans une allowlist de confiance, scanne chaque document pour détecter des instructions impératives suspectes avant indexation, et conserve la provenance de chaque chunk jusqu'à la réponse générée afin de permettre l'audit et le retrait rapide d'un document malveillant.

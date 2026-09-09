@@ -1,0 +1,37 @@
+id: dependency-confusion
+language: rust
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte dans Cargo.toml, Cargo.lock et .cargo/config.toml des indices de
+    confusion de dépendances : crate interne référencée sans registre privé
+    explicitement prioritaire.
+  patterns:
+    - "Cargo.toml: dépendance au nom interne (même préfixe que l'organisation) déclarée sans champ 'registry = \"...\"' pointant vers un registre privé"
+    - ".cargo/config.toml: absence de [registries.<interne>] ou de [source] remplaçant crates.io pour les crates internes"
+    - "Cargo.toml: dépendance interne sans [patch] ni [source.crates-io].replace-with vers un registre/mirroir interne alors qu'un nom identique pourrait exister sur crates.io public"
+    - "Cargo.lock: entrée pour une crate interne dont la source résolue est 'registry+https://github.com/rust-lang/crates.io-index' au lieu du registre privé attendu"
+  exclude_if:
+    - "[registries.<interne>] ou [source] avec replace-with restreint explicitement la résolution des crates internes au registre privé"
+    - "le nom de la crate interne est réservé/publié intentionnellement (crate vide) sur crates.io par l'organisation elle-même"
+
+message: >
+  La configuration Cargo ne garantit pas la priorité d'un registre privé pour
+  une crate au nom interne — un attaquant peut publier une crate malveillante
+  de même nom sur crates.io avec un numéro de version supérieur pour qu'elle
+  soit résolue à sa place. Déclarer un registre privé explicite via
+  [registries] ou [source]/replace-with (voir
+  rules/remediation/dependency-confusion.md).
+
+false_positive_notes:
+  - "Si toutes les dépendances du Cargo.toml sont publiques et légitimement sur crates.io (aucune crate interne), non applicable."
+  - "Si un .cargo/config.toml global (hors dépôt) impose déjà un registre privé exclusif pour les crates internes, le risque est mitigé — vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

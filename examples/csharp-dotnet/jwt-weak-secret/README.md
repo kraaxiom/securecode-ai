@@ -1,0 +1,3 @@
+# JWT signé avec un secret faible (CWE-326)
+
+La version vulnérable signe les tokens avec un secret HMAC court et prévisible (`monsecret123`), codé en dur dans le service. Un tel secret peut être retrouvé hors ligne par un attaquant via une attaque par dictionnaire ou force brute, lui permettant ensuite de forger des tokens valides contenant n'importe quel rôle, y compris `admin`. La correction charge le secret depuis la configuration (issue d'un gestionnaire de secrets dédié, jamais versionnée) et vérifie explicitement au démarrage qu'il atteint au moins 256 bits d'entropie, seuil minimal recommandé pour HS256. L'application échoue immédiatement si le secret est absent ou insuffisant, plutôt que de démarrer avec une signature faible.

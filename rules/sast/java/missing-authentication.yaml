@@ -1,0 +1,40 @@
+id: missing-authentication
+language: java
+category: websocket
+cwe: CWE-306
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration Spring `WebSocketMessageBrokerConfigurer` ou
+    `AbstractSecurityWebSocketMessageBrokerConfigurer` dans laquelle les
+    canaux STOMP (`/app/**`, `/topic/**`, `/queue/**`) ne sont protégés par
+    aucune règle d'autorisation, ou dans laquelle `configureMessageBroker`
+    enregistre un endpoint sans que `WebSocketSecurity`/`ChannelSecurity`
+    ne soit appliqué.
+  patterns:
+    - "class $C extends AbstractSecurityWebSocketMessageBrokerConfigurer { ... messages.anyMessage().permitAll() ... }"
+    - "registerStompEndpoints($registry) { $registry.addEndpoint($path)... } // aucune classe SecurityConfig associée dans le module"
+    - "@MessageMapping($_) $ret $method(...) { ... } // absence de @PreAuthorize et absence de vérification manuelle du Principal"
+    - "StompHeaderAccessor.getUser() == null // jamais vérifié avant traitement du message"
+  exclude_if:
+    - "Une classe étendant AbstractSecurityWebSocketMessageBrokerConfigurer définit des règles messages.simpDestMatchers(...).authenticated() pour les destinations sensibles"
+    - "Chaque @MessageMapping sensible est annoté @PreAuthorize ou vérifie explicitement le Principal/StompHeaderAccessor.getUser()"
+
+message: >
+  Le canal WebSocket/STOMP ne met en œuvre aucun contrôle d'authentification
+  ou d'autorisation — tout client, authentifié ou non, peut envoyer et
+  recevoir des messages sur les destinations applicatives. Configurer
+  `AbstractSecurityWebSocketMessageBrokerConfigurer` avec des règles
+  `simpDestMatchers(...).authenticated()` et vérifier le `Principal` dans
+  chaque handler `@MessageMapping` sensible.
+
+false_positive_notes:
+  - "Si l'endpoint WebSocket ne sert que des données publiques non sensibles (ex: statut de santé), la sévérité peut être réduite en `medium`."
+  - "Si l'authentification est appliquée en amont via un filtre HTTP sur le handshake (ex: token dans l'URL de connexion validé par un HandshakeInterceptor), vérifier que ce filtre est bien enregistré avant de reclasser."
+
+remediation_ref: rules/remediation/missing-authentication.md
+knowledge_ref: knowledge/websocket/missing-authentication.md

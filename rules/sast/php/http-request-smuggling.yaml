@@ -1,0 +1,37 @@
+id: http-request-smuggling
+language: php
+category: injections
+cwe: CWE-444
+owasp: A03:2021-Injection
+severity: high
+confidence_default: low
+
+match:
+  type: regex
+  description: >
+    Détecte la lecture conjointe des en-têtes HTTP_CONTENT_LENGTH et
+    HTTP_TRANSFER_ENCODING sans rejet explicite du cas où les deux sont
+    présents simultanément. Regex utilisée car cette vulnérabilité est
+    principalement une question de configuration d'infrastructure ; la
+    détection statique ne peut repérer qu'un indicateur applicatif partiel
+    (absence de contrôle défensif), pas la vulnérabilité de fond au niveau
+    proxy.
+  patterns:
+    - "HTTP_TRANSFER_ENCODING"
+  exclude_if:
+    - "Le code vérifie explicitement la présence conjointe de HTTP_CONTENT_LENGTH et HTTP_TRANSFER_ENCODING et rejette la requête (ex: http_response_code(400)) avant tout traitement"
+    - "La valeur de HTTP_TRANSFER_ENCODING n'est utilisée qu'en lecture pour du logging, sans influence sur le traitement du corps de la requête"
+
+message: >
+  Traitement d'un en-tête Transfer-Encoding sans rejet explicite des
+  requêtes présentant conjointement Content-Length et Transfer-Encoding —
+  ce cas doit être bloqué en défense en profondeur, en complément de la
+  configuration du proxy amont (voir
+  rules/remediation/http-request-smuggling.md).
+
+false_positive_notes:
+  - "Ce pattern est un indicateur applicatif faible : la vulnérabilité réelle dépend surtout de la configuration du proxy/load balancer en amont, non détectable par analyse statique du code applicatif seul."
+  - "Si l'application est systématiquement placée derrière un proxy qui normalise déjà les requêtes HTTP/1.1 ambiguës (documenté), le risque résiduel côté code applicatif est faible — confirmer manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

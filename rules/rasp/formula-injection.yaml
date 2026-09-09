@@ -1,0 +1,12 @@
+id: formula-injection
+category: injections
+cwe: CWE-1236
+type: rasp
+guard:
+  sink: fonction d'écriture de cellule de tableur ou de ligne CSV (setCellValue, writerow, addRow)
+  block_condition: la valeur écrite dans la cellule provient d'une entrée utilisateur non neutralisée et commence par un caractère déclencheur de formule (=, +, -, @, tabulation, retour chariot)
+  action: sanitize
+  fail_mode: fail-open
+severity: medium
+remediation_ref: rules/remediation/formula-injection.md
+knowledge_ref: knowledge/injections/formula-injection.md

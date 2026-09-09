@@ -1,0 +1,19 @@
+id: ssi
+category: injections
+cwe: CWE-97
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST
+  target: champ de formulaire ou paramètre de requête reflété dans une page HTML servie par un serveur supportant les Server-Side Includes
+  technique: differential-response
+  indicators:
+    - directive SSI neutre (date/heure serveur) apparaissant en clair dans la réponse HTML alors que la valeur injectée était différente
+    - nom de variable d'environnement serveur (ex. DOCUMENT_ROOT) résolu et affiché dans la page
+    - absence d'échappement des séquences "<!--#" observée par comparaison entre une entrée neutre et une entrée témoin
+false_positive_notes:
+  - certains CMS échappent nativement les commentaires HTML, vérifier que la valeur est bien interprétée et non simplement reflétée
+  - vérifier que le serveur exécute réellement les SSI sur le type de fichier testé avant de conclure
+remediation_ref: rules/remediation/ssi.md
+knowledge_ref: knowledge/injections/ssi.md

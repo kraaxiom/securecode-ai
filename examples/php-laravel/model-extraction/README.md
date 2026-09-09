@@ -1,0 +1,3 @@
+# Model Extraction
+
+La version vulnérable expose un endpoint d'inférence sans limitation de débit ni quota par clé API et renvoie les logits/probabilités bruts du modèle en plus du texte généré, ce qui permet à un attaquant d'interroger massivement et systématiquement le service pour en reconstituer un équivalent fonctionnel ou en dériver la logique interne (CWE-200, Exposure of Sensitive Information to an Unauthorized Actor). La version corrigée applique un throttling strict par clé API, détecte les patterns de requêtes anormaux (volume, régularité) via un service de surveillance qui journalise et bloque les usages suspects, et ne renvoie plus que la sortie textuelle strictement nécessaire au cas d'usage métier, sans logits ni scores bruts.

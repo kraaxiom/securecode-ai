@@ -1,0 +1,43 @@
+id: request-desynchronization
+language: java
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de conteneur HTTP (Tomcat/Netty/Undertow
+    derrière un reverse proxy) tolérant des en-têtes `Content-Length` et
+    `Transfer-Encoding` simultanés ou mal normalisés, ou un client HTTP
+    interne (`HttpClient`, `RestTemplate`) réutilisant des connexions
+    persistantes vers un backend sans validation stricte du framing —
+    conditions propices au request smuggling/desynchronization en présence
+    d'un proxy amont divergent.
+  patterns:
+    - "server.tomcat.relaxed-path-chars / relaxed-query-chars configuré de façon permissive sans validation stricte du framing HTTP"
+    - "HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build() // connexions keep-alive vers un backend sans désactivation du pooling en cas de divergence de proxy connue"
+    - "@Configuration class $C { ... } // TomcatServletWebServerFactory personnalisé désactivant la validation stricte des en-têtes (setRejectIllegalHeader(false) ou équivalent)"
+  exclude_if:
+    - "Le serveur applicatif est configuré en mode strict (rejet des requêtes avec Content-Length ET Transfer-Encoding simultanés) — comportement par défaut de Tomcat/Netty récents non modifié"
+    - "Aucun reverse proxy intermédiaire ne réécrit ou ne tolère un framing HTTP divergent (topologie mono-serveur direct)"
+
+message: >
+  Le conteneur HTTP ou le client interne tolère un framing de requête
+  ambigu (`Content-Length`/`Transfer-Encoding` simultanés, validation des
+  en-têtes assouplie) — en présence d'un reverse proxy interprétant les
+  limites de requête différemment du backend, cela ouvre la voie au request
+  smuggling/desynchronization, permettant de détourner des requêtes d'autres
+  utilisateurs. Conserver la validation stricte du framing HTTP par défaut
+  du conteneur (ne pas désactiver le rejet des en-têtes ambigus) et
+  s'assurer que le reverse proxy et le backend utilisent des implémentations
+  HTTP conformes et à jour.
+
+false_positive_notes:
+  - "Si aucune configuration ne relâche explicitement la validation stricte des en-têtes HTTP du conteneur (comportement par défaut), ce n'est généralement pas exploitable — vérifier la topologie réseau avant de remonter en `critical`."
+  - "Si l'application est exposée directement sans reverse proxy intermédiaire, le risque de désynchronisation est fortement réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

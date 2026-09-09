@@ -1,0 +1,35 @@
+id: error-sqli
+language: python
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête SQL interpolée exécutée dans un bloc try/except où le
+    message d'exception (contenant potentiellement le détail de l'erreur SQL
+    du moteur) est renvoyé à l'utilisateur (réponse HTTP, print, log exposé),
+    ce qui permet une exfiltration par messages d'erreur.
+  patterns:
+    - "try: cursor.execute(f\"... {var} ...\") except Exception as e: return str(e)"
+    - "try: cursor.execute(\"...\" % var) except DatabaseError as e: response.write(str(e))"
+    - "try: connection.execute(f\"... {var} ...\") except SQLAlchemyError as e: jsonify(error=str(e))"
+  exclude_if:
+    - "le message d'exception est loggé côté serveur uniquement, jamais renvoyé au client"
+    - "la requête utilise des paramètres liés"
+
+message: >
+  Requête SQL interpolée dont l'erreur du moteur est renvoyée au client —
+  un attaquant peut exploiter les messages d'erreur pour extraire la
+  structure de la base. Paramétrer la requête et masquer les erreurs SQL
+  brutes dans les réponses.
+
+false_positive_notes:
+  - "Si l'application tourne uniquement en mode debug désactivé en production et que le message d'erreur est générique, le risque est réduit."
+  - "Vérifier que str(e) ou repr(e) atteint réellement une sortie visible par le client avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/error-sqli.md
+knowledge_ref: knowledge/injections/error-sqli.md

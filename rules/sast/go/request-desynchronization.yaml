@@ -1,0 +1,38 @@
+id: request-desynchronization
+language: go
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Go placé derrière un reverse proxy exposant un
+    parsing manuel de requête HTTP (lecture brute de `net.Conn`/`bufio`
+    reconstruisant une requête sans passer par `net/http` ou
+    `net/textproto`), ou un traitement personnalisé des en-têtes
+    `Content-Length`/`Transfer-Encoding` susceptible d'interpréter
+    différemment les limites de requête que le frontal.
+  patterns:
+    - "conn.Read(buf) sur un net.Conn brut reconstruisant manuellement une requête HTTP sans utiliser net/http ou net/textproto"
+    - "code qui lit à la fois r.Header.Get(\"Content-Length\") et r.Header.Get(\"Transfer-Encoding\") sans rejeter la requête si les deux sont présents simultanément"
+    - "serveur HTTP custom qui fait confiance à Transfer-Encoding: chunked transmis par un proxy sans re-normalisation stricte via le stdlib net/http"
+  exclude_if:
+    - "le serveur utilise exclusivement net/http (ou un framework construit dessus) sans parsing HTTP manuel bas niveau"
+    - "la requête est explicitement rejetée (400) lorsque Content-Length et Transfer-Encoding sont tous deux présents"
+
+message: >
+  Traitement HTTP potentiellement divergent entre le reverse proxy et le
+  serveur Go (parsing manuel, gestion ambiguë de Content-Length/
+  Transfer-Encoding) — risque de Request Smuggling permettant d'injecter
+  une requête cachée traitée dans le contexte d'un autre utilisateur (voir
+  rules/remediation/request-desynchronization.md).
+
+false_positive_notes:
+  - "Cette classe de vulnérabilité dépend fortement de la combinaison proxy+serveur applicatif ; une confirmation nécessite souvent un test d'intégration, pas seulement une revue de code source."
+  - "Le stdlib net/http de Go rejette nativement la plupart des ambiguïtés Content-Length/Transfer-Encoding ; le risque se concentre sur le code qui contourne net/http avec un parsing brut — vérifier avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

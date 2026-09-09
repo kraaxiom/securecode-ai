@@ -1,0 +1,29 @@
+id: command-injection
+language: csharp
+category: injections
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'exécution d'un processus/shell avec des arguments construits par concaténation d'une entrée utilisateur (injection de commande).
+  patterns:
+    - "new ProcessStartInfo(_, string_concat(_, $var, _))"
+    - "Process.Start(string_concat(_, $var, _))"
+    - "cmd.exe /c avec argument construit par concaténation de $var"
+  exclude_if:
+    - "les arguments sont passés individuellement via ProcessStartInfo.ArgumentList (pas de shell), pas via une chaîne concaténée passée à /c"
+    - "$var est validée par une liste blanche stricte avant utilisation"
+
+message: >
+  Injection de commande détectée — préférer l'exécution directe du binaire avec arguments séparés (sans shell) et une liste blanche stricte (voir rules/remediation/command-injection.md).
+
+false_positive_notes:
+  - "Si les arguments sont passés séparément sans invocation d'un interpréteur shell, le risque d'injection de métacaractères shell est fortement réduit — reclasser en `medium`."
+  - "Si $var provient d'une constante interne, non exploitable."
+
+remediation_ref: rules/remediation/command-injection.md
+knowledge_ref: knowledge/injections/command-injection.md

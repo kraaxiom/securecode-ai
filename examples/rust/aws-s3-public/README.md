@@ -1,0 +1,3 @@
+# Bucket S3 public (CWE-284)
+
+Le code vulnérable provisionne un bucket S3 avec une ACL `public-read` et une bucket policy accordant `Principal: "*"` en lecture/liste, exposant tous les objets (y compris des exports de données sensibles) sans authentification. La correction crée le bucket en ACL privée, active intégralement "Block Public Access" via `put_public_access_block`, restreint la bucket policy à un rôle IAM applicatif précis avec transport chiffré exigé, et remplace tout besoin de partage ponctuel par une URL pré-signée à durée de vie limitée (`PresigningConfig::expires_in`). Élimine la classe de vulnérabilité CWE-284 (Improper Access Control).

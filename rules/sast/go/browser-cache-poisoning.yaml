@@ -1,0 +1,35 @@
+id: browser-cache-poisoning
+language: go
+category: modern
+cwe: CWE-525
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler net/http renvoyant des données spécifiques à
+    l'utilisateur (profil, solde, session) sans en-tête `Cache-Control`
+    restrictif, ou avec une valeur trop permissive (`public`, absence de
+    `no-store`), exposant le contenu au cache du navigateur.
+  patterns:
+    - "func handler(w http.ResponseWriter, r *http.Request) { json.NewEncoder(w).Encode(userData) } sans w.Header().Set(\"Cache-Control\", \"no-store\")"
+    - "w.Header().Set(\"Cache-Control\", \"public, max-age=3600\") sur un handler qui écrit des données issues de r.Context().Value(\"user\") ou d'une session authentifiée"
+    - "http.ServeFile(w, r, path) appelé sur une route authentifiée générant un contenu dynamique par utilisateur, sans en-tête Cache-Control explicite"
+  exclude_if:
+    - "le handler fixe explicitement w.Header().Set(\"Cache-Control\", \"no-store, private\") (ou équivalent) avant d'écrire la réponse"
+    - "un middleware global (chaîne de handlers) applique cette politique à toutes les routes authentifiées"
+
+message: >
+  Réponse contenant des données spécifiques à l'utilisateur renvoyée sans
+  en-tête Cache-Control restrictif — risque de réutilisation incorrecte par
+  le cache du navigateur, notamment sur des postes partagés (voir
+  rules/remediation/browser-cache-poisoning.md).
+
+false_positive_notes:
+  - "Si un middleware Go (net/http) applique systématiquement `Cache-Control: no-store` à toutes les routes authentifiées, reclasser en `low`."
+  - "Les données réellement publiques (contenu identique pour tous les utilisateurs, ex: assets statiques) ne sont pas concernées par ce risque."
+
+remediation_ref: rules/remediation/browser-cache-poisoning.md
+knowledge_ref: knowledge/modern/browser-cache-poisoning.md

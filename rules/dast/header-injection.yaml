@@ -1,0 +1,18 @@
+id: header-injection
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: GET
+  target: paramètre de requête réinjecté dans un en-tête de réponse HTTP (ex: Content-Disposition, en-tête personnalisé)
+  technique: error-signature
+  indicators:
+    - en-tête HTTP supplémentaire non prévu par l'application observé dans la réponse brute suite à l'injection d'une séquence de fin de ligne
+    - troncature ou dédoublement de la section d'en-têtes de la réponse brute
+  false_positive_notes:
+    - certains frameworks encodent automatiquement CR/LF dans les valeurs d'en-tête, ce qui neutralise l'injection sans erreur visible
+    - vérifier la réponse brute (pas seulement le rendu du client HTTP) pour confirmer l'injection réelle
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

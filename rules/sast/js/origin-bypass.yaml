@@ -1,0 +1,34 @@
+id: origin-bypass
+language: js
+category: websocket
+cwe: CWE-346
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vérification d'Origin faite par sous-chaîne (`includes`,
+    `indexOf`, `startsWith`/`endsWith` seuls) plutôt que par égalité stricte
+    à une liste fermée (Set/array), ou une regex non ancrée, ou une origine de
+    référence dérivée d'un en-tête client.
+  patterns:
+    - "origin.includes(_)"
+    - "origin.indexOf(_) !== -1"
+    - "new RegExp(...) sans ^ et $ appliqué à req.headers.origin"
+    - "ALLOWED_ORIGIN construit à partir de req.headers.host ou req.headers['x-forwarded-host']"
+  exclude_if:
+    - "La comparaison utilise ALLOWED_ORIGINS.has(origin) ou origin === '...' sur une constante serveur fermée"
+    - "La regex est strictement ancrée (^...$) avec les points échappés"
+
+message: >
+  Vérification d'Origin par sous-chaîne, regex non ancrée, ou dérivée d'un
+  en-tête client — contournable (voir rules/remediation/origin-bypass.md).
+
+false_positive_notes:
+  - "Si includes/indexOf est utilisé sur une valeur qui n'est pas req.headers.origin (autre contexte métier), ce n'est pas applicable — vérifier le contexte."
+  - "Une regex ancrée correctement n'est pas vulnérable même construite avec new RegExp, si l'entrée n'est pas interpolée dans le pattern."
+
+remediation_ref: rules/remediation/origin-bypass.md
+knowledge_ref: knowledge/websocket/origin-bypass.md

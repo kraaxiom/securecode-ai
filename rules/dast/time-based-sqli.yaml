@@ -1,0 +1,19 @@
+id: time-based-sqli
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET
+  target: paramètre de requête ou champ de formulaire concaténé dans une clause SQL WHERE/conditionnelle
+  technique: timing-anomaly
+  indicators:
+    - délai de réponse reproductible et proportionnel corrélé à une classe d'entrée injectant une condition temporelle, comparé à une entrée témoin sans condition
+    - variance de latence significative et statistiquement stable entre une entrée conditionnelle "vraie" et une entrée conditionnelle "fausse"
+    - absence de différence de contenu de réponse malgré la différence de délai, cohérente avec une injection aveugle basée sur le temps
+false_positive_notes:
+  - répéter la mesure plusieurs fois pour écarter la latence réseau ou la charge serveur ponctuelle
+  - vérifier la cohérence du délai avec la durée injectée plutôt qu'un simple ralentissement générique
+remediation_ref: rules/remediation/time-based-sqli.md
+knowledge_ref: knowledge/injections/time-based-sqli.md

@@ -1,0 +1,15 @@
+id: crlf-injection
+category: injections
+cwe: CWE-93
+type: iast
+instrumentation:
+  hook_points:
+    - "php: header() / setcookie()"
+    - "java: HttpServletResponse.setHeader / sendRedirect"
+    - "node: res.setHeader / res.writeHead"
+    - "python: django.http.HttpResponse headers / Flask Response.headers"
+  taint_check: Suivi de la donnée depuis une source HTTP (paramètre, en-tête) jusqu'à un sink d'écriture d'en-tête HTTP ou de ligne de log sans neutralisation des caractères \r et \n.
+  trigger_condition: Une valeur taintée contenant \r ou \n atteint le sink d'écriture d'en-tête ou de log sans être filtrée ou encodée.
+severity: medium
+remediation_ref: rules/remediation/crlf-injection.md
+knowledge_ref: knowledge/injections/crlf-injection.md

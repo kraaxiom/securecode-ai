@@ -1,0 +1,3 @@
+# Password Spraying (CWE-307)
+
+La version vulnérable ne limite les échecs de connexion que par compte, via `GetFailedAttemptsAsync(email)`. Un attaquant testant un petit nombre de mots de passe très courants sur un grand nombre de comptes distincts depuis une même source ne déclenche donc jamais ce seuil par compte, et passe inaperçu. La correction ajoute une agrégation globale des échecs par adresse IP (`GetFailedAttemptsByIpAsync`), avec un seuil dédié plus élevé mais indépendant du compte ciblé, et déclenche une alerte de sécurité lorsque ce volume anormal est atteint. La combinaison des deux dimensions (compte et source) permet de détecter un spray distribué que la seule limitation par compte laisserait passer.

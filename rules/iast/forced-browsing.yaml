@@ -1,0 +1,15 @@
+id: forced-browsing
+category: authorization
+cwe: CWE-425
+type: iast
+instrumentation:
+  hook_points:
+    - "php: routeur/gestionnaire de fichiers statiques servant une ressource sans middleware d'authentification/autorisation associé"
+    - "js: middleware de fichiers statiques (ex. express.static) configuré sur un répertoire contenant des ressources sensibles"
+    - "python: vue d'étape d'un flux multi-étapes ne vérifiant pas d'état de session prouvant la complétion des étapes précédentes"
+    - "java: contrôleur d'étape de workflow accessible sans vérification de l'état de progression stocké côté serveur"
+  taint_check: "requête directe sur une route/fichier (source: URL demandée) atteignant la remise du contenu (sink) sans passage par un contrôle d'authentification/autorisation ou de vérification d'état de progression"
+  trigger_condition: "le contenu est servi alors qu'aucun contrôle d'accès ni vérification d'état de flux n'a été exécuté pour cette route/fichier dans le chemin observé"
+severity: medium
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

@@ -1,0 +1,3 @@
+# Embedding Poisoning (CWE-349)
+
+Le code vulnérable transforme et indexe tout avis utilisateur en embedding sans modération ni limite de volume, permettant à un attaquant de fabriquer du contenu dont le vecteur est proche de requêtes fréquentes pour polluer la recherche sémantique. La correction ajoute une modération indépendante du contenu avant génération de l'embedding, applique une limite de fréquence par utilisateur (`LimiteurFrequence`) pour freiner les campagnes automatisées, et prévoit une réévaluation périodique de la pertinence sur des requêtes de référence. Élimine la classe de vulnérabilité CWE-349 (Acceptance of Extraneous Untrusted Data With Trust).

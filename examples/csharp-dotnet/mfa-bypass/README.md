@@ -1,0 +1,3 @@
+# Contournement de MFA (CWE-287)
+
+La version vulnérable délivre un token pleinement privilégié dès que le mot de passe est validé, et se contente de renvoyer `mfaRequired` comme simple indication au client. Rien n'empêche un attaquant d'ignorer cette indication : il possède déjà un jeton d'accès complet avant toute vérification du second facteur. La correction introduit un token intermédiaire à portée strictement limitée (`scope: mfa_pending`), qui n'autorise que l'appel à `/mfa/verify`, et ne délivre le token complet qu'après validation côté serveur du code MFA — jamais à partir d'un paramètre modifiable par le client. Tous les points d'entrée doivent suivre ce même flux séquencé pour rester cohérents.

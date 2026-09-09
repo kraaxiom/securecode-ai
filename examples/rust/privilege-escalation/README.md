@@ -1,0 +1,3 @@
+# Privilege Escalation
+
+`vulnerable.rs` applique n'importe quel rôle envoyé par le client sans vérifier que l'appelant a le droit d'accorder ce niveau de privilège, permettant à un utilisateur standard de s'auto-promouvoir admin : c'est un exemple de CWE-269 (Improper Privilege Management). `fixed.rs` ajoute une garde `can_grant_role` qui vérifie que le rôle demandé est bien accordable par l'appelant selon son propre niveau, puis invalide les sessions actives de la cible après le changement. Cette correction suit `rules/remediation/privilege-escalation.md` : vérifier le droit d'attribution avant toute écriture et invalider les sessions pour éviter la persistance d'anciens privilèges.

@@ -1,0 +1,12 @@
+id: code-injection
+category: injections
+cwe: CWE-94
+type: rasp
+guard:
+  sink: évaluation dynamique de code (eval, exec, new Function, ScriptEngine.eval, unserialize)
+  block_condition: Une valeur taintée provenant d'une entrée utilisateur atteint le sink d'évaluation dynamique sans validation stricte préalable.
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

@@ -1,0 +1,29 @@
+id: broken-access-control
+language: js
+category: authorization
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route servant une ressource sensible (download, export)
+    protégée uniquement par requireAuth, sans middleware/fonction
+    d'autorisation dédiée (authorize()).
+  patterns:
+    - "router.get(_, requireAuth, handler) où handler sert un fichier/ressource sensible sans appel à authorize(_) ni vérification équivalente"
+  exclude_if:
+    - "Un middleware authorize(checkFn) ou une vérification de propriété est présent dans la chaîne avant le handler"
+
+message: >
+  Ressource sensible protégée uniquement par l'authentification, sans
+  contrôle d'autorisation propre à la ressource — voir
+  rules/remediation/broken-access-control.md.
+
+false_positive_notes:
+  - "Cette règle recoupe partiellement bfla/bola/idor — si l'un de ces contrôles plus spécifiques est déjà présent, ne pas dupliquer le finding."
+
+remediation_ref: rules/remediation/broken-access-control.md
+knowledge_ref: knowledge/authorization/broken-access-control.md

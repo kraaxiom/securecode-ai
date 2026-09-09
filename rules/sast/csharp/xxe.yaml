@@ -1,0 +1,27 @@
+id: xxe
+language: csharp
+category: injections
+cwe: CWE-611
+owasp: A05:2021-Security_Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un parseur XML configuré pour résoudre les entités externes/DOCTYPE sur une source non fiable.
+  patterns:
+    - "new XmlDocument() { XmlResolver = new XmlUrlResolver() } sans DtdProcessing.Prohibit"
+    - "XmlReaderSettings avec DtdProcessing = DtdProcessing.Parse et XmlResolver non nul"
+  exclude_if:
+    - "XmlResolver est explicitement mis à null ou DtdProcessing.Prohibit est défini"
+
+message: >
+  Injection d'entité externe XML (XXE) détectée — désactiver la résolution des entités externes et du DTD avant de parser du XML non fiable (voir rules/remediation/xxe.md).
+
+false_positive_notes:
+  - "La stdlib de ce langage ne résout pas les entités externes par défaut dans le cas courant — ne signaler que lorsqu'un résolveur externe personnalisé est explicitement branché."
+  - "Si la source XML est strictement interne/de confiance, reclasser en `info`."
+
+remediation_ref: rules/remediation/xxe.md
+knowledge_ref: knowledge/injections/xxe.md

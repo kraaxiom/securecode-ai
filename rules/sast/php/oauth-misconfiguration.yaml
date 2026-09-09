@@ -1,0 +1,29 @@
+id: oauth-misconfiguration
+language: php
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel getAuthorizationUrl() sans paramètre 'state' généré/stocké
+    en session, ou un callback OAuth sans vérification du state reçu.
+  patterns:
+    - "$provider->getAuthorizationUrl() sans argument 'state' ni session(['oauth2_state' => ...]) avant l'appel"
+    - "$provider->getAccessToken('authorization_code', ['code' => $_]) sans comparaison préalable de $request->input('state') avec session('oauth2_state')"
+  exclude_if:
+    - "Un state généré via random_bytes/bin2hex est stocké en session et comparé explicitement dans le callback"
+
+message: >
+  Flux OAuth sans génération/vérification de paramètre 'state' — expose à
+  une CSRF sur le callback d'authentification (voir
+  rules/remediation/oauth-misconfiguration.md).
+
+false_positive_notes:
+  - "Certains SDK OAuth gèrent le state en interne de façon transparente (à vérifier dans la documentation de la librairie utilisée) avant de confirmer l'absence de protection."
+
+remediation_ref: rules/remediation/oauth-misconfiguration.md
+knowledge_ref: knowledge/auth/oauth-misconfiguration.md

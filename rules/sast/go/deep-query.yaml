@@ -1,0 +1,35 @@
+id: deep-query
+language: go
+category: graphql
+cwe: CWE-674
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma GraphQL gqlgen exposant des types récursifs/imbriqués
+    (relations `friends`, `children`, `replies` dans le fichier `.graphql`)
+    sans règle de validation gqlparser limitant la profondeur de requête
+    configurée sur le serveur.
+  patterns:
+    - "srv := handler.NewDefaultServer(generated.NewExecutableSchema(cfg)) sans srv.Use(extension.FixedComplexityLimit(...)) ni règle de profondeur personnalisée"
+    - "handler.New(schema) sans ajout d'une gqlparser/validator.Rule de limite de profondeur dans validator.AddRule(...)"
+    - "schéma .graphql définissant type User { friends: [User!]! } sans middleware appliquant une profondeur maximale avant exécution"
+  exclude_if:
+    - "une règle de validation de profondeur (validator.AddRule personnalisée, ou extension gqlgen équivalente) est explicitement configurée avec un maximum raisonnable (ex: <= 10)"
+    - "le schéma ne contient aucun type auto-référent ou relation cyclique exploitable en profondeur"
+
+message: >
+  Schéma GraphQL gqlgen sans limite de profondeur de requête — une requête
+  imbriquée récursivement (ex: `user { friends { friends { ... } } }`) peut
+  provoquer un déni de service par consommation exponentielle de ressources
+  (voir rules/remediation/deep-query.md).
+
+false_positive_notes:
+  - "Si le schéma ne contient aucune relation auto-référente, le risque de profondeur exponentielle est nul même sans limite explicite."
+  - "Un timeout global d'exécution de requête (ex: http.Server{ReadTimeout, WriteTimeout} ou context.WithTimeout) atténue partiellement le risque sans le supprimer — signaler quand même."
+
+remediation_ref: rules/remediation/deep-query.md
+knowledge_ref: knowledge/graphql/deep-query.md

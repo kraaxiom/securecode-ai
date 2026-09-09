@@ -1,0 +1,35 @@
+id: session-fixation
+language: python
+category: sessions
+cwe: CWE-384
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une authentification réussie (login) qui ne régénère pas
+    l'identifiant de session, permettant à un attaquant ayant pré-imposé un
+    identifiant de session à la victime de la réutiliser après connexion.
+  patterns:
+    - "login_user($_) (Flask-Login) sans appel préalable à session.clear() / regeneration d'ID"
+    - "django.contrib.auth.login($_) précédé d'une réutilisation manuelle de request.session.session_key existant sans cycle_key()"
+    - "Assignation manuelle de session[$_] = user_id sans régénération de l'identifiant de session"
+  exclude_if:
+    - "django.contrib.auth.login() est utilisé tel quel (Django régénère automatiquement la clé de session via SessionMiddleware)"
+    - "request.session.cycle_key() ou session.regenerate() est appelé juste avant/après authentification"
+
+message: >
+  Authentification sans régénération de l'identifiant de session — un
+  attaquant qui fixe l'ID de session de la victime avant connexion peut ensuite
+  l'utiliser pour usurper la session authentifiée. Régénérer l'ID de session
+  (request.session.cycle_key() en Django, session.clear() + reconstruction en
+  Flask) immédiatement après une authentification réussie.
+
+false_positive_notes:
+  - "django.contrib.auth.login() régénère déjà la session key nativement — ne pas remonter sauf si le flux contourne cette fonction."
+  - "Si le framework de session utilisé effectue la rotation automatiquement (vérifier la config SESSION_ENGINE), reclasser en `info`."
+
+remediation_ref: rules/remediation/session-fixation.md
+knowledge_ref: knowledge/sessions/session-fixation.md

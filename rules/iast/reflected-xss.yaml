@@ -1,0 +1,23 @@
+id: reflected-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "php: $_GET / $_POST / $_SERVER comme sources"
+    - "js: req.query / req.body (Node/Express) comme sources"
+    - "python: request.args / request.form comme sources"
+    - "java: HttpServletRequest.getParameter comme source"
+    - "csharp: HttpContext.Request.Query/Form comme source"
+    - "go: r.URL.Query() / r.FormValue comme source"
+    - "tous langages: fonction de rendu de réponse HTML (moteur de templates, concaténation, sortie brute) comme sink"
+  taint_check: >
+    Trace une valeur issue directement de la requête HTTP courante jusqu'à son insertion dans la
+    réponse HTML de cette même requête.
+  trigger_condition: >
+    Donnée marquée non fiable issue de la requête atteint le sink de rendu HTML sans passer par
+    une fonction d'encodage contextuel du framework, ou via un mécanisme d'échappement explicitement
+    désactivé (|safe, {!! !!}, dangerouslySetInnerHTML).
+severity: high
+remediation_ref: rules/remediation/reflected-xss.md
+knowledge_ref: knowledge/xss/reflected-xss.md

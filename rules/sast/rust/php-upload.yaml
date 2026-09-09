@@ -1,0 +1,37 @@
+id: php-upload
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent générique de l'upload de fichier serveur exécutable
+    (transposé de la classe PHP vers un service Rust) — détecte
+    l'enregistrement d'un fichier téléversé dans un répertoire servi
+    publiquement sans liste blanche d'extensions ni vérification du
+    contenu réel.
+  patterns:
+    - "File::create($destPath)"
+    - "std::fs::write($destPath, _)"
+    - "$field.write_all(_)"
+  exclude_if:
+    - "l'extension est validée par une liste blanche stricte d'extensions autorisées avant File::create/fs::write"
+    - "le répertoire de destination n'est jamais exposé via Files::new/ServeDir ou un handler statique équivalent"
+    - "le nom de fichier de destination est généré aléatoirement côté serveur sans réutiliser le nom fourni par le client"
+
+message: >
+  Enregistrement d'un fichier téléversé dans un répertoire potentiellement
+  servi publiquement sans liste blanche d'extensions ni vérification du
+  contenu réel — risque de dépôt d'un fichier exécutable (voir
+  rules/remediation/php-upload.md).
+
+false_positive_notes:
+  - "Si le répertoire de destination n'est jamais exposé par un handler statique, l'impact direct est écarté — reclasser en `info`."
+  - "Si une liste blanche d'extensions stricte et un renommage aléatoire sont déjà appliqués avant l'écriture, le risque est neutralisé."
+
+remediation_ref: rules/remediation/php-upload.md
+knowledge_ref: knowledge/upload/php-upload.md

@@ -1,0 +1,36 @@
+id: double-spending
+language: csharp
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une opération financière/de crédit (débit de solde, utilisation
+    de crédit, remboursement) en C# sans idempotence ni verrouillage
+    transactionnel, permettant à des requêtes concurrentes ou rejouées de
+    faire dépenser deux fois la même ressource.
+  patterns:
+    - "public async Task ProcessPaymentAsync(int userId, decimal amount) { var balance = await GetBalanceAsync(userId); ...; await SetBalanceAsync(userId, balance - amount); } — sans clé d'idempotence ni transaction atomique/verrou de ligne"
+    - "[HttpPost(\"withdraw\")]/[HttpPost(\"transfer\")] (ASP.NET Core) sans en-tête Idempotency-Key vérifié en base et sans transaction sérialisable (Database.BeginTransaction(IsolationLevel.Serializable)), permettant un rejeu ou une requête concurrente de débiter deux fois"
+    - "traitement de webhook de paiement (Stripe/PayPal) créditant un compte sans vérifier qu'un EventId n'a pas déjà été traité (absence de contrainte UNIQUE ou de table de registre d'idempotence)"
+  exclude_if:
+    - "une clé d'idempotence unique est vérifiée/enregistrée avant traitement (contrainte UNIQUE en base ou registre dédié) ET la mise à jour du solde est protégée par une transaction sérialisable ou un jeton de concurrence optimiste (RowVersion)"
+
+message: >
+  Opération financière sans idempotence ni verrouillage transactionnel — des
+  requêtes concurrentes ou un rejeu (retry réseau, replay de webhook) peuvent
+  faire créditer/débiter deux fois la même ressource. Imposer une clé
+  d'idempotence unique persistée en base et protéger la mise à jour du solde
+  par une transaction sérialisable ou un RowVersion — voir
+  rules/remediation/double-spending.md.
+
+false_positive_notes:
+  - "Un traitement de paiement délégué entièrement à un prestataire (Stripe Checkout géré côté fournisseur) sans logique de solde locale peut ne pas être concerné — vérifier où se situe la logique de crédit."
+  - "La présence d'une contrainte UNIQUE sur l'ID de transaction en base suffit à couvrir le rejeu même sans verrou de ligne explicite dans le code applicatif."
+
+remediation_ref: rules/remediation/double-spending.md
+knowledge_ref: knowledge/business-logic/double-spending.md

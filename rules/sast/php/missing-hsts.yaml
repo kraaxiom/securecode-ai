@@ -1,0 +1,35 @@
+id: missing-hsts
+language: php
+category: headers
+cwe: CWE-319
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détection au niveau applicatif PHP de l'absence d'envoi de l'en-tête
+    Strict-Transport-Security via header() sur les réponses HTTPS. La
+    vérification exhaustive reste souvent de niveau config/infra (nginx
+    add_header, Apache Header always set, configuration du reverse
+    proxy/CDN terminant le TLS) et doit être complétée par un contrôle
+    sur la configuration du serveur web.
+  patterns:
+    - "absence d'appel header('Strict-Transport-Security: ...') dans le point d'entrée ou le middleware global"
+    - "absence de directive add_header Strict-Transport-Security dans la configuration nginx associée au vhost 443"
+    - "absence de directive Header always set Strict-Transport-Security dans la configuration Apache associée au vhost 443"
+  exclude_if:
+    - "l'application n'est jamais servie en HTTPS (environnement de développement local uniquement)"
+    - "l'en-tête Strict-Transport-Security est défini globalement au niveau du reverse proxy/CDN terminant le TLS en amont de l'application"
+
+message: >
+  En-tête Strict-Transport-Security absent des réponses HTTPS — le site reste
+  exposé aux attaques de downgrade/SSL stripping (voir rules/remediation/missing-hsts.md).
+
+false_positive_notes:
+  - "Si l'en-tête est injecté par un reverse proxy, un CDN ou un load balancer terminant le TLS en amont du code PHP scanné, ce n'est pas un vrai positif au niveau applicatif — vérifier la configuration infra avant de remonter le finding."
+  - "Environnement de développement/staging servi uniquement en HTTP local : le finding n'est pas exploitable et peut être reclassé en `info`."
+
+remediation_ref: rules/remediation/missing-hsts.md
+knowledge_ref: knowledge/headers/missing-hsts.md

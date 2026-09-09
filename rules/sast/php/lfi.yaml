@@ -1,0 +1,30 @@
+id: lfi
+language: php
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à une fonction d'inclusion dynamique (include/require) recevant une variable non validée par une whitelist stricte.
+  patterns:
+    - "include(string_concat(_, $var, _))"
+    - "require(string_concat(_, $var, _))"
+    - "include_once(string_concat(_, $var, _))"
+    - "require_once(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est comparée à une whitelist fermée de valeurs constantes avant l'inclusion"
+    - "$var est un littéral constant"
+
+message: >
+  Inclusion dynamique de fichier basée sur une entrée non validée — voir rules/remediation/lfi.md.
+
+false_positive_notes:
+  - "Si une whitelist stricte (in_array avec liste constante) précède l'inclusion, reclasser en `info`."
+  - "Vérifier manuellement si allow_url_include est désactivé, ce qui réduit (sans éliminer) l'impact en LFI pure."
+
+remediation_ref: rules/remediation/lfi.md
+knowledge_ref: knowledge/file-inclusion/lfi.md

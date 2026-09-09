@@ -1,0 +1,36 @@
+id: csv-injection
+language: python
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture d'une valeur utilisateur non préfixée/échappée dans
+    un fichier CSV (module csv.writer.writerow, pandas.DataFrame.to_csv)
+    dont le contenu peut débuter par =, +, -, @ (interprété comme formule
+    par Excel/LibreOffice à l'ouverture), sans neutralisation préalable.
+  patterns:
+    - "writer.writerow([var, ...])"
+    - "csv_writer.writerow({\"field\": var})"
+    - "dataframe.to_csv(path)"
+  exclude_if:
+    - "var est préfixé/neutralisé lorsqu'il commence par =, +, -, @, tab ou CR avant écriture (ex: ajout d'une apostrophe ou d'un préfixe neutre)"
+    - "var provient exclusivement de constantes applicatives internes, jamais d'une entrée utilisateur"
+
+message: >
+  Valeur utilisateur écrite dans un fichier CSV sans neutralisation des
+  caractères déclencheurs de formule (=, +, -, @) — à l'ouverture dans
+  Excel/LibreOffice, cela peut exécuter une formule arbitraire (CSV/Formula
+  Injection). Préfixer toute valeur commençant par ces caractères avec une
+  apostrophe ou un caractère neutre avant l'écriture.
+
+false_positive_notes:
+  - "Les valeurs strictement numériques ou provenant de constantes internes ne sont pas concernées."
+  - "Certains lecteurs CSV (parsers stricts, pas de tableur) ne sont pas vulnérables à l'interprétation de formule — le risque dépend de l'usage final du fichier."
+
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

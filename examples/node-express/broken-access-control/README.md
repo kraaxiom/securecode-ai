@@ -1,0 +1,3 @@
+# Broken Access Control (catégorie générale)
+
+La version vulnérable expose le téléchargement d'une facture en se contentant de vérifier que l'utilisateur est connecté, sans aucune couche d'autorisation propre à la ressource, ce qui revient à s'appuyer sur le masquage côté interface. La version corrigée introduit un middleware `authorize` centralisé et réutilisable appliquant le principe « deny by default » : l'accès est refusé sauf autorisation explicite (propriétaire ou administrateur). Cela correspond à **CWE-284 (Improper Access Control)**, catégorie générale de l'OWASP A01:2021-Broken Access Control.

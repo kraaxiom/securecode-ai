@@ -1,0 +1,29 @@
+id: forced-browsing
+language: js
+category: authorization
+cwe: CWE-425
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte app.use(express.static(...)) pointant vers un répertoire au
+    nommage sensible (backups, internal, private, exports) sans middleware
+    d'autorisation en amont.
+  patterns:
+    - "app.use('/backups'|'/internal'|'/exports', express.static(_)) sans requireAuth ni requireRole avant"
+  exclude_if:
+    - "Un middleware d'authentification/autorisation est appliqué avant express.static sur ce chemin"
+
+message: >
+  Répertoire au nommage sensible servi statiquement sans contrôle
+  d'authentification/autorisation — voir
+  rules/remediation/forced-browsing.md.
+
+false_positive_notes:
+  - "Le nommage de répertoire est un indicateur heuristique, pas une preuve de sensibilité réelle — confirmer manuellement le contenu avant escalade."
+
+remediation_ref: rules/remediation/forced-browsing.md
+knowledge_ref: knowledge/authorization/forced-browsing.md

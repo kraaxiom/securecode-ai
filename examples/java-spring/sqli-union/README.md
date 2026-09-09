@@ -1,0 +1,3 @@
+# Injection SQL par UNION (CWE-89)
+
+Le code vulnérable concatène directement `categoryId` et `sort` dans la requête SQL, ce qui permet à un attaquant d'injecter une clause `UNION SELECT` via `categoryId` pour extraire des colonnes d'une autre table (par exemple les identifiants et mots de passe de la table `users`) affichées à la place des colonnes produits attendues. La version corrigée caste `categoryId` en entier et le lie via un paramètre `PreparedStatement` (`JdbcTemplate`), rendant impossible l'injection d'une clause `UNION`, tandis que `sort` — qui ne peut pas être paramétré en SQL standard — est restreint à une liste blanche stricte de colonnes autorisées.

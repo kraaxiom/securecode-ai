@@ -1,0 +1,37 @@
+id: css-injection
+language: go
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une valeur utilisateur convertie en template.HTML ou template.CSS
+    et insérée dans un bloc `<style>` ou un attribut `style` via html/template,
+    contournant l'autoéchappement contextuel du package.
+  patterns:
+    - "template.HTML(string_concat(\"<style>\", $userInput, \"</style>\"))"
+    - "template.CSS($userInput)"
+    - "template.HTMLAttr(string_concat(\"style='\", $userInput, \"'\"))"
+    - "tmpl.Execute(w, map[string]interface{}{\"Style\": template.CSS($userInput)})"
+  exclude_if:
+    - "$userInput passe par une validation stricte de format avant conversion (ex: regex couleur hexadécimale)"
+    - "la valeur provient d'une liste blanche de constantes applicatives (enum de thèmes) et non d'une entrée libre"
+    - "aucune conversion template.HTML/template.CSS/template.HTMLAttr n'est utilisée (autoéchappement standard actif)"
+
+message: >
+  Une valeur utilisateur est convertie en template.HTML/template.CSS et
+  insérée dans un bloc `<style>` ou un attribut `style`, contournant
+  l'autoéchappement de html/template — cela permet l'injection de règles CSS
+  arbitraires (voir rules/remediation/css-injection.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une regex stricte (ex: couleur hexadécimale) avant conversion, le risque d'injection est écarté."
+  - "L'autoéchappement par défaut de html/template protège déjà tant qu'aucune conversion template.HTML/CSS/HTMLAttr n'est utilisée."
+  - "Si la valeur provient d'une énumération serveur fermée (thèmes prédéfinis), il n'y a pas d'entrée utilisateur libre à injecter."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

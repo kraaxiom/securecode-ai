@@ -1,0 +1,32 @@
+id: sha1
+language: csharp
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage de SHA-1 (SHA1.Create(), SHA1CryptoServiceProvider) pour
+    hacher un mot de passe, signer un artefact ou produire une preuve
+    d'intégrité opposable à un attaquant.
+  patterns:
+    - "SHA1.Create(...)"
+    - "new SHA1CryptoServiceProvider(...)"
+    - "SHA1.HashData(_)"
+  exclude_if:
+    - "usage exclusif comme somme de contrôle non adversariale sans enjeu de sécurité"
+
+message: >
+  SHA-1 est cryptographiquement cassé depuis l'attaque SHAttered (2017) — pour
+  un mot de passe utiliser Argon2id/BCrypt, pour une signature ou intégrité
+  opposable utiliser SHA-256 ou supérieur.
+
+false_positive_notes:
+  - "Si SHA-1 sert uniquement de checksum non adversarial (ex: déduplication interne), reclasser en `low`."
+  - "Si utilisé pour signer des certificats ou artefacts logiciels, maintenir `high`."
+
+remediation_ref: rules/remediation/sha1.md
+knowledge_ref: knowledge/crypto/sha1.md

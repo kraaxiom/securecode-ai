@@ -1,0 +1,36 @@
+id: css-injection
+language: rust
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une valeur utilisateur marquée `|safe` dans un template
+    Askama/Tera puis insérée dans un bloc `<style>` ou un attribut `style`,
+    contournant l'autoéchappement contextuel du moteur de templates.
+  patterns:
+    - "{{ $userInput|safe }}  # dans un bloc <style> ou un attribut style="
+    - "context.insert(\"style\", &format!(\"{}\", $userInput))  # rendu ensuite via {{ style|safe }}"
+    - "Markup::from($userInput)  # Askama, injecté dans <style>"
+  exclude_if:
+    - "$userInput passe par une validation stricte de format avant rendu (ex: regex couleur hexadécimale)"
+    - "la valeur provient d'une liste blanche de constantes applicatives (enum de thèmes) et non d'une entrée libre"
+    - "le filtre |safe n'est pas utilisé (autoéchappement par défaut actif)"
+
+message: >
+  Une valeur utilisateur marquée `|safe` (ou équivalente) est insérée dans un
+  bloc `<style>` ou un attribut `style` d'un template Askama/Tera, contournant
+  l'autoéchappement — cela permet l'injection de règles CSS arbitraires (voir
+  rules/remediation/css-injection.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une regex stricte (ex: couleur hexadécimale) avant rendu, le risque d'injection est écarté."
+  - "L'autoéchappement par défaut d'Askama/Tera protège déjà tant que le filtre |safe n'est pas utilisé."
+  - "Si la valeur provient d'une énumération serveur fermée (thèmes prédéfinis), il n'y a pas d'entrée utilisateur libre à injecter."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

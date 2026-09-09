@@ -1,0 +1,3 @@
+# BFLA — Broken Function Level Authorization
+
+`vulnerable.rs` expose un endpoint de suppression d'utilisateur qui ne vérifie que l'authentification, sans contrôler le rôle de l'appelant : n'importe quel utilisateur connecté peut exécuter une action réservée aux administrateurs, ce qui correspond à CWE-862 (Missing Authorization). `fixed.rs` introduit une vérification de rôle explicite et centralisée (`require_role`) exécutée avant toute action privilégiée, indépendamment de ce que masque l'interface. Cette correction applique la recommandation de `rules/remediation/bfla.md` : ne jamais s'appuyer sur l'absence d'affichage côté client comme mesure de sécurité, mais imposer un contrôle serveur systématique sur chaque fonction sensible.

@@ -1,0 +1,33 @@
+id: double-extension
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une validation d'extension basee uniquement sur filename.endswith()
+    ou une regex qui ne considere que la derniere extension, contournable par
+    un nom en double extension (ex: shell.php.jpg, shell.jpg.py).
+  patterns:
+    - "filename.endswith(('.jpg', '.png')) sans verifier l'absence d'extensions intermediaires executables (.php, .py, .cgi)"
+    - "re.search(r'\\.(jpg|png)$', filename) utilise comme unique controle d'extension"
+    - "os.path.splitext(filename)[1] utilise seul, sans rejeter les noms contenant plusieurs extensions suspectes"
+  exclude_if:
+    - "Le nom de fichier est entierement regenere cote serveur (uuid4() + extension whitelistee unique) sans conserver le nom original"
+
+message: >
+  Validation d'extension par simple correspondance de fin de chaine - un nom
+  de fichier en double extension (shell.php.jpg) peut contourner ce controle
+  selon la configuration du serveur d'execution. Regenerer systematiquement
+  le nom de fichier cote serveur et valider le type reel (magic bytes) plutot
+  que le nom.
+
+false_positive_notes:
+  - "Si le nom de fichier original n'est jamais conserve sur le disque (renommage uuid), le risque de double extension est neutralise - reclasser en `low`."
+
+remediation_ref: rules/remediation/double-extension.md
+knowledge_ref: knowledge/upload/double-extension.md

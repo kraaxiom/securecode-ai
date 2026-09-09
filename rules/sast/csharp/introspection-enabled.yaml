@@ -1,0 +1,35 @@
+id: introspection-enabled
+language: csharp
+category: graphql
+cwe: CWE-200
+owasp: A05:2021-Security Misconfiguration
+severity: low
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma GraphQL HotChocolate déployé sans désactivation de
+    l'introspection en environnement de production, ou avec l'IDE Banana
+    Cake Pop/Nitro (`MapGraphQL` avec explorateur intégré) activé sans
+    condition d'environnement.
+  patterns:
+    - "services.AddGraphQLServer().AllowIntrospection(true) sans condition sur env.IsProduction()"
+    - "services.AddGraphQLServer() sans .AddIntrospectionAllowedRule() conditionnée à l'environnement (introspection active par défaut)"
+    - "endpoints.MapGraphQL().WithOptions(new GraphQLServerOptions { Tool = { Enable = true } }) déployé sans vérification de env.IsDevelopment()"
+  exclude_if:
+    - "l'introspection est explicitement désactivée en production via `.AllowIntrospection(env.IsDevelopment())` ou une condition d'environnement équivalente"
+    - "l'outil interactif (`GraphQLServerOptions.Tool.Enable`) est conditionné par `if (env.IsDevelopment())`, empêchant son activation en production"
+
+message: >
+  Introspection GraphQL et/ou explorateur interactif (Banana Cake Pop/Nitro)
+  potentiellement actifs en production sans condition d'environnement — un
+  attaquant peut cartographier l'intégralité du schéma de l'API, y compris
+  des champs non documentés (voir rules/remediation/introspection-enabled.md).
+
+false_positive_notes:
+  - "Si le déploiement de production utilise une configuration distincte qui force `AllowIntrospection(false)` et désactive l'outil intégré, la variable de code source seule ne suffit pas à conclure — vérifier la configuration de déploiement."
+  - "Une API strictement interne sans données sensibles exposées via le schéma réduit l'impact réel — reclasser en `info` si confirmé."
+
+remediation_ref: rules/remediation/introspection-enabled.md
+knowledge_ref: knowledge/graphql/introspection-enabled.md

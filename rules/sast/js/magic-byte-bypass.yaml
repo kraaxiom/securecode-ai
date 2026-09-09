@@ -1,0 +1,34 @@
+id: magic-byte-bypass
+language: javascript
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé limitée à la lecture des
+    premiers octets du buffer (slice/subarray de petite longueur comparé à
+    une signature hexadécimale) sans décodage structurel complet via une
+    bibliothèque d'image, permettant un contournement par falsification des
+    magic bytes.
+  patterns:
+    - "buffer.slice(0, small_int_length).toString('hex') === string_literal_hex"
+    - "buffer.subarray(0, small_int_length).equals(Buffer.from(string_literal_hex, 'hex'))"
+  exclude_if:
+    - "sharp(_).metadata() ou une fonction de décodage complet équivalente est appelée et son résultat validé"
+    - "le fichier est systématiquement ré-encodé (sharp().toFile()) avant stockage définitif"
+
+message: >
+  Validation basée uniquement sur les premiers octets du buffer — contournable
+  en préfixant un contenu malveillant avec une signature valide, voir
+  rules/remediation/magic-byte-bypass.md.
+
+false_positive_notes:
+  - "Si un ré-encodage complet (sharp) intervient après cette vérification rapide, le risque est neutralisé."
+  - "Bibliothèques de détection de type par contenu (file-type) déjà utilisées ailleurs dans le même module peuvent être manquées par une analyse locale au fichier."
+
+remediation_ref: rules/remediation/magic-byte-bypass.md
+knowledge_ref: knowledge/upload/magic-byte-bypass.md

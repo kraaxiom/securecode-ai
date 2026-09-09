@@ -1,0 +1,15 @@
+id: brute-force
+category: auth
+cwe: CWE-307
+type: rasp
+guard:
+  sink: fonction de vérification d'identifiants (comparaison mot de passe/hash) appelée depuis le contrôleur d'authentification
+  block_condition: >
+    Nombre d'échecs de vérification d'identifiants dépassant un seuil configuré pour le
+    même compte ou la même IP dans une fenêtre glissante, sans qu'un compteur applicatif
+    interne n'ait déjà déclenché de verrouillage.
+  action: block
+  fail_mode: fail-closed   # recommandation par défaut pour un sink d'authentification ; l'opérateur peut choisir fail-open si la disponibilité prime, à documenter explicitement
+severity: medium
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

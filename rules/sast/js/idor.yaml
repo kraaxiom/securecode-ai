@@ -1,0 +1,29 @@
+id: idor
+language: js
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte Model.findById(req.params.id) utilisé directement dans un
+    handler de route protégée, sans filtre d'appartenance ni vérification
+    manuelle explicite.
+  patterns:
+    - "Model.findById(req.params.id) suivi d'un res.json(doc) sans filtre ownerId ni vérification"
+  exclude_if:
+    - "Le filtre ownerId/userId est inclus directement dans la requête (findOne({ _id, ownerId }))"
+    - "Une vérification manuelle (if (doc.ownerId !== req.user.id) return res.status(403)) suit la récupération"
+
+message: >
+  Objet récupéré par identifiant fourni par le client sans vérification
+  d'appartenance — voir rules/remediation/idor.md.
+
+false_positive_notes:
+  - "Si une vérification manuelle post-récupération est présente, ce n'est pas un faux négatif mais une implémentation alternative valide."
+
+remediation_ref: rules/remediation/idor.md
+knowledge_ref: knowledge/authorization/idor.md

@@ -1,0 +1,34 @@
+id: api-key-leakage
+language: javascript
+category: api
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une chaîne littérale ressemblant à une clé API ou un secret
+    (préfixe connu type sk_, AKIA, ghp_, ou forte entropie) assignée à une
+    constante ou passée directement en argument d'un SDK/client, y compris
+    dans du code destiné à être bundlé côté navigateur.
+  patterns:
+    - "const $var = \"<literal_high_entropy_string>\""
+    - "require('$sdk')(\"<literal_high_entropy_string>\")"
+    - "new $Client({ apiKey: \"<literal_high_entropy_string>\" })"
+  exclude_if:
+    - "La valeur provient de process.env.*"
+    - "La chaîne est un placeholder explicite dans un fichier .example ou de documentation"
+
+message: >
+  Secret codé en dur détecté — déplacer cette valeur vers process.env et un
+  fichier .env exclu du versionnement, révoquer la clé exposée (voir
+  rules/remediation/api-key-leakage.md).
+
+false_positive_notes:
+  - "Vérifier qu'il ne s'agit pas d'une clé publique par conception (ex: clé publishable Stripe) dont l'exposition côté client est prévue par le fournisseur."
+  - "Si le fichier est exclusivement un fichier de test/fixtures non déployé, reclasser en `info`."
+
+remediation_ref: rules/remediation/api-key-leakage.md
+knowledge_ref: knowledge/api/api-key-leakage.md

@@ -1,0 +1,3 @@
+# Blind XSS (CWE-79)
+
+Le message de ticket et le User-Agent, tous deux fournis par un utilisateur externe non authentifié, étaient injectés tels quels dans le HTML affiché au back-office admin. La correction applique `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')` sur ces deux champs avant affichage, car toute donnée franchissant la frontière de confiance doit être encodée, même lorsqu'elle n'est consultée que dans une interface interne. Cela neutralise l'exécution différée du payload dans le contexte à privilèges d'un agent support (CWE-79 — Improper Neutralization of Input During Web Page Generation).

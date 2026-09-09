@@ -1,0 +1,36 @@
+id: batch-attack
+language: go
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint GraphQL gqlgen acceptant un batch d'opérations
+    (tableau JSON en entrée) sans limite sur sa taille, typiquement via un
+    handler HTTP personnalisé qui décode `[]*graphql.RawParams` et itère sans
+    borne, ou via `transport.POST` avec le batching implicitement accepté
+    sans middleware de contrôle.
+  patterns:
+    - "var batch []*graphql.RawParams; json.NewDecoder(r.Body).Decode(&batch); for _, op := range batch { exec.DispatchOperation(ctx, op) } sans limite de longueur"
+    - "srv.AroundResponses(...) ou transport.POST{} enregistré sans middleware vérifiant len(batch) <= N avant traitement"
+    - "handler personnalisé détectant `[` en tête du corps JSON et traitant chaque élément comme une opération indépendante sans max_batch_size configuré"
+  exclude_if:
+    - "une vérification explicite len(batch) <= N (avec N raisonnable, ex: <= 10) est effectuée avant traitement"
+    - "le batching n'est pas implémenté par le handler (une seule opération par requête HTTP acceptée, corps non-tableau rejeté)"
+
+message: >
+  Endpoint GraphQL gqlgen acceptant un batch d'opérations sans limite de
+  taille — un attaquant peut soumettre des centaines de tentatives (ex:
+  bruteforce d'identifiants) en une seule requête HTTP, contournant le
+  rate-limiting (voir rules/remediation/batch-attack.md).
+
+false_positive_notes:
+  - "Si un rate-limiting est appliqué au niveau de chaque opération individuelle du batch (et non seulement au niveau HTTP), le risque est réduit."
+  - "Certaines API internes de confiance utilisent le batching pour l'efficacité légitime — vérifier le contexte d'authentification avant de remonter en `high`."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

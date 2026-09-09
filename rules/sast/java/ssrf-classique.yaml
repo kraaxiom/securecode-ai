@@ -1,0 +1,38 @@
+id: ssrf-classique
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel réseau sortant (`RestTemplate`, `WebClient`, `HttpClient`, `URLConnection`)
+    dont l'URL ou l'hôte de destination provient directement d'une entrée utilisateur
+    (paramètre Spring, corps JSON), sans whitelist de domaines ni filtrage des plages
+    d'adresses privées/loopback/link-local.
+  patterns:
+    - "restTemplate.getForObject($url, ...)"
+    - "restTemplate.exchange($url, ...)"
+    - "webClient.get().uri($url) ..."
+    - "new URL($url).openConnection()"
+    - "HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create($url))..., ...)"
+    - "@RequestParam(...) String $url ... restTemplate.getForObject($url, ...)"
+  exclude_if:
+    - "$url est validé contre une whitelist explicite de domaines/hôtes autorisés avant l'appel"
+    - "$url est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Requête HTTP sortante construite à partir d'une URL/hôte contrôlé par l'utilisateur sans
+  whitelist ni filtrage des plages d'adresses internes — restreindre les destinations
+  autorisées et valider l'adresse IP résolue avant chaque requête (voir
+  rules/remediation/ssrf-classique.md).
+
+false_positive_notes:
+  - "Si $url est toujours résolu depuis une configuration serveur fixe (jamais influencée par l'utilisateur), ce n'est pas exploitable."
+  - "Une whitelist de domaines vérifiée avant l'appel neutralise le risque — vérifier qu'elle couvre aussi les redirections HTTP."
+
+remediation_ref: rules/remediation/ssrf-classique.md
+knowledge_ref: knowledge/ssrf/ssrf-classique.md

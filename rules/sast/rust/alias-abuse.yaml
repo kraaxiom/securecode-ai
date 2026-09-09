@@ -1,0 +1,35 @@
+id: alias-abuse
+language: rust
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un schéma async-graphql (`Schema::build(Query, Mutation,
+    Subscription)`) construit sans extension limitant le nombre d'alias par
+    requête, permettant de multiplier un même resolver des centaines de fois
+    dans un seul appel HTTP.
+  patterns:
+    - "Schema::build(Query, Mutation, Subscription).finish() sans .limit_complexity(N) ni extension personnalisée de comptage d'alias"
+    - "Schema::build(Query, Mutation, EmptySubscription).extension(Analyzer).finish() où Analyzer journalise mais ne limite pas le nombre d'alias"
+    - "Schema::new(Query, Mutation, Subscription) exposé via un handler axum/actix sans aucune extension de limitation dans la chaîne .extension(...)"
+  exclude_if:
+    - "le schéma applique .limit_complexity(N) ou une extension personnalisée implémentant Extension qui compte explicitement les alias et rejette au-delà d'un seuil"
+    - "l'API est strictement interne, authentifiée, et soumise à un rate-limiting au niveau de la complexité de requête (query cost)"
+
+message: >
+  Schéma async-graphql sans limite sur le nombre d'alias par requête — un
+  attaquant peut multiplier les appels à un resolver sensible (ex: bruteforce
+  de mot de passe) en une seule requête HTTP, contournant le rate-limiting
+  classique (voir rules/remediation/alias-abuse.md).
+
+false_positive_notes:
+  - "Si .limit_complexity(N) est configuré avec un seuil raisonnable qui contraint indirectement le nombre d'alias exploitables, reclasser en `low`."
+  - "Un schéma exposant uniquement des données publiques non sensibles au bruteforce réduit fortement l'impact réel."
+
+remediation_ref: rules/remediation/alias-abuse.md
+knowledge_ref: knowledge/graphql/alias-abuse.md

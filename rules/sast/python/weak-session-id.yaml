@@ -1,0 +1,35 @@
+id: weak-session-id
+language: python
+category: sessions
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la génération d'un identifiant de session ou de jeton avec une
+    source d'aléa non cryptographique (module random, time, hash prévisible),
+    ou une SECRET_KEY faible/codée en dur.
+  patterns:
+    - "random.random() / random.randint($_,$_) utilisé pour générer un session_id ou un token"
+    - "hashlib.md5(str(time.time()).encode()).hexdigest() utilisé comme identifiant de session"
+    - "app.config['SECRET_KEY'] = 'dev' ou toute chaîne littérale codée en dur (Flask)"
+    - "SECRET_KEY = 'django-insecure-...' laissée en production (settings.py Django)"
+  exclude_if:
+    - "secrets.token_urlsafe() / secrets.token_hex() / os.urandom() est utilisé pour générer l'identifiant"
+    - "SECRET_KEY est chargée depuis une variable d'environnement ou un gestionnaire de secrets"
+
+message: >
+  Identifiant de session ou clé secrète généré avec une source d'aléa non
+  cryptographique (ou codé en dur) — prévisible ou brute-forçable, il permet
+  à un attaquant de deviner ou fixer des sessions valides. Utiliser le module
+  `secrets` (secrets.token_urlsafe(32)) et charger SECRET_KEY depuis
+  l'environnement.
+
+false_positive_notes:
+  - "random.random() utilisé hors contexte sécurité (ex: mélange d'une liste d'affichage) n'est pas concerné — vérifier l'usage réel de la valeur générée."
+
+remediation_ref: rules/remediation/weak-session-id.md
+knowledge_ref: knowledge/sessions/weak-session-id.md

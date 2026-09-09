@@ -1,0 +1,33 @@
+id: known-cves
+language: go
+category: supply-chain
+cwe: CWE-1104
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: high
+confidence_default: high
+
+match:
+  type: dependency-scan
+  description: >
+    Détecte dans go.mod / go.sum des versions de modules Go figées
+    correspondant à des CVE publiées connues (nécessite une base CVE à jour
+    type Go Vulnerability Database/OSV).
+  patterns:
+    - "go.mod: require paquet vX.Y.Z où (paquet, vX.Y.Z) correspond à une entrée de la base CVE/OSV/govulncheck pour l'écosystème Go"
+    - "go.sum: hash correspondant à une version de module dans une plage vulnérable connue (ex: golang.org/x/text<0.3.8, gopkg.in/yaml.v2<2.2.8)"
+    - "go.mod: 'go' directive ou toolchain ciblant une version du langage Go elle-même en fin de support avec CVE connues du runtime/stdlib"
+  exclude_if:
+    - "un correctif backporté est documenté (changelog interne) rendant la CVE non exploitable malgré le numéro de version"
+    - "le module vulnérable est listé uniquement comme dépendance indirecte de test (// indirect dans un bloc require de test) et n'atteint jamais le binaire de production"
+
+message: >
+  Dépendance Go figée à une version associée à une CVE publiée connue.
+  Mettre à jour vers une version corrigée et intégrer un scan continu
+  (govulncheck, Dependabot) — voir rules/remediation/known-cves.md.
+
+false_positive_notes:
+  - "Vérifier avec govulncheck que le chemin de code vulnérable est réellement atteint (certaines CVE ne touchent qu'une fonction non appelée)."
+  - "Une CVE 'low' sur un composant non exposé en frontière de confiance peut être reclassée en `medium`."
+
+remediation_ref: rules/remediation/known-cves.md
+knowledge_ref: knowledge/supply-chain/known-cves.md

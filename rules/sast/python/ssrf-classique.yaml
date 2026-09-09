@@ -1,0 +1,37 @@
+id: ssrf-classique
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête HTTP sortante (requests, urllib, httpx, aiohttp)
+    dont l'URL ou le host est directement dérivé d'une entrée utilisateur
+    sans validation de destination.
+  patterns:
+    - "requests.get($user_url)"
+    - "requests.post($user_url, _)"
+    - "urllib.request.urlopen($user_url)"
+    - "httpx.get($user_url)"
+    - "aiohttp.ClientSession().get($user_url)"
+  exclude_if:
+    - "$user_url est validé contre une liste blanche fermée de domaines/hosts autorisés avant l'appel"
+    - "$user_url est un littéral constant construit côté serveur sans segment utilisateur"
+
+message: >
+  Requête HTTP sortante construite à partir d'une URL fournie par
+  l'utilisateur sans validation de destination — un attaquant peut forcer
+  le serveur à effectuer des requêtes vers des ressources internes (SSRF).
+  Valider le host résolu contre une liste blanche stricte avant tout appel
+  réseau (voir rules/remediation/ssrf-classique.md).
+
+false_positive_notes:
+  - "Une validation par simple préfixe (startswith('https://')) n'empêche pas le SSRF — ne pas déclasser sur cette seule base."
+  - "Si l'URL est reconstruite à partir d'un identifiant validé côté serveur (ex: template fixe + ID numérique whitelisté), le risque est réduit — vérifier au cas par cas."
+
+remediation_ref: rules/remediation/ssrf-classique.md
+knowledge_ref: knowledge/ssrf/ssrf-classique.md

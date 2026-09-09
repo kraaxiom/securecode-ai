@@ -1,0 +1,36 @@
+id: cache-poisoning
+language: python
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage d'en-têtes non normalisés (`X-Forwarded-Host`,
+    `X-Forwarded-Scheme`, `X-Forwarded-Proto`) pour générer une réponse
+    (redirection, URL absolue rendue dans le HTML) dans une application
+    Flask/Django déployée derrière un cache/CDN, sans que ces en-têtes ne
+    fassent partie de la clé de cache.
+  patterns:
+    - "host = request.headers.get('X-Forwarded-Host'); return redirect(f'https://{host}/...')"
+    - "django: request.META.get('HTTP_X_FORWARDED_HOST') utilisé pour construire une URL absolue dans un template sans validation contre ALLOWED_HOSTS"
+    - "url_for(_, _external=True) avec SERVER_NAME dérivé dynamiquement d'un en-tête non fiable"
+  exclude_if:
+    - "l'en-tête est validé contre une allowlist stricte de hosts autorisés avant usage (ex: comparaison à settings.ALLOWED_HOSTS)"
+    - "le cache/CDN est configuré pour inclure cet en-tête dans sa clé de cache (Vary: X-Forwarded-Host), neutralisant l'empoisonnement"
+
+message: >
+  En-tête non fiable (X-Forwarded-Host/Proto) utilisé pour générer une
+  réponse mise en cache sans validation ni inclusion dans la clé de cache —
+  un attaquant peut empoisonner le cache et servir du contenu malveillant à
+  tous les visiteurs suivants (voir rules/remediation/cache-poisoning.md).
+
+false_positive_notes:
+  - "Si l'application n'est pas placée derrière un cache/CDN partagé (déploiement direct), le risque d'empoisonnement de cache partagé ne s'applique pas, bien que l'open redirect reste possible."
+  - "Django avec USE_X_FORWARDED_HOST=False (comportement par défaut) ignore cet en-tête pour ALLOWED_HOSTS — vérifier settings.py avant de confirmer."
+
+remediation_ref: rules/remediation/cache-poisoning.md
+knowledge_ref: knowledge/modern/cache-poisoning.md

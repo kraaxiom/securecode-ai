@@ -1,0 +1,35 @@
+id: rest
+language: rust
+category: api
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des incohérences de contrôle d'accès entre méthodes HTTP d'une
+    même ressource dans un routeur actix-web/axum (ex: middleware
+    d'autorisation appliqué sur GET mais absent sur DELETE/PUT de la même
+    route), ou une configuration CORS permissive.
+  patterns:
+    - ".route(\"/api/resource/{id}\", web::delete().to($handler))"
+    - "Cors::default().allow_any_origin().supports_credentials()"
+    - "CorsLayer::new().allow_origin(Any)"
+  exclude_if:
+    - "toutes les méthodes HTTP de la ressource sont enveloppées du même middleware d'authentification/autorisation (vérifié explicitement)"
+    - "allow_any_origin/Any n'est jamais combiné avec supports_credentials/allow_credentials"
+
+message: >
+  Incohérence de contrôle d'accès entre les méthodes HTTP d'une même
+  ressource, ou configuration CORS trop permissive — harmoniser le
+  middleware d'autorisation sur toutes les routes et restreindre CORS à une
+  liste blanche d'origines (voir rules/remediation/rest.md).
+
+false_positive_notes:
+  - "Si la méthode non protégée est intentionnellement publique (lecture seule non sensible), documenter l'exception plutôt que corriger."
+  - "Vérifier qu'un middleware global appliqué au niveau du routeur ne couvre pas déjà toutes les routes avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/rest.md
+knowledge_ref: knowledge/api/rest.md

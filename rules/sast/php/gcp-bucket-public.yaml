@@ -1,0 +1,34 @@
+id: gcp-bucket-public
+language: php
+category: cloud
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Vérification config/IaC : détecte un binding IAM de bucket Google Cloud
+    Storage accordant un accès à `allUsers`/`allAuthenticatedUsers`, une ACL
+    publique, ou l'absence de "Public Access Prevention", dans les fichiers
+    Terraform/gcloud d'un dépôt.
+  patterns:
+    - "terraform: google_storage_bucket_iam_member/binding avec member = \"allUsers\" ou \"allAuthenticatedUsers\""
+    - "gcloud/API: predefinedAcl ou objectAcl = \"publicRead\""
+    - "terraform: public_access_prevention absent ou = \"inherited\" sans contrainte d'organisation équivalente"
+  exclude_if:
+    - "le bucket héberge explicitement un site statique public documenté sans données sensibles"
+    - "le binding allUsers est scoping en lecture seule (roles/storage.objectViewer) sur un bucket de contenu public volontaire et documenté"
+
+message: >
+  Bucket GCS potentiellement accessible publiquement (binding IAM allUsers/
+  allAuthenticatedUsers ou ACL publique) — retirer l'accès public et activer
+  Public Access Prevention (voir rules/remediation/gcp-bucket-public.md).
+
+false_positive_notes:
+  - "Un bucket de contenu statique public documenté (site vitrine, assets) est un usage légitime — vérifier l'absence de données sensibles avant de confirmer `high`."
+  - "allAuthenticatedUsers reste un risque élevé même si ce n'est pas allUsers : tout compte Google authentifié (pas seulement les utilisateurs de l'organisation) y a accès."
+
+remediation_ref: rules/remediation/gcp-bucket-public.md
+knowledge_ref: knowledge/cloud/gcp-bucket-public.md

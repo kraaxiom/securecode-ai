@@ -1,0 +1,40 @@
+id: agent-hijacking
+language: csharp
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un agent Semantic Kernel (KernelFunction, Planner) ou un
+    function-calling Azure OpenAI disposant de plugins à fort impact
+    (exécution shell/fichier/réseau/paiement) invocables sans validation
+    applicative indépendante de la décision du modèle, permettant à une
+    source non fiable de détourner l'agent vers une action non prévue.
+  patterns:
+    - "kernel.ImportPluginFromType<T>() exposant une [KernelFunction] qui exécute Process.Start(...) ou System.Diagnostics.Process sans allowlist ni confirmation"
+    - "await kernel.InvokeAsync(pluginName, functionName, args) où functionName/args proviennent directement de la réponse du modèle (ToolCalls) sans validation de schéma"
+    - "FunctionCallingStepwisePlanner / AutoInvokeKernelFunctions activé sur des plugins à fort impact sans human-in-the-loop ni sandboxing"
+  exclude_if:
+    - "chaque plugin à fort impact impose une validation applicative indépendante du LLM (allowlist stricte, confirmation humaine, sandboxing) avant exécution"
+    - "l'agent ne reçoit aucun contenu externe non fiable (entrée intégralement contrôlée côté serveur)"
+
+message: >
+  Agent Semantic Kernel/Azure OpenAI disposant de plugins à fort impact sans
+  couche de validation applicative indépendante — un contenu externe non
+  fiable (indirect prompt injection) peut détourner l'agent pour déclencher
+  des actions non prévues (exécution de commandes, exfiltration,
+  transactions). Imposer une allowlist stricte de fonctions, valider chaque
+  appel de plugin côté application (jamais faire confiance à la décision du
+  modèle seule), et isoler les plugins à fort impact (sandbox, confirmation)
+  — voir rules/remediation/agent-hijacking.md.
+
+false_positive_notes:
+  - "Un agent en environnement de test isolé sans accès réseau/production réduit la sévérité à `medium`."
+  - "La présence d'un human-in-the-loop obligatoire avant toute exécution de plugin sensible réduit fortement le risque — vérifier son caractère réellement bloquant."
+
+remediation_ref: rules/remediation/agent-hijacking.md
+knowledge_ref: knowledge/llm/agent-hijacking.md

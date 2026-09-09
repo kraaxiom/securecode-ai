@@ -1,0 +1,3 @@
+## Utilisation de RC4 (CWE-327)
+
+Le code vulnérable chiffre du contenu avec `crypto.createCipheriv('rc4', ...)`, un chiffrement par flux dont le flux de sortie présente des biais statistiques exploitables pour récupérer du texte en clair ; RC4 est d'ailleurs interdit dans TLS depuis la RFC 7465. La correction remplace RC4 par AES-256-GCM, un chiffrement authentifié moderne, avec un nonce (IV) unique et aléatoire généré à chaque opération via `crypto.randomBytes(12)`, et un tag d'authentification vérifiable au déchiffrement. La clé doit provenir d'un gestionnaire de secrets ou d'une variable d'environnement, jamais d'une valeur codée en dur.

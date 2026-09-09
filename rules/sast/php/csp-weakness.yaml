@@ -1,0 +1,33 @@
+id: csp-weakness
+language: php
+category: frontend
+cwe: CWE-693
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une CSP définie avec `unsafe-inline`/`unsafe-eval`, un joker `*`
+    dans `default-src`/`script-src`, ou l'absence totale d'en-tête CSP dans le
+    bootstrap applicatif.
+  patterns:
+    - "header('Content-Security-Policy: ' . _)" # contenant unsafe-inline ou unsafe-eval
+    - "'Content-Security-Policy-Report-Only'" # jamais accompagné d'un Content-Security-Policy bloquant
+    - "default-src *"
+  exclude_if:
+    - "la valeur de script-src utilise un nonce ou un hash au lieu de unsafe-inline/unsafe-eval"
+    - "un en-tête Content-Security-Policy bloquant (non report-only) est également présent"
+
+message: >
+  Content Security Policy absente ou trop permissive (unsafe-inline,
+  unsafe-eval, joker large, ou report-only uniquement) — voir
+  rules/remediation/csp-weakness.md.
+
+false_positive_notes:
+  - "Phase de migration documentée où report-only coexiste temporairement avec un plan de bascule daté : reclasser en `low` avec suivi."
+  - "Application interne d'administration sans contenu utilisateur généré : évaluer l'exposition réelle avant de maintenir en `medium`."
+
+remediation_ref: rules/remediation/csp-weakness.md
+knowledge_ref: knowledge/frontend/csp-weakness.md

@@ -1,0 +1,19 @@
+id: http-request-smuggling
+category: injections
+cwe: CWE-444
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST
+  target: en-têtes Content-Length et Transfer-Encoding de la requête envoyée à travers la chaîne proxy frontal / serveur backend
+  technique: timing-anomaly
+  indicators:
+    - discordance observée dans le traitement du Content-Length et du Transfer-Encoding entre le frontal et le backend, révélée par un désynchronisation de réponse (réponse orpheline ou mélangée avec celle d'une autre requête)
+    - délai de réponse anormalement long indiquant que le backend attend un corps de requête incomplet (requête restée en attente côté serveur)
+    - contenu de réponse appartenant visiblement à une requête tierce reçu en réponse à sa propre requête
+  false_positive_notes:
+    - un simple timeout réseau ne suffit pas à démontrer une désynchronisation, corréler avec plusieurs requêtes de contrôle
+    - certains équilibreurs de charge normalisent déjà les en-têtes ambigus, ce qui masque la vulnérabilité côté frontal sans l'éliminer côté backend
+remediation_ref: rules/remediation/http-request-smuggling.md
+knowledge_ref: knowledge/injections/http-request-smuggling.md

@@ -1,0 +1,31 @@
+id: clickjacking
+language: js
+category: frontend
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une application Express servant du HTML sans middleware
+    définissant `X-Frame-Options` ni CSP `frame-ancestors` (ex: absence de
+    `helmet.frameguard()` ou d'en-tête manuel équivalent).
+  patterns:
+    - "app.use(express.static(_))" # sans app.use(helmet.frameguard(...)) présent ailleurs dans le fichier
+    - "res.send(html)"             # rendu HTML direct sans en-tête anti-framing défini au préalable
+  exclude_if:
+    - "helmet() ou helmet.frameguard() est utilisé globalement via app.use()"
+    - "res.set('X-Frame-Options', _) ou une CSP frame-ancestors est définie avant l'envoi de la réponse"
+
+message: >
+  Absence d'en-tête anti-framing sur une réponse HTML servie — voir
+  rules/remediation/clickjacking.md.
+
+false_positive_notes:
+  - "Serveur API JSON pur sans rendu HTML : non applicable, reclasser en `info`."
+  - "En-tête ajouté par un CDN/reverse proxy en amont documenté : vérifier avant de confirmer le finding."
+
+remediation_ref: rules/remediation/clickjacking.md
+knowledge_ref: knowledge/frontend/clickjacking.md

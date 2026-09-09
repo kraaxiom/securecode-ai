@@ -1,0 +1,38 @@
+id: svg-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'acceptation d'un upload de fichier SVG sans sanitisation ni
+    restriction de Content-Type au moment de la restitution, alors qu'un
+    SVG peut embarquer du JavaScript exécutable (`<script>`,
+    `onload=`) interprété si le fichier est servi avec un
+    Content-Type image/svg+xml et affiché inline (pas via `<img>` seul).
+  patterns:
+    - "MultipartFile upload accepté avec contentType image/svg+xml sans passage par un sanitizer SVG (OWASP Java HTML Sanitizer avec politique SVG stricte)"
+    - "response.setContentType(\"image/svg+xml\") suivi de l'écriture directe du contenu uploadé"
+  exclude_if:
+    - "le SVG uploadé est systématiquement rasterisé (converti en PNG/JPEG) avant stockage/restitution"
+    - "le fichier est servi avec Content-Disposition: attachment et Content-Type générique (téléchargement forcé, pas de rendu inline)"
+    - "le contenu SVG passe par une sanitisation dédiée supprimant les balises script/gestionnaires d'événements avant stockage"
+
+message: >
+  Fichier SVG uploadé par un utilisateur restitué sans sanitisation — un
+  SVG peut contenir du JavaScript exécuté au rendu (balise `<script>`,
+  attributs `on*`), exposant à un XSS stocké via upload de fichier ;
+  rasteriser le SVG en image bitmap, forcer le téléchargement
+  (Content-Disposition: attachment), ou sanitiser strictement le contenu
+  SVG avant stockage (voir rules/remediation/svg-xss.md).
+
+false_positive_notes:
+  - "Un SVG systématiquement converti en PNG/JPEG côté serveur avant stockage n'est pas concerné."
+  - "Servir le fichier avec Content-Disposition: attachment empêche le rendu inline dans la plupart des navigateurs et réduit le risque, bien que le téléchargement direct reste possible dans certains cas."
+
+remediation_ref: rules/remediation/svg-xss.md
+knowledge_ref: knowledge/xss/svg-xss.md

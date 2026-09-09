@@ -1,0 +1,37 @@
+id: dependency-confusion
+language: csharp
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte dans les .csproj, packages.config, nuget.config ou
+    NuGet.Config des indices de confusion de dépendances : PackageReference
+    vers un paquet interne sans source NuGet privée prioritaire explicite.
+  patterns:
+    - "*.csproj: <PackageReference Include=\"...\"> vers un paquet au nom interne (même préfixe que l'organisation) sans <packageSources> privé configuré en priorité"
+    - "nuget.config / NuGet.Config: absence de <packageSourceMapping> restreignant les paquets internes à un feed privé alors que nuget.org reste actif"
+    - "nuget.config: <add key=\"nuget.org\" .../> déclaré sans clear() préalable, alors qu'un feed interne (Azure Artifacts, MyGet, ProGet) est également présent"
+    - "packages.config / *.csproj: PackageReference sans version verrouillée exacte pour un paquet interne (plage de version ouverte facilitant la substitution)"
+  exclude_if:
+    - "<packageSourceMapping> restreint explicitement les préfixes de paquets internes au feed privé (source unique autorisée)"
+    - "nuget.config appelle <clear /> puis ne référence que des sources internes de confiance"
+
+message: >
+  Le fichier de configuration NuGet ne garantit pas la priorité d'une source
+  privée pour un paquet portant un nom interne — un attaquant peut publier un
+  paquet malveillant de même nom sur nuget.org avec un numéro de version
+  supérieur pour qu'il soit résolu à sa place. Utiliser <packageSourceMapping>
+  pour restreindre les préfixes internes à un feed privé (voir
+  rules/remediation/dependency-confusion.md).
+
+false_positive_notes:
+  - "Si tous les PackageReference du projet correspondent à des paquets publics légitimes (aucun paquet interne), non applicable."
+  - "Si un packageSourceMapping global est déjà défini au niveau solution/organisation (hors dépôt), le risque est mitigé — vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

@@ -1,0 +1,33 @@
+id: rfi
+language: java
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le chargement d'un template, d'une classe ou d'une ressource dont la valeur peut
+    contenir un schéma d'URL distante (`http://`, `https://`, `ftp://`) fourni par l'utilisateur,
+    typiquement via un moteur de template ou un chargeur de ressources externe.
+  patterns:
+    - "templateEngine.process($param, ...)  # $param contient potentiellement un schéma d'URL"
+    - "new URLClassLoader(new URL[]{new URL($param)})"
+    - "resourceLoader.getResource($param)"
+  exclude_if:
+    - "$param est validé par un filtre de schéma explicite rejetant http(s)/ftp avant l'appel"
+    - "$param provient d'une configuration serveur fixe (pas d'entrée utilisateur)"
+
+message: >
+  Ressource/template chargé dynamiquement depuis une valeur pouvant contenir une URL distante
+  contrôlée par le client — interdire tout schéma réseau dans les sélecteurs de ressource et
+  utiliser un mapping fermé (voir rules/remediation/rfi.md).
+
+false_positive_notes:
+  - "Si le chargeur de ressources est configuré pour n'accepter que le classpath interne (pas de résolution réseau), le risque n'est pas exploitable."
+  - "Vérifier que le mécanisme équivalent à `allow_url_include` n'existe pas en Java — le risque réel dépend du composant tiers utilisé (ex. classloader distant, moteur de template mal configuré)."
+
+remediation_ref: rules/remediation/rfi.md
+knowledge_ref: knowledge/file-inclusion/rfi.md

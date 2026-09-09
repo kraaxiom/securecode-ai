@@ -1,0 +1,28 @@
+id: sslv3
+language: go
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration tls.Config dont MinVersion est fixé à
+    tls.VersionSSL30, autorisant la négociation de SSLv3.
+  patterns:
+    - "MinVersion: tls.VersionSSL30"
+    - "tls.Config{MinVersion: tls.VersionSSL30}"
+  exclude_if:
+    - "aucune (SSLv3 ne doit jamais être activé, même conditionnellement)"
+
+message: >
+  SSLv3 (tls.VersionSSL30) est interdit par la RFC 7568 et vulnérable à
+  l'attaque POODLE — fixer MinVersion à tls.VersionTLS12 au minimum.
+
+false_positive_notes:
+  - "Aucun cas légitime connu : toute présence de ce flag doit être remontée en `critical`."
+
+remediation_ref: rules/remediation/sslv3.md
+knowledge_ref: knowledge/crypto/sslv3.md

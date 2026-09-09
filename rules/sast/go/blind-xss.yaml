@@ -1,0 +1,29 @@
+id: blind-xss
+language: go
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une insertion de contenu utilisateur dans une page HTML/DOM sans échappement contextuel (xss aveugle (blind xss)).
+  patterns:
+    - "text/template utilisé pour générer du HTML au lieu de html/template"
+    - "template.HTML($var) forçant du contenu non échappé dans html/template"
+    - "fmt.Fprintf(w, string_concat(_, $var, _)) écrit directement dans une réponse HTTP sans échappement"
+  exclude_if:
+    - "le rendu utilise html/template (échappement contextuel automatique) sans template.HTML/template.JS forcé"
+    - "$var provient d'une constante interne, pas d'une entrée utilisateur"
+
+message: >
+  XSS aveugle (blind XSS) détecté — échapper systématiquement toute donnée utilisateur avant insertion dans le HTML/DOM, ou utiliser l'échappement contextuel automatique du framework (voir rules/remediation/blind-xss.md).
+
+false_positive_notes:
+  - "Si le moteur de rendu applique un échappement contextuel automatique (Razor par défaut, html/template, askama/tera par défaut) et qu'aucun mécanisme de contournement (Html.Raw, template.HTML, |safe) n'est utilisé, ce n'est pas exploitable."
+  - "Si la valeur est strictement interne et non dérivée d'une entrée utilisateur, reclasser en `info`."
+
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

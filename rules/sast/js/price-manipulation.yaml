@@ -1,0 +1,31 @@
+id: price-manipulation
+language: js
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation directe de req.body.amount / req.body.price pour
+    une opération de facturation, sans recalcul depuis un catalogue serveur.
+  patterns:
+    - "chargeCard(_, req.body.amount)"
+    - "chargeCard(_, req.body.price)"
+    - "stripe.charges.create({ amount: req.body.amount })"
+  exclude_if:
+    - "Le montant est recalculé via catalog.getPrice()/un service de tarification serveur avant l'appel de paiement"
+    - "Une vérification explicite compare et rejette tout écart avec le prix serveur calculé"
+
+message: >
+  Montant de paiement accepté directement depuis req.body sans recalcul
+  serveur — voir rules/remediation/price-manipulation.md.
+
+false_positive_notes:
+  - "Un montant provenant d'un webhook déjà signé par le fournisseur de paiement (source de vérité tierce) n'est pas concerné."
+  - "Vérifier si un middleware de validation de schéma bloque déjà les montants hors plage attendue."
+
+remediation_ref: rules/remediation/price-manipulation.md
+knowledge_ref: knowledge/business-logic/price-manipulation.md

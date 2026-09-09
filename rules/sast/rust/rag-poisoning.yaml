@@ -1,0 +1,38 @@
+id: rag-poisoning
+language: rust
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pipeline RAG (async-openai + store vectoriel) qui insère des
+    documents dans le corpus de récupération à partir d'une source
+    modifiable par des utilisateurs non fiables, puis injecte les documents
+    récupérés tels quels dans le prompt sans les distinguer d'instructions
+    système.
+  patterns:
+    - "let docs = retriever.search(&query).await?; let prompt = format!(\"{:?}\\n{}\", docs, query) — documents insérés sans délimitation ni marquage 'contenu non fiable'"
+    - "vector_store.add_documents(vec![user_uploaded_content]).await? sans validation/modération avant indexation dans le corpus RAG en production"
+    - "let answer = rag_chain.run(query).await? sur un corpus alimenté par des sources publiques modifiables (wiki collaboratif, forum) sans filtrage"
+  exclude_if:
+    - "le corpus RAG est alimenté uniquement par des sources internes contrôlées ET les documents récupérés sont explicitement délimités comme données non fiables dans le prompt (le modèle est instruit de ne jamais exécuter d'instructions qui s'y trouvent)"
+
+message: >
+  Corpus RAG alimenté par des sources modifiables par des tiers, avec
+  documents récupérés injectés dans le prompt sans délimitation — un
+  attaquant peut empoisonner le corpus pour faire répondre le modèle de façon
+  biaisée ou lui faire exécuter des instructions cachées. Valider/modérer les
+  documents avant indexation, isoler par source de confiance, et délimiter
+  strictement le contenu récupéré comme donnée dans le prompt — voir
+  rules/remediation/rag-poisoning.md.
+
+false_positive_notes:
+  - "Si le corpus est en lecture seule et généré uniquement en interne (pas de contribution externe), non applicable."
+  - "Une simple limite d'accès en écriture au corpus (auth) sans modération de contenu laisse un risque résiduel si le compte auteur est compromis — garder `high`."
+
+remediation_ref: rules/remediation/rag-poisoning.md
+knowledge_ref: knowledge/llm/rag-poisoning.md

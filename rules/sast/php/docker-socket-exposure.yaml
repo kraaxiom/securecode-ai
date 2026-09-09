@@ -1,0 +1,33 @@
+id: docker-socket-exposure
+language: config
+category: docker
+cwe: CWE-250
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: config-pattern
+  description: >
+    Détecte le montage du socket Docker de l'hôte à l'intérieur d'un
+    conteneur, dans un docker-compose.yml, une commande `docker run`, ou un
+    manifeste de déploiement.
+  patterns:
+    - "-v /var/run/docker.sock:/var/run/docker.sock"
+    - "volumes:\n  - /var/run/docker.sock:/var/run/docker.sock"
+    - "- /var/run/docker.sock:/var/run/docker.sock"
+  exclude_if:
+    - "montage effectué via un proxy d'API Docker en lecture seule restreignant les endpoints (ex: docker-socket-proxy)"
+    - "montage en lecture seule (:ro) combiné à un filtrage d'endpoints documenté"
+
+message: >
+  Le socket Docker de l'hôte est monté dans le conteneur, donnant un
+  contrôle équivalent à root sur l'hôte. Voir
+  rules/remediation/docker-socket-exposure.md.
+
+false_positive_notes:
+  - "Si le montage passe par un proxy d'API Docker filtrant strictement les endpoints, reclasser en `medium`."
+  - "Un environnement isolé et surveillé dédié au build (pas d'exécution de code non fiable) réduit le risque réel mais pas le pattern détecté."
+
+remediation_ref: rules/remediation/docker-socket-exposure.md
+knowledge_ref: knowledge/docker/docker-socket-exposure.md

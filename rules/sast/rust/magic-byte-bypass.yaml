@@ -1,0 +1,38 @@
+id: magic-byte-bypass
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé limitée à la lecture des
+    premiers octets (signature/magic bytes, ex: crate infer sur un buffer
+    partiel) sans décodage complet ni ré-encodage de l'image, permettant
+    un contournement par préfixage.
+  patterns:
+    - "$file.read(&mut $buffer)"
+    - "infer::get($buffer)"
+    - "$buffer.starts_with($magicBytes)"
+  exclude_if:
+    - "le fichier est intégralement décodé via une bibliothèque d'image robuste (ex: crate image::load) qui échoue sur un contenu hybride"
+    - "le fichier est re-encodé dans un nouveau fichier propre après validation, détruisant tout contenu superflu"
+    - "la vérification de signature est combinée à une liste blanche d'extension et un stockage hors répertoire exécutable"
+
+message: >
+  Validation d'un fichier téléversé limitée à la lecture des premiers
+  octets (ex: infer::get sur un buffer partiel) sans décodage complet ni
+  ré-encodage — un fichier peut être préfixé avec une signature valide
+  tout en contenant un contenu exécutable. Décoder intégralement l'image
+  avec une bibliothèque robuste et la ré-encoder (voir
+  rules/remediation/magic-byte-bypass.md).
+
+false_positive_notes:
+  - "Si la lecture du buffer initial est suivie d'un décodage complet via la crate image qui échouerait sur un fichier corrompu/hybride, ce n'est pas exploitable — reclasser en `info`."
+  - "Si le fichier est systématiquement re-encodé après validation, le contenu superflu est détruit indépendamment du contrôle de signature initial."
+
+remediation_ref: rules/remediation/magic-byte-bypass.md
+knowledge_ref: knowledge/upload/magic-byte-bypass.md

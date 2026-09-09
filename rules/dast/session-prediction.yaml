@@ -1,0 +1,17 @@
+id: session-prediction
+category: auth
+cwe: CWE-330
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+type: dast
+test:
+  method: POST
+  target: identifiant de session émis dans un cookie ou un jeton après authentification
+  technique: differential-response
+  indicators:
+    - "Les identifiants de session émis lors de connexions successives (par le testeur, sur ses propres comptes de test) présentent une structure séquentielle, un pattern temporel visible, ou une similarité anormale entre eux plutôt qu'une apparence uniformément aléatoire"
+    - "La longueur effective de l'identifiant de session ou l'espace de valeurs apparent est insuffisant pour résister à une estimation d'entropie raisonnable, observable par comparaison statistique d'un échantillon d'identifiants collectés sur les propres sessions de test"
+false_positive_notes:
+  - "Ce test se limite à une analyse statistique d'un échantillon d'identifiants issus des propres sessions du testeur — il ne tente jamais de deviner ou de réutiliser l'identifiant de session d'un tiers."
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

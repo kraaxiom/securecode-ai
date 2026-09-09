@@ -1,0 +1,33 @@
+id: business-rule-bypass
+language: php
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation directe d'un champ sensible (role, price, status,
+    is_admin) issu de la requête client pour une opération d'écriture, sans
+    revalidation ou recalcul serveur visible dans la même fonction.
+  patterns:
+    - "->update([\"role\" => $request->input(_)])"
+    - "->update([\"price\" => $request->input(_)])"
+    - "$model->status = $_POST[_]"
+    - "$model->is_admin = $request->input(_)"
+  exclude_if:
+    - "La valeur passe par une fonction de validation/whitelist avant l'affectation (in_array, enum cast)"
+    - "L'appelant est protégé par un contrôle d'autorisation explicite validant ce changement précis (ex: Gate::authorize)"
+
+message: >
+  Champ sensible (rôle, prix, statut) affecté directement depuis l'entrée
+  utilisateur sans revalidation serveur — voir rules/remediation/business-rule-bypass.md.
+
+false_positive_notes:
+  - "Si le endpoint est réservé aux administrateurs avec middleware de rôle strict, le risque est réduit — vérifier la portée du contrôle."
+  - "Un cast/enum de validation immédiatement avant l'affectation neutralise ce pattern."
+
+remediation_ref: rules/remediation/business-rule-bypass.md
+knowledge_ref: knowledge/business-logic/business-rule-bypass.md

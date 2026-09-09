@@ -1,0 +1,33 @@
+id: prototype-pollution
+language: php
+category: frontend
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation, côté PHP, de JSON utilisateur transmis tel quel à
+    un moteur de rendu/bundler côté client sans filtrage des clés
+    `__proto__`/`constructor`/`prototype` — pertinent lorsque PHP sert de
+    backend à une SPA JS effectuant une fusion d'objets côté client.
+  patterns:
+    - "echo json_encode($_POST)" # transmis directement à un script client faisant du merge
+    - "echo json_encode($request->all())"
+  exclude_if:
+    - "le tableau est filtré via une liste blanche de clés explicites avant json_encode"
+    - "la sortie n'est jamais consommée par une fusion d'objets JS côté client (usage strictement backend-to-backend)"
+
+message: >
+  Données utilisateur exposées telles quelles vers un contexte client
+  susceptible de fusion d'objets — risque de prototype pollution côté JS
+  (voir rules/remediation/prototype-pollution.md).
+
+false_positive_notes:
+  - "Si la réponse JSON n'est jamais traitée par une fonction de merge/deepMerge côté client, le risque est théorique — reclasser en `low`."
+  - "PHP lui-même n'est pas vulnérable à la prototype pollution (spécifique à JS) : ce finding ne s'applique qu'au flux de données vers un frontend JS."
+
+remediation_ref: rules/remediation/prototype-pollution.md
+knowledge_ref: knowledge/frontend/prototype-pollution.md

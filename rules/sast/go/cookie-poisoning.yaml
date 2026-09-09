@@ -1,0 +1,35 @@
+id: cookie-poisoning
+language: go
+category: sessions
+cwe: CWE-565
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation directe de la valeur d'un cookie (r.Cookie /
+    http.Request.Cookies) pour une décision d'autorisation ou métier sans
+    vérification de signature (ex: securecookie, HMAC) ni revalidation
+    côté serveur.
+  patterns:
+    - "cookie, _ := r.Cookie($name); if cookie.Value == $role_or_id { _ }"
+    - "$var, _ := r.Cookie($name); ... Authorize($var.Value)"
+    - "r.Cookies()" # itéré et utilisé directement pour une décision métier
+  exclude_if:
+    - "la valeur du cookie est décodée/vérifiée via gorilla/securecookie ou une fonction de vérification HMAC avant usage"
+    - "la valeur est un identifiant opaque de session (gorilla/sessions) revérifié côté serveur, pas un rôle/prix stocké directement"
+
+message: >
+  Valeur de cookie lue directement (r.Cookie) et utilisée pour une décision
+  de sécurité ou métier sans signature ni vérification d'intégrité — un
+  attaquant peut modifier son propre cookie pour s'octroyer des privilèges
+  (voir rules/remediation/cookie-poisoning.md).
+
+false_positive_notes:
+  - "Si gorilla/securecookie ou un HMAC équivalent protège la valeur avant lecture, le risque d'altération est neutralisé — reclasser en `info`."
+  - "Si le cookie ne contient qu'un identifiant de session opaque géré par gorilla/sessions et que le rôle réel est relu en base à chaque requête, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/cookie-poisoning.md
+knowledge_ref: knowledge/sessions/cookie-poisoning.md

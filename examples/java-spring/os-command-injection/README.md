@@ -1,0 +1,3 @@
+# Injection de commande OS (CWE-78)
+
+Le code vulnérable concatène l'entrée utilisateur `host` dans une chaîne de commande exécutée via `sh -c`, ce qui permet à un attaquant d'insérer des méta-caractères shell (`;`, `|`, `&&`, backtick) pour exécuter des commandes arbitraires sur le serveur. La version corrigée valide `host` selon une liste blanche stricte (caractères alphanumériques, point, tiret) puis utilise `ProcessBuilder` avec un tableau d'arguments fixe, ce qui exécute le binaire directement sans passer par un interpréteur shell et élimine tout risque d'interprétation de méta-caractères.

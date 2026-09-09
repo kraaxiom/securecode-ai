@@ -1,0 +1,37 @@
+id: api-key-leakage
+language: csharp
+category: api
+cwe: CWE-798
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé API, un secret client ou un token codé en dur dans le
+    code source C# ou dans un fichier de configuration ASP.NET Core
+    (appsettings.json, Program.cs) au lieu d'être injecté via une variable
+    d'environnement ou un gestionnaire de secrets (Azure Key Vault, User Secrets).
+  patterns:
+    - "const string $var = \"$literal_key\""
+    - "private static readonly string $var = \"$literal_key\""
+    - "builder.Configuration[\"$key\"] = \"$literal_key\""
+    - "new HttpClient().DefaultRequestHeaders.Add(\"Authorization\", \"$literal_key\")"
+    - "\"ApiKey\": \"$literal_key\""
+  exclude_if:
+    - "la valeur provient de IConfiguration/appsettings via une clé sans littéral en dur (ex: Configuration[\"ApiKey\"] sans valeur codée)"
+    - "la valeur est lue depuis Environment.GetEnvironmentVariable ou Azure Key Vault / User Secrets"
+    - "le littéral est un exemple factice clairement non fonctionnel (ex: \"YOUR_API_KEY_HERE\")"
+
+message: >
+  Clé API ou secret codé en dur dans le code source ou la configuration —
+  déplacer vers une variable d'environnement ou un gestionnaire de secrets
+  (Azure Key Vault, User Secrets en développement) (voir rules/remediation/api-key-leakage.md).
+
+false_positive_notes:
+  - "Si la chaîne est un exemple de documentation manifestement non fonctionnel, reclasser en `info`."
+  - "Vérifier que appsettings.Development.json n'est pas confondu avec un secret de production réel avant de remonter en `high`."
+
+remediation_ref: rules/remediation/api-key-leakage.md
+knowledge_ref: knowledge/api/api-key-leakage.md

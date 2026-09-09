@@ -1,0 +1,35 @@
+id: header-injection
+language: python
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'assignation directe d'une entrée utilisateur à un en-tête de
+    réponse HTTP (redirection, en-tête personnalisé) sans validation, en
+    particulier pour les en-têtes Location/Set-Cookie construits à partir de
+    request.args/request.form/request.headers.
+  patterns:
+    - "response.headers[\"Location\"] = request.args.get(\"next\")"
+    - "resp[\"Content-Disposition\"] = f\"attachment; filename={var}\""
+    - "response.headers.update({header_name: var})"
+  exclude_if:
+    - "var provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur)"
+    - "var est validé par une liste blanche stricte ou un encodage adapté (urlencode) avant assignation"
+
+message: >
+  En-tête HTTP construit directement à partir d'une entrée utilisateur non
+  validée — un attaquant peut injecter des caractères de contrôle ou
+  manipuler le comportement du client/proxy. Valider strictement le format
+  attendu (whitelist, encodage) avant d'assigner la valeur à un en-tête.
+
+false_positive_notes:
+  - "Les en-têtes dont la valeur passe par un encodeur adapté (urllib.parse.quote pour un nom de fichier, par exemple) présentent un risque très réduit."
+  - "Distinguer d'une simple redirection vers une URL validée par whitelist (pas de risque de header injection)."
+
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

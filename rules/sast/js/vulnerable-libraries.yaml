@@ -1,0 +1,32 @@
+id: vulnerable-libraries
+language: javascript
+category: supply-chain
+cwe: CWE-1035
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: medium
+confidence_default: low
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans package.json, une dépendance dont la version majeure est
+    très en retard par rapport à la dernière version stable, ou dont le
+    dépôt source correspondant est marqué archivé/non maintenu.
+  patterns:
+    - "dependencies.<package>: '<version>' où <version> a plusieurs générations majeures de retard sur la dernière release stable"
+    - "Package dont le dépôt GitHub est archivé/sans commit depuis > 24 mois (ex: request, request-promise)"
+  exclude_if:
+    - "Le package est explicitement gelé par choix documenté (ex: compatibilité legacy justifiée) avec contrôle compensatoire noté"
+    - "Le package n'a pas de CVE connue et n'a aucune surface de sécurité exposée (utilitaire pur sans I/O réseau)"
+
+message: >
+  Dépendance obsolète ou non maintenue détectée — planifier une mise à
+  niveau ou un remplacement par une alternative activement maintenue
+  (voir rules/remediation/vulnerable-libraries.md).
+
+false_positive_notes:
+  - "Une bibliothèque stable sans besoin de mise à jour fonctionnelle n'est pas nécessairement un risque si elle reste sans CVE et sans surface de sécurité exposée."
+  - "Vérifier l'activité réelle du mainteneur (issues traitées, forks actifs) avant de conclure à l'abandon."
+
+remediation_ref: rules/remediation/vulnerable-libraries.md
+knowledge_ref: knowledge/supply-chain/vulnerable-libraries.md

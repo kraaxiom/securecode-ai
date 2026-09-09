@@ -1,0 +1,43 @@
+id: xs-search
+language: java
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint de recherche/filtrage Spring MVC dont le nombre de
+    résultats, le statut HTTP ou le temps de réponse varie visiblement selon
+    des critères contrôlés par un attaquant appliqués aux données d'autrui
+    (ex: `@GetMapping("/search")` filtrant sur des champs privés d'un autre
+    utilisateur), permettant à un site tiers embarquant cet endpoint dans un
+    iframe/fetch cross-origin de déduire des données privées par
+    oracle (XS-Search), en l'absence de protections CSRF/frame-ancestors et
+    de limitation de requêtes.
+  patterns:
+    - "@GetMapping(\"/search\") ResponseEntity<$T> $method(@RequestParam $query, ...) { ... return $repository.findByCriteria($query, ...); } // résultat/statut observable, sans vérification d'appartenance stricte à l'utilisateur courant"
+    - "SecurityFilterChain $chain(HttpSecurity $http) { ... } // absence de frame-ancestors/X-Frame-Options empêchant l'embarquement cross-origin de la page de recherche"
+  exclude_if:
+    - "L'endpoint de recherche filtre strictement sur les données appartenant à l'utilisateur authentifié courant (pas de recherche cross-utilisateur possible)"
+    - "headers().frameOptions(...).deny() ou frame-ancestors 'none'/'self' empêche l'embarquement de la page dans un iframe cross-origin, et un rate limiting borne le nombre de requêtes de sondage possibles"
+
+message: >
+  L'endpoint de recherche/filtrage retourne un résultat observable
+  (nombre de résultats, statut, timing) qui varie selon des critères
+  applicables à des données appartenant à d'autres utilisateurs, sans
+  restriction d'embarquement cross-origin — un site tiers peut automatiser
+  des centaines de requêtes de sondage (via iframe/fetch) pour déduire des
+  informations privées bit par bit (XS-Search). Restreindre la recherche
+  aux données de l'utilisateur courant, interdire l'embarquement cross-
+  origin (`frame-ancestors 'self'`), et appliquer un rate limiting strict
+  sur les endpoints de recherche sensibles.
+
+false_positive_notes:
+  - "XS-Search nécessite généralement un grand nombre de requêtes automatisées pour être exploitable — si un rate limiting agressif est en place, le risque pratique est réduit même sans autres protections — reclasser en `low`."
+  - "Si l'endpoint ne recherche jamais dans des données appartenant à d'autres utilisateurs que l'appelant, cette règle ne s'applique pas."
+
+remediation_ref: rules/remediation/xs-search.md
+knowledge_ref: knowledge/modern/xs-search.md

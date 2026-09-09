@@ -1,0 +1,32 @@
+id: wp-config-php
+language: php
+category: sensitive-files
+cwe: CWE-540
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: filesystem-pattern
+  description: >
+    Détecte la présence de le fichier `wp-config.php` (identifiants de base de données WordPress, clés de sécurité/salts) accessible en texte brut, typiquement via une copie de sauvegarde (wp-config.php.bak, .old, ~, .swp) que le serveur ne traite pas comme du PHP, atteignable par une requête HTTP
+    directe (pas d'analyse du contenu du fichier — simple présence dans un
+    répertoire servi publiquement par le serveur web).
+  patterns:
+    - "fichier correspondant à: wp-config.php.bak, wp-config.php.old, wp-config.php~, wp-config.php.swp"
+    - "chemin situé sous un répertoire configuré comme webroot (ex: public/, www/, htdocs/, wwwroot/)"
+  exclude_if:
+    - "le fichier est situé strictement en dehors de la racine documentaire du serveur web (ex: hors de public/ pour une app Laravel/Symfony)"
+    - "une règle serveur (nginx deny / Apache Require all denied) bloque explicitement et vérifiablement l'accès au fichier"
+
+message: >
+  wp-config.php détecté dans le webroot public — accessible potentiellement par
+  une requête HTTP directe. Voir rules/remediation/wp-config-php.md pour la
+  correction (règle serveur, .gitignore, contrôle CI).
+
+false_positive_notes:
+  - "Si le répertoire scanné n'est pas réellement le webroot déployé (ex: scan du dépôt Git complet, pas de l'artefact de déploiement), reclasser en `info`."
+  - "Vérifier qu'une règle de blocage serveur n'est pas déjà en place avant de considérer l'alerte comme exploitable."
+
+remediation_ref: rules/remediation/wp-config-php.md
+knowledge_ref: knowledge/sensitive-files/wp-config-php.md

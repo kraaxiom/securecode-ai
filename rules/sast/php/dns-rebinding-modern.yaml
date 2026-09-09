@@ -1,0 +1,33 @@
+id: dns-rebinding-modern
+language: php
+category: modern
+cwe: CWE-350
+owasp: A10:2021-Server-Side Request Forgery
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint destiné à un usage local/interne qui fonde une
+    décision d'accès uniquement sur $_SERVER['HTTP_HOST'] ou HTTP_ORIGIN,
+    sans authentification explicite ni validation stricte de liste blanche.
+  patterns:
+    - "if ($_SERVER['HTTP_HOST'] === _) grants access without a token/session check"
+    - "route bound to 127.0.0.1/localhost without any authentication middleware"
+    - "$_SERVER['HTTP_ORIGIN'] used as sole access control condition"
+  exclude_if:
+    - "un jeton ou une session est vérifié en plus de l'en-tête Host/Origin"
+    - "le Host est validé contre une liste blanche stricte définie en constante"
+
+message: >
+  Contrôle d'accès basé uniquement sur l'en-tête Host/Origin pour un service
+  local — vulnérable au DNS rebinding si aucune authentification indépendante
+  du réseau n'est appliquée (voir rules/remediation/dns-rebinding-modern.md).
+
+false_positive_notes:
+  - "Si le service n'est jamais accessible que via une socket Unix ou une interface non réseau, non applicable."
+  - "Si une authentification par jeton est déjà exigée en amont dans un middleware non visible localement, vérifier manuellement."
+
+remediation_ref: rules/remediation/dns-rebinding-modern.md
+knowledge_ref: knowledge/modern/dns-rebinding-modern.md

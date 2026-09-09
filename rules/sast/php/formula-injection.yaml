@@ -1,0 +1,35 @@
+id: formula-injection
+language: php
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte l'écriture d'une variable utilisateur non neutralisée dans une
+    ligne CSV (fputcsv, implode suivi d'écriture fichier) ou une cellule
+    XLSX/ODS sans passage préalable par une fonction de neutralisation des
+    caractères déclencheurs de formule. Une regex est utilisée car la
+    détection porte sur l'absence d'un appel de neutralisation avant l'appel
+    d'écriture, difficile à exprimer fiablement en ast-pattern générique.
+  patterns:
+    - "fputcsv\\s*\\(\\s*\\$\\w+\\s*,\\s*\\[[^\\]]*\\$(_GET|_POST|_REQUEST|request)"
+    - "->setCellValue\\s*\\(\\s*[\"'][A-Z]+\\d+[\"']\\s*,\\s*\\$(_GET|_POST|_REQUEST|request)"
+  exclude_if:
+    - "La valeur passe par une fonction de neutralisation des caractères =, +, -, @ avant l'appel fputcsv/setCellValue"
+    - "La valeur est une constante applicative interne, jamais issue d'une saisie utilisateur"
+
+message: >
+  Écriture d'une valeur utilisateur non neutralisée dans un export CSV/XLSX —
+  préfixer les valeurs commençant par =, +, -, @ d'une apostrophe avant
+  écriture (voir rules/remediation/formula-injection.md).
+
+false_positive_notes:
+  - "Si la bibliothèque d'export utilisée applique une neutralisation automatique documentée (option d'échappement de formule activée), le risque est déjà couvert — reclasser en `info`."
+  - "Si le champ exporté est strictement numérique ou validé par un format contrôlé (ex: date ISO), il ne peut pas contenir de caractère déclencheur — reclasser en `info`."
+
+remediation_ref: rules/remediation/formula-injection.md
+knowledge_ref: knowledge/injections/formula-injection.md

@@ -1,0 +1,33 @@
+id: rc4
+language: java
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'instanciation d'un chiffrement par flux RC4/ARCFOUR via
+    Cipher.getInstance(), interdit dans TLS depuis la RFC 7465 et présentant
+    des biais statistiques exploitables.
+  patterns:
+    - 'Cipher.getInstance("RC4")'
+    - 'Cipher.getInstance("ARCFOUR")'
+    - 'Cipher.getInstance("RC4/_/_")'
+    - 'KeyGenerator.getInstance("RC4")'
+    - 'KeyGenerator.getInstance("ARCFOUR")'
+  exclude_if:
+    - "L'appel se trouve dans du code mort ou une branche explicitement désactivée par une constante de configuration"
+
+message: >
+  Algorithme RC4/ARCFOUR détecté — remplacer par AES-256-GCM ou ChaCha20-Poly1305
+  via javax.crypto.Cipher (voir rules/remediation/rc4.md).
+
+false_positive_notes:
+  - "Un usage RC4 pour interopérer avec un protocole tiers immuable reste un risque réel à faire remonter, ne pas déclasser sans validation explicite."
+  - "Vérifier que la chaîne d'algorithme n'est pas un simple commentaire ou une chaîne de test non exécutée."
+
+remediation_ref: rules/remediation/rc4.md
+knowledge_ref: knowledge/crypto/rc4.md

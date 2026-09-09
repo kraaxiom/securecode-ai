@@ -1,0 +1,132 @@
+{
+  "$schema": "../schemas/finding.schema.json",
+  "description": "Jeu de cas de test pour mesurer la précision de détection du moteur SAST du skill SecureCode AI. Chaque cas référence une fixture volontairement vulnérable dans tests/fixtures/ et la liste des findings attendus (rule_id + fichier + plage de lignes approximative + cwe).",
+  "cases": [
+    {
+      "id": "php-laravel-demo-sqli-union",
+      "fixture_path": "tests/fixtures/php-laravel-demo/app/Http/Controllers/UserController.php",
+      "language": "php",
+      "expected_findings": [
+        {
+          "rule_id": "sqli-union",
+          "cwe": "CWE-89",
+          "severity": "high",
+          "function": "search",
+          "description": "Concaténation directe de $term dans une requête DB::select brute."
+        }
+      ]
+    },
+    {
+      "id": "php-laravel-demo-idor",
+      "fixture_path": "tests/fixtures/php-laravel-demo/app/Http/Controllers/UserController.php",
+      "language": "php",
+      "expected_findings": [
+        {
+          "rule_id": "idor",
+          "cwe": "CWE-639",
+          "severity": "high",
+          "function": "show",
+          "description": "User::find($id) sans vérification que l'utilisateur authentifié est le propriétaire de la ressource."
+        }
+      ]
+    },
+    {
+      "id": "php-laravel-demo-reflected-xss",
+      "fixture_path": "tests/fixtures/php-laravel-demo/app/Http/Controllers/UserController.php",
+      "language": "php",
+      "expected_findings": [
+        {
+          "rule_id": "reflected-xss",
+          "cwe": "CWE-79",
+          "severity": "medium",
+          "function": "welcome",
+          "description": "Paramètre $name réinjecté sans échappement dans une réponse HTML brute."
+        }
+      ]
+    },
+    {
+      "id": "node-express-demo-command-injection",
+      "fixture_path": "tests/fixtures/node-express-demo/routes/users.js",
+      "language": "js",
+      "expected_findings": [
+        {
+          "rule_id": "command-injection",
+          "cwe": "CWE-78",
+          "severity": "critical",
+          "route": "GET /convert",
+          "description": "req.query.file concaténé directement dans une commande shell passée à exec()."
+        }
+      ]
+    },
+    {
+      "id": "node-express-demo-broken-access-control",
+      "fixture_path": "tests/fixtures/node-express-demo/routes/users.js",
+      "language": "js",
+      "expected_findings": [
+        {
+          "rule_id": "broken-access-control",
+          "cwe": "CWE-284",
+          "severity": "high",
+          "route": "GET /:id",
+          "description": "Aucune vérification que req.user.id correspond à req.params.id avant de renvoyer le profil."
+        }
+      ]
+    },
+    {
+      "id": "node-express-demo-weak-jwt-secret",
+      "fixture_path": "tests/fixtures/node-express-demo/routes/users.js",
+      "language": "js",
+      "expected_findings": [
+        {
+          "rule_id": "weak-jwt-secret",
+          "cwe": "CWE-1391",
+          "severity": "high",
+          "route": "POST /login",
+          "description": "Secret JWT court et codé en dur ('secret123') dans jwt.sign()."
+        }
+      ]
+    },
+    {
+      "id": "python-django-demo-ssti",
+      "fixture_path": "tests/fixtures/python-django-demo/app/views.py",
+      "language": "python",
+      "expected_findings": [
+        {
+          "rule_id": "ssti",
+          "cwe": "CWE-1336",
+          "severity": "critical",
+          "function": "greet",
+          "description": "Concaténation de l'entrée utilisateur dans le code source d'un Template Django avant compilation."
+        }
+      ]
+    },
+    {
+      "id": "python-django-demo-path-traversal",
+      "fixture_path": "tests/fixtures/python-django-demo/app/views.py",
+      "language": "python",
+      "expected_findings": [
+        {
+          "rule_id": "path-traversal",
+          "cwe": "CWE-22",
+          "severity": "high",
+          "function": "download_file",
+          "description": "os.path.join(MEDIA_ROOT, filename) sans validation contre les séquences '../'."
+        }
+      ]
+    },
+    {
+      "id": "python-django-demo-mass-assignment",
+      "fixture_path": "tests/fixtures/python-django-demo/app/views.py",
+      "language": "python",
+      "expected_findings": [
+        {
+          "rule_id": "mass-assignment",
+          "cwe": "CWE-915",
+          "severity": "high",
+          "function": "update_profile",
+          "description": "Application aveugle du corps JSON de la requête sur le modèle utilisateur via setattr()."
+        }
+      ]
+    }
+  ]
+}

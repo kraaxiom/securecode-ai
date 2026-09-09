@@ -1,0 +1,36 @@
+id: model-inversion
+language: csharp
+category: llm
+cwe: CWE-200
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un modèle fine-tuné/entraîné sur des données sensibles (PII,
+    dossiers internes) via Azure OpenAI exposé via une API sans limitation
+    permettant des attaques d'inversion de modèle (reconstruction d'exemples
+    d'entraînement par requêtes ciblées répétées).
+  patterns:
+    - "await openAIClient.GetFineTuningJobs().CreateAsync(new FineTuningJobCreationOptions(datasetContenantPii)) puis modèle exposé via endpoint public sans anonymisation préalable des données d'entraînement"
+    - "FineTuningJobCreationOptions(fichierContenantDonneesClients) sans étape de pseudonymisation/agrégation avant fine-tuning"
+    - "Endpoint exposant le modèle fine-tuné sans limitation de similarité/volume de requêtes ciblant des identifiants spécifiques (ex: 'quel est l'email de X')"
+  exclude_if:
+    - "les données d'entraînement sont anonymisées/pseudonymisées avant fine-tuning (aucune donnée directement identifiable) ET l'accès à l'API est limité en débit"
+
+message: >
+  Modèle entraîné/fine-tuné sur des données sensibles et exposé sans
+  protection contre les attaques d'inversion — un attaquant peut reconstruire
+  des données d'entraînement (PII) par requêtes ciblées répétées. Anonymiser/
+  pseudonymiser les données avant entraînement, limiter le débit d'accès à
+  l'API, et envisager une confidentialité différentielle (differential
+  privacy) — voir rules/remediation/model-inversion.md.
+
+false_positive_notes:
+  - "Un modèle entraîné uniquement sur des données publiques/synthétiques n'est pas concerné."
+  - "Un accès strictement interne et audité au modèle (pas d'exposition externe) réduit fortement le risque — reclasser en `medium`."
+
+remediation_ref: rules/remediation/model-inversion.md
+knowledge_ref: knowledge/llm/model-inversion.md

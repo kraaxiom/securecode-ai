@@ -1,0 +1,36 @@
+id: markdown-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la conversion d'un Markdown utilisateur en HTML (via
+    CommonMark-java, flexmark, pegdown) dont la sortie est insérée sans
+    passer par un sanitizer, alors que la plupart des moteurs Markdown
+    autorisent par défaut le HTML brut inline (`<script>`, `<img onerror>`).
+  patterns:
+    - "HtmlRenderer.render(Node) suivi d'une insertion th:utext=\"${html}\" sans sanitisation"
+    - "PegDownProcessor.markdownToHtml($var) inséré directement dans la réponse"
+  exclude_if:
+    - "le rendu HTML passe par OWASP Java HTML Sanitizer (ou équivalent) après conversion Markdown, avant insertion"
+    - "le moteur Markdown est configuré avec HtmlBlockParser/HtmlInlineParser désactivés (pas de HTML brut autorisé)"
+
+message: >
+  HTML généré à partir de Markdown utilisateur inséré sans sanitisation —
+  la plupart des moteurs Markdown laissent passer le HTML brut inline par
+  défaut, permettant l'injection de `<script>`/gestionnaires d'événements
+  (XSS) ; désactiver le HTML brut dans le moteur Markdown ou passer la
+  sortie par OWASP Java HTML Sanitizer avant rendu
+  (voir rules/remediation/markdown-xss.md).
+
+false_positive_notes:
+  - "Un moteur configuré pour échapper (pas interpréter) le HTML brut inline neutralise ce vecteur — vérifier les extensions/options activées."
+  - "Un sanitizer HTML appliqué systématiquement après conversion, avec whitelist de balises restreinte, réduit fortement le risque."
+
+remediation_ref: rules/remediation/markdown-xss.md
+knowledge_ref: knowledge/xss/markdown-xss.md

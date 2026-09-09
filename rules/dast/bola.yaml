@@ -1,0 +1,19 @@
+id: bola
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+type: dast
+test:
+  method: GET|PUT|DELETE
+  target: identifiant d'objet dans le chemin de l'URL ou dans le corps JSON d'un endpoint d'API (ex. /api/orders/{id})
+  technique: differential-response
+  indicators:
+    - "requête effectuée avec un compte A sur un identifiant d'objet appartenant à un compte B renvoie un statut de succès (200) au lieu d'un refus (401/403/404)"
+    - "le corps de réponse pour l'objet du compte B est identique en structure à celui obtenu légitimement pour un objet du compte A, alors que l'appelant n'a jamais été associé à cet objet"
+    - "variation du code de statut selon la simple valeur numérique de l'identifiant testé, sans changement du token d'authentification utilisé"
+false_positive_notes:
+  - "objet volontairement public/partagé (ressource collaborative) : vérifier le modèle de partage avant de conclure à une BOLA"
+  - "réponse 403 générique renvoyée pour toute erreur applicative : ne pas confondre avec un vrai contrôle d'appartenance testé sur plusieurs objets distincts"
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

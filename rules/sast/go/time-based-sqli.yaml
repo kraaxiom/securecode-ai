@@ -1,0 +1,30 @@
+id: time-based-sqli
+language: go
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'une requête SQL par concaténation/formatage d'une variable non liée (injection sql basée sur le temps).
+  patterns:
+    - "db.Query(fmt.Sprintf(_, $var))"
+    - "db.Exec(fmt.Sprintf(_, $var))"
+    - "db.QueryRow(string_concat(_, $var, _))"
+    - "sqlx.Query(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est passé comme argument positionnel séparé à db.Query/Exec (placeholders ? ou $1), pas dans la chaîne formatée"
+    - "$var provient d'une constante interne, pas d'une entrée utilisateur"
+
+message: >
+  Injection SQL basée sur le temps détectée — utiliser des requêtes paramétrées avec placeholders (?, $1) au lieu de fmt.Sprintf (voir rules/remediation/time-based-sqli.md).
+
+false_positive_notes:
+  - "Si la variable provient exclusivement d'une constante applicative interne, non exploitable — reclasser en `info`."
+  - "Vérifier que l'ORM/ODBC ne réalise pas déjà un échappement systématique avant de remonter en `high`/`critical`."
+
+remediation_ref: rules/remediation/time-based-sqli.md
+knowledge_ref: knowledge/injections/time-based-sqli.md

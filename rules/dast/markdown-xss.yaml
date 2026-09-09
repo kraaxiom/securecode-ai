@@ -1,0 +1,17 @@
+id: markdown-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: POST
+  target: champ de contenu Markdown (commentaire, wiki, ticket, README) soumis puis rendu en HTML
+  technique: differential-response
+  indicators:
+    - "un marqueur inerte placé dans une construction Markdown de type lien/image (schéma d'URL non http) apparaît dans la réponse rendue sous une forme structurellement active (attribut d'URL non neutralisé) plutôt que comme texte littéral échappé"
+    - "un bloc HTML brut inséré dans le contenu Markdown source est restitué tel quel dans le HTML de sortie plutôt que d'être neutralisé ou supprimé, révélant que le support HTML brut du moteur de rendu est actif sur du contenu non fiable"
+false_positive_notes:
+  - "Certains moteurs Markdown échappent le HTML brut par défaut — confirmer que le rendu observé provient bien du contenu soumis et non d'une configuration de test différente de la production."
+remediation_ref: rules/remediation/markdown-xss.md
+knowledge_ref: knowledge/xss/markdown-xss.md

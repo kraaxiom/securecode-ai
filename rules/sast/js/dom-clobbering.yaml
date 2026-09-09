@@ -1,0 +1,32 @@
+id: dom-clobbering
+language: js
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage d'une variable globale implicite (`window.X`,
+    `document.getElementById(...)`) pour une valeur de configuration
+    sensible, sans validation de type avant utilisation.
+  patterns:
+    - "if (window._) { _ }"                       # sans vérification typeof/instanceof
+    - "document.getElementById(_).value"           # utilisé comme source de config/URL sans validation
+    - "document.forms._.action"
+  exclude_if:
+    - "la valeur est vérifiée via typeof === 'object' ou instanceof avant usage sensible"
+    - "la variable provient d'un module JS encapsulé (import), pas d'un accès implicite au DOM/window"
+
+message: >
+  Variable globale implicite utilisée sans validation de type — risque de DOM
+  clobbering (voir rules/remediation/dom-clobbering.md).
+
+false_positive_notes:
+  - "Si aucune entrée HTML utilisateur n'est jamais rendue dans la page (pas de commentaires/contenu riche), le vecteur d'injection est absent — reclasser en `info`."
+  - "Variable window.X définie exclusivement par du code JS de confiance (jamais par du HTML), sans risque de collision : reclasser en `low`."
+
+remediation_ref: rules/remediation/dom-clobbering.md
+knowledge_ref: knowledge/frontend/dom-clobbering.md

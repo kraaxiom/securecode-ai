@@ -1,0 +1,36 @@
+id: zip-bomb
+language: java
+category: upload
+cwe: CWE-409
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une décompression d'archive uploadée (ZipInputStream,
+    java.util.zip.ZipFile, Apache Commons Compress) sans limite sur la taille
+    décompressée totale, le nombre d'entrées, ou le ratio de compression,
+    exposant à une bombe zip (déni de service par épuisement disque/mémoire).
+  patterns:
+    - "ZipInputStream.getNextEntry() suivi d'une boucle de lecture (IOUtils.copy / while read) sans limite de taille cumulée ni de nombre d'entrées"
+    - "ZipFile ouvert sur un fichier uploadé et itéré sans vérification de ZipEntry.getSize() avant extraction complète"
+    - "absence de vérification du ratio taille-compressée/taille-décompressée avant extraction"
+  exclude_if:
+    - "une limite de taille cumulée décompressée et de nombre d'entrées est vérifiée avant/pendant l'extraction (ex: compteur incrémenté et comparé à un seuil, IOException levée au dépassement)"
+    - "l'extraction utilise une bibliothèque avec protection intégrée contre les zip bombs et une limite explicitement configurée"
+
+message: >
+  L'extraction d'archive uploadée ne limite ni la taille décompressée totale
+  ni le nombre d'entrées — une archive malveillante hautement compressée peut
+  épuiser le disque ou la mémoire du serveur (zip bomb). Imposer une taille
+  maximale décompressée cumulée, un nombre maximal d'entrées, et vérifier le
+  ratio de compression avant extraction complète.
+
+false_positive_notes:
+  - "Si l'archive n'est jamais entièrement extraite (seule la liste des entrées est lue via ZipEntry sans copie du contenu), le risque ne s'applique pas."
+  - "Une limite de taille imposée en amont par un WAF/proxy ne protège pas contre un ratio de compression extrême si la taille compressée reste sous le seuil — ne pas exclure sur ce seul critère."
+
+remediation_ref: rules/remediation/zip-bomb.md
+knowledge_ref: knowledge/upload/zip-bomb.md

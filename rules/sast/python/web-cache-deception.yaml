@@ -1,0 +1,36 @@
+id: web-cache-deception
+language: python
+category: modern
+cwe: CWE-524
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route Flask/Django dynamique et authentifiée dont le
+    routing accepte un chemin avec suffixe arbitraire (ex: route générique
+    `<path:anything>` ou fallback catch-all) qui pourrait être interprété
+    par un cache amont comme une ressource statique en raison de son
+    extension apparente (`.css`, `.jpg`).
+  patterns:
+    - "@app.route('/account/profile/<path:extra>') def profile(extra): return render_user_profile() # accepte n'importe quel suffixe, y compris .css/.jpg"
+    - "Django urls.py avec re_path(r'^compte/profil/(?P<suffix>.*)$', ...) sans validation stricte du suffixe autorisé"
+  exclude_if:
+    - "la route valide strictement le suffixe/chemin contre un pattern exact (pas de catch-all) et rejette (404) tout segment inattendu"
+    - "les en-têtes Cache-Control: private, no-store sont explicitement fixés sur toute réponse de cette route, empêchant sa mise en cache quel que soit le chemin"
+
+message: >
+  Route authentifiée acceptant un chemin/suffixe arbitraire sans validation
+  stricte — un cache amont peut être trompé par une extension apparente
+  (.css, .jpg) et stocker une page personnalisée, la servant ensuite à
+  n'importe quel visiteur non authentifié (voir
+  rules/remediation/web-cache-deception.md).
+
+false_positive_notes:
+  - "Si l'application n'est pas déployée derrière un cache/CDN partagé, l'impact se limite à un comportement de routing inattendu, sans fuite inter-utilisateurs."
+  - "Un en-tête Cache-Control: private/no-store correctement fixé sur la réponse neutralise ce risque même avec un routing permissif — vérifier avant de confirmer en `high`."
+
+remediation_ref: rules/remediation/web-cache-deception.md
+knowledge_ref: knowledge/modern/web-cache-deception.md

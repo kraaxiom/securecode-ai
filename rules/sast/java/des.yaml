@@ -1,0 +1,37 @@
+id: des
+language: java
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'instanciation d'un chiffrement via Cipher.getInstance() avec un
+    algorithme DES ou 3DES (DESede), obsolète et cassable par force brute
+    (56 bits effectifs) ou vulnérable à l'attaque Sweet32.
+  patterns:
+    - 'Cipher.getInstance("DES")'
+    - 'Cipher.getInstance("DES/_/_")'
+    - 'Cipher.getInstance("DESede")'
+    - 'Cipher.getInstance("DESede/_/_")'
+    - 'Cipher.getInstance("TripleDES")'
+    - 'KeyGenerator.getInstance("DES")'
+    - 'KeyGenerator.getInstance("DESede")'
+  exclude_if:
+    - "L'appel se trouve dans un fichier de test unitaire dédié à la compatibilité avec un format legacy explicitement documenté"
+    - "La chaîne d'algorithme provient d'une constante commentée comme désactivée / code mort non atteignable"
+
+message: >
+  Algorithme DES/3DES détecté — remplacer par AES-256 en mode GCM
+  (javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")) avec une clé
+  générée par KeyGenerator/SecureRandom (voir rules/remediation/des.md).
+
+false_positive_notes:
+  - "Si la valeur passée à Cipher.getInstance() est concaténée dynamiquement et ne peut pas être résolue statiquement, vérifier manuellement la valeur réelle avant de confirmer."
+  - "Un usage de DES uniquement pour interopérer avec un système tiers legacy immuable reste un risque réel — ne pas déclasser sans validation d'un responsable sécurité."
+
+remediation_ref: rules/remediation/des.md
+knowledge_ref: knowledge/crypto/des.md

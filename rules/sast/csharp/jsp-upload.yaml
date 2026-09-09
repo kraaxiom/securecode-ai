@@ -1,0 +1,37 @@
+id: jsp-upload
+language: csharp
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent générique de l'upload de fichier exécutable côté conteneur
+    d'application (transposé de la classe JSP/Servlet vers ASP.NET) —
+    détecte l'enregistrement d'un fichier téléversé dans un répertoire
+    déployé et servi par l'application sans validation stricte, permettant
+    le dépôt d'un fichier interprétable par le runtime (.aspx, .cshtml).
+  patterns:
+    - "$file.CopyToAsync(_)"
+    - "File.WriteAllBytes(Path.Combine($env.WebRootPath, _), _)"
+    - "File.Copy($tempPath, string_concat(_, $file.FileName))"
+  exclude_if:
+    - "l'extension est validée par une liste blanche stricte avant l'écriture dans le répertoire déployé"
+    - "le fichier est stocké hors du répertoire wwwroot ou dans un dossier dont l'exécution de scripts est explicitement désactivée"
+    - "le nom de fichier de destination est généré côté serveur sans réutiliser le nom fourni par le client"
+
+message: >
+  Enregistrement d'un fichier téléversé directement dans le répertoire
+  déployé de l'application (wwwroot ou équivalent) sans validation
+  stricte — risque de dépôt d'un fichier interprété par le runtime au lieu
+  d'être servi comme contenu statique (voir rules/remediation/jsp-upload.md).
+
+false_positive_notes:
+  - "Si le répertoire de destination est en dehors de wwwroot et non exposé par le pipeline de fichiers statiques, ce n'est pas exploitable directement — reclasser en `info`."
+  - "Si une liste blanche d'extensions stricte et un renommage aléatoire sont déjà appliqués, le risque est neutralisé."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

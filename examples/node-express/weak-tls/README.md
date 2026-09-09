@@ -1,0 +1,3 @@
+## Configuration TLS faible (CWE-326)
+
+Le code vulnérable crée un agent HTTPS avec `rejectUnauthorized: false`, désactivant totalement la vérification du certificat du serveur distant, ce qui permet à un attaquant en position de man-in-the-middle d'intercepter ou de falsifier le trafic même si la connexion utilise nominalement TLS. La correction réactive la vérification (`rejectUnauthorized: true`) et impose une version minimale moderne du protocole (`minVersion: 'TLSv1.2'`), garantissant à la fois l'authenticité du serveur distant et l'usage de suites de chiffrement récentes. Cette désactivation ne doit jamais être tolérée, y compris temporairement en environnement de développement ou de test.

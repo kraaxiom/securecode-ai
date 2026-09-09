@@ -1,0 +1,36 @@
+id: account-takeover
+language: java
+category: business-logic
+cwe: CWE-640
+owasp: A07:2021-Identification-and-Authentication-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java (Spring Service/Controller), un flux de
+    réinitialisation de mot de passe ou de changement d'email sans
+    vérification suffisante de l'identité (pas de token à usage unique
+    daté, pas de ré-authentification), permettant une prise de contrôle de
+    compte.
+  patterns:
+    - "@PostMapping(\"/reset-password\") appelant userService.updatePassword(userId, newPassword) sans vérifier un token de réinitialisation signé/à expiration en base"
+    - "méthode changeEmail(Long userId, String newEmail) modifiant l'email sans exiger la vérification du nouvel email ni ré-authentification par mot de passe"
+    - "token de réinitialisation généré via new Random() ou UUID tronqué/prévisible au lieu de SecureRandom avec entropie suffisante"
+    - "absence d'invalidation des sessions actives existantes après changement de mot de passe (pas d'appel à session invalidation / révocation des JWT existants)"
+
+message: >
+  Flux de réinitialisation de mot de passe ou de changement d'email sans
+  vérification d'identité suffisante — permet une prise de contrôle de
+  compte (account takeover). Utiliser un token à usage unique signé avec
+  expiration courte généré via SecureRandom, exiger une vérification du
+  nouvel email, et invalider les sessions actives après tout changement de
+  credentials.
+
+false_positive_notes:
+  - "Si le token de réinitialisation est vérifié avec expiration et usage unique via un service dédié (ex: Spring Security PasswordResetTokenRepository), reclasser en `low`."
+  - "Les flux internes réservés aux administrateurs authentifiés avec MFA présentent un risque réduit."
+
+remediation_ref: rules/remediation/account-takeover.md
+knowledge_ref: knowledge/business-logic/account-takeover.md

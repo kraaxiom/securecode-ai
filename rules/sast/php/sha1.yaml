@@ -1,0 +1,33 @@
+id: sha1
+language: php
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage de sha1() pour du hachage de mot de passe, de secret,
+    ou de signature opposable à un attaquant.
+  patterns:
+    - "sha1($password)"
+    - "sha1($_POST['password'])"
+    - "hash(\"sha1\", _)"
+    - "hash_hmac(\"sha1\", _, _)"
+  exclude_if:
+    - "le résultat sert uniquement de checksum non adversarial (comparaison de contenu de fichier interne, clé de cache)"
+    - "l'algorithme est imposé par un protocole tiers legacy documenté (ex: compatibilité OAuth1 avec un partenaire figé) et le risque est accepté explicitement"
+
+message: >
+  SHA-1 est cassé pour un usage adversarial (collisions pratiques
+  démontrées) — pour un mot de passe utiliser password_hash(), pour une
+  signature/HMAC préférer SHA-256+ (voir rules/remediation/sha1.md).
+
+false_positive_notes:
+  - "Un SHA-1 utilisé pour vérifier l'intégrité d'un téléchargement non sensible et non signé par un attaquant potentiel est un risque faible — envisager `low`."
+  - "Vérifier si la donnée hachée touche l'authentification ou une signature de sécurité avant de fixer la sévérité définitive."
+
+remediation_ref: rules/remediation/sha1.md
+knowledge_ref: knowledge/crypto/sha1.md

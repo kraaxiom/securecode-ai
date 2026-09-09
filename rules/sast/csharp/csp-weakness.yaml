@@ -1,0 +1,37 @@
+id: csp-weakness
+language: csharp
+category: frontend
+cwe: CWE-693
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une Content-Security-Policy configurée côté ASP.NET Core
+    (middleware ou en-tête manuel) contenant des directives trop permissives
+    (unsafe-inline, unsafe-eval, joker large) ou son absence totale.
+  patterns:
+    - "context.Response.Headers[\"Content-Security-Policy\"] = string_concat(_, \"unsafe-inline\", _)"
+    - "context.Response.Headers[\"Content-Security-Policy\"] = string_concat(_, \"unsafe-eval\", _)"
+    - "context.Response.Headers[\"Content-Security-Policy\"] = \"default-src *\""
+    - "app.Use(async (context, next) => { _; next(); })  # aucune définition de Content-Security-Policy dans le pipeline"
+  exclude_if:
+    - "la valeur unsafe-inline/unsafe-eval est explicitement limitée à un environnement de développement (condition env.IsDevelopment())"
+    - "la CSP utilise des nonces ou hashes générés dynamiquement plutôt que unsafe-inline"
+    - "la directive concernée est report-only et un ticket de durcissement est référencé dans le code"
+
+message: >
+  La Content-Security-Policy définie par le backend contient des directives
+  trop permissives (unsafe-inline/unsafe-eval/joker *) ou n'est pas définie du
+  tout, ce qui réduit l'efficacité de cette défense en profondeur contre le XSS
+  (voir rules/remediation/csp-weakness.md).
+
+false_positive_notes:
+  - "Si unsafe-inline/unsafe-eval n'est actif qu'en environnement de développement (IsDevelopment()), l'impact en production est nul."
+  - "Une CSP en mode Content-Security-Policy-Report-Only n'est pas bloquante mais reste un signal à corriger, pas un vrai positif critique."
+  - "Vérifier qu'aucun middleware plus spécifique (ex: NWebsec) ne surcharge ensuite cette valeur avec une politique plus stricte."
+
+remediation_ref: rules/remediation/csp-weakness.md
+knowledge_ref: knowledge/frontend/csp-weakness.md

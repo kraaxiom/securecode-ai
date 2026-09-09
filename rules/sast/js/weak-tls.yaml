@@ -1,0 +1,33 @@
+id: weak-tls
+language: js
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration TLS Node.js incluant des suites de chiffrement
+    faibles ou désactivant la vérification de certificat.
+  patterns:
+    - "https.request({\"rejectUnauthorized\": false}, _)"
+    - "tls.connect({\"rejectUnauthorized\": false})"
+    - "new https.Agent({\"rejectUnauthorized\": false})"
+    - "axios.create({\"httpsAgent\": *rejectUnauthorized: false*})"
+  exclude_if:
+    - "rejectUnauthorized est désactivé uniquement dans un environnement de test local clairement isolé (constante d'environnement 'test'/'local' vérifiée avant l'appel)"
+
+message: >
+  Configuration TLS faible (suites obsolètes ou vérification de certificat
+  désactivée) — imposer des suites AEAD modernes avec forward secrecy et ne
+  jamais désactiver rejectUnauthorized en production
+  (voir rules/remediation/weak-tls.md).
+
+false_positive_notes:
+  - "La désactivation de rejectUnauthorized dans un script d'infrastructure interne isolé reste risquée mais peut être `medium` plutôt que `high`."
+  - "Confirmer l'environnement cible (prod vs dev/test) avant de fixer la sévérité finale — ce pattern a un taux de faux positifs plus élevé que les autres règles crypto."
+
+remediation_ref: rules/remediation/weak-tls.md
+knowledge_ref: knowledge/crypto/weak-tls.md

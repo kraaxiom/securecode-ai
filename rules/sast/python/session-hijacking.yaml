@@ -1,0 +1,32 @@
+id: session-hijacking
+language: python
+category: sessions
+cwe: CWE-613
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une gestion de session sans expiration serveur (durée de vie
+    infinie ou absente), ni liaison au contexte client (IP/user-agent), ce qui
+    facilite la réutilisation d'un identifiant de session volé.
+  patterns:
+    - "PERMANENT_SESSION_LIFETIME non défini alors que session.permanent = True (Flask)"
+    - "SESSION_COOKIE_AGE réglé à une valeur très élevée ou absente en production (Django)"
+    - "Absence de contrôle de cohérence (user-agent, empreinte) lors de la reprise d'une session existante sur une ressource sensible"
+  exclude_if:
+    - "Une durée de session raisonnable et une invalidation explicite au logout (session.flush() / session.clear()) sont présentes"
+
+message: >
+  Session sans expiration serveur ni contrôle de cohérence — un identifiant de
+  session volé (XSS, réseau, log) reste utilisable indéfiniment. Définir une
+  durée de vie de session courte, invalider la session au logout côté serveur
+  et envisager une empreinte additionnelle (user-agent, rotation périodique).
+
+false_positive_notes:
+  - "Une session courte associée à un refresh token séparé côté serveur réduit fortement le risque — reclasser en `medium`."
+
+remediation_ref: rules/remediation/session-hijacking.md
+knowledge_ref: knowledge/sessions/session-hijacking.md

@@ -1,0 +1,30 @@
+id: bfla
+language: php
+category: authorization
+cwe: CWE-862
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route effectuant une action sensible (destroy, update d'un
+    champ privilégié, export) protégée uniquement par le middleware 'auth',
+    sans middleware/policy de rôle ('can:', 'role:').
+  patterns:
+    - "Route::delete(_, [_, 'destroy'])->middleware('auth') sans ->middleware('can:*') ni ->middleware('role:*')"
+    - "Route::post('/admin/*', _)->middleware('auth') sans vérification de rôle additionnelle"
+  exclude_if:
+    - "Une policy Laravel (can:) ou un middleware de rôle est chaîné sur la route"
+    - "Une vérification de rôle explicite est effectuée en première ligne du contrôleur (abort_unless, Gate::authorize)"
+
+message: >
+  Endpoint sensible protégé uniquement par l'authentification, sans
+  vérification de rôle/permission — voir rules/remediation/bfla.md.
+
+false_positive_notes:
+  - "Si le contrôleur applique la vérification de rôle en première instruction (Gate::authorize, abort_unless), la route peut sembler non protégée alors qu'elle l'est — vérifier le corps du contrôleur avant de confirmer."
+
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

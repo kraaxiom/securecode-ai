@@ -1,0 +1,3 @@
+# XML External Entity (XXE) Injection (CWE-611)
+
+La version vulnérable configure `XmlReaderSettings` avec `DtdProcessing.Parse` et un `XmlUrlResolver` actif, ce qui autorise le traitement des déclarations DOCTYPE et la résolution d'entités externes ; un document XML malveillant peut alors déclarer une entité pointant vers un fichier local ou une URL interne (divulgation de fichiers, SSRF, déni de service par expansion d'entités). La correction interdit explicitement le traitement des DTD (`DtdProcessing.Prohibit`), supprime tout résolveur d'entités (`XmlResolver = null` sur le `XmlReader` et le `XmlDocument`) et limite `MaxCharactersFromEntities` par défense en profondeur.

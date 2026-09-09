@@ -1,0 +1,34 @@
+id: session-fixation
+language: rust
+category: sessions
+cwe: CWE-384
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction de connexion (actix_session::Session ou
+    tower-sessions) qui authentifie l'utilisateur en réutilisant la session
+    existante sans en régénérer l'identifiant, ou qui accepte un identifiant
+    de session fourni par le client via l'URL.
+  patterns:
+    - "async fn login($session: Session, _) { _ session.insert(\"user_id\", $userID)?; _ }" # sans session.renew() avant/après insert
+    - "async fn login($session: tower_sessions::Session, _) { _ session.insert(\"user_id\", $userID).await?; _ }" # sans session.cycle_id().await
+    - "query.get(\"session_id\")" # identifiant de session accepté depuis l'URL
+  exclude_if:
+    - "session.renew() (actix_session) ou session.cycle_id().await (tower-sessions) est appelé lors de l'authentification, avant ou juste après l'insertion des données utilisateur"
+
+message: >
+  Authentification effectuée sans régénération de l'identifiant de session
+  (session.renew() / session.cycle_id()) — un attaquant ayant préalablement
+  imposé un identifiant à la victime pourrait réutiliser ce même identifiant
+  après connexion (voir rules/remediation/session-fixation.md).
+
+false_positive_notes:
+  - "actix_session et tower-sessions ne régénèrent pas automatiquement l'identifiant de session à chaque insert() ; l'appel explicite à renew()/cycle_id() est requis lors du login."
+  - "Ne jamais accepter un identifiant de session transmis en paramètre d'URL ou de formulaire, même si le reste du flux paraît correct."
+
+remediation_ref: rules/remediation/session-fixation.md
+knowledge_ref: knowledge/sessions/session-fixation.md

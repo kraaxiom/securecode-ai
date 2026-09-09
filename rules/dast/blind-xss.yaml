@@ -1,0 +1,19 @@
+id: blind-xss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: POST
+  target: champ de formulaire externe non authentifié (contact, avis, ticket support, en-tête User-Agent journalisé) susceptible d'être consulté ultérieurement dans une interface d'administration
+  technique: out-of-band
+  indicators:
+    - "callback reçu sur un canal de rappel externe (domaine unique de corrélation) après consultation différée de la donnée soumise dans une interface interne/admin, confirmant une exécution en dehors du contexte de soumission initial"
+    - "délai variable entre soumission et déclenchement du callback, cohérent avec une consultation asynchrone par un opérateur plutôt qu'un rendu immédiat"
+    - "absence d'encodage contextuel observable sur la valeur soumise lorsqu'elle est exposée via une API de consultation accessible en test (ex: endpoint d'export ou de prévisualisation admin)"
+false_positive_notes:
+  - "Un callback reçu sans corrélation stricte à l'identifiant unique injecté peut provenir d'un scan tiers non lié — vérifier l'unicité du marqueur avant de conclure."
+  - "L'absence de callback ne prouve pas l'absence de vulnérabilité si l'interface admin n'a pas été consultée pendant la fenêtre de test."
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

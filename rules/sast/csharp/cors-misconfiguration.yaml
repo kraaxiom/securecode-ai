@@ -1,0 +1,37 @@
+id: cors-misconfiguration
+language: csharp
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une politique CORS ASP.NET Core combinant une origine trop
+    permissive (AllowAnyOrigin ou reflet dynamique de l'en-tête Origin) avec
+    l'autorisation des identifiants (AllowCredentials).
+  patterns:
+    - "builder.AllowAnyOrigin().AllowCredentials()"
+    - "policy.SetIsOriginAllowed(_ => true).AllowCredentials()"
+    - "services.AddCors(options => options.AddPolicy($_, builder => builder.AllowAnyOrigin()._.AllowCredentials()))"
+    - "context.Response.Headers[\"Access-Control-Allow-Origin\"] = context.Request.Headers[\"Origin\"]"
+  exclude_if:
+    - "la politique utilise WithOrigins($liste_statique) avec une liste blanche explicite d'origines"
+    - "AllowCredentials() n'est pas appelé sur la même policy que AllowAnyOrigin()"
+    - "l'endpoint concerné est une API publique sans authentification par cookie/session"
+
+message: >
+  La politique CORS autorise une origine arbitraire (AllowAnyOrigin ou reflet
+  de l'en-tête Origin) tout en autorisant les identifiants (AllowCredentials) —
+  un site tiers malveillant peut alors lire des réponses authentifiées de la
+  victime (voir rules/remediation/cors-misconfiguration.md).
+
+false_positive_notes:
+  - "Si AllowCredentials() n'est jamais appelé sur cette policy, la combinaison n'est pas exploitable pour voler des données authentifiées."
+  - "Si l'API ne repose pas sur des cookies/sessions pour l'authentification (ex: uniquement Bearer token en header), l'impact est réduit."
+  - "Vérifier que WithOrigins() ne contient pas une liste dynamique reconstruite à partir de l'en-tête Origin lui-même."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

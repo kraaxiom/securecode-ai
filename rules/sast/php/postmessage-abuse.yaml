@@ -1,0 +1,31 @@
+id: postmessage-abuse
+language: php
+category: frontend
+cwe: CWE-346
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte du code PHP générant dynamiquement un script inline utilisant
+    `postMessage` sans origine cible explicite, ou un gestionnaire `message`
+    injecté côté serveur sans vérification d'origine.
+  patterns:
+    - "echo \"<script>_.postMessage(_, '*')_</script>\""
+    - "echo \"<script>window.addEventListener('message', function(e) { _ })</script>\"" # sans vérification e.origin
+  exclude_if:
+    - "le script généré précise une origine cible explicite (pas '*') dans l'appel postMessage"
+    - "le gestionnaire message généré compare e.origin à une valeur attendue avant traitement"
+
+message: >
+  Script généré côté serveur utilisant postMessage sans origine stricte —
+  voir rules/remediation/postmessage-abuse.md.
+
+false_positive_notes:
+  - "Si le script n'est jamais intégré en iframe/popup cross-origin (contexte same-origin garanti), le risque est réduit — reclasser en `low`."
+  - "Génération de script à des fins de test/documentation, jamais servie en production : reclasser en `info`."
+
+remediation_ref: rules/remediation/postmessage-abuse.md
+knowledge_ref: knowledge/frontend/postmessage-abuse.md

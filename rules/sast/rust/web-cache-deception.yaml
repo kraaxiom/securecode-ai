@@ -1,0 +1,41 @@
+id: web-cache-deception
+language: rust
+category: modern
+cwe: CWE-524
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un routeur actix-web/axum dont le path matching est permissif
+    (segments de chemin arbitraires acceptés après une route valide, ou
+    service de fichiers statiques monté sur un préfixe qui recouvre des
+    routes authentifiées) combiné à l'absence d'en-tête `Cache-Control:
+    private, no-store` explicite sur les réponses contenant des données
+    utilisateur — permettant à un cache/CDN en amont de mettre en cache une
+    réponse personnalisée trompé par une extension d'URL apparente (ex:
+    `/compte/profil/inexistant.css`).
+  patterns:
+    - "actix_web::web::scope(\"/compte\").service(...) combiné à actix_files::Files::new(...) monté sur un préfixe qui intercepte des chemins non reconnus au lieu de retourner 404"
+    - "axum: Router::new().fallback(serve_dir) qui capture des chemins arbitraires sous une route authentifiée sans validation stricte de l'extension/segment"
+    - "handler retournant des données de profil/compte (HttpResponse::Ok().body(profile_html)) sans .insert_header((\"Cache-Control\", \"private, no-store\"))"
+  exclude_if:
+    - "le routeur retourne une 404 stricte sur tout segment de chemin non reconnu (pas de fallback générique capturant les extensions statiques)"
+    - "Cache-Control: private, no-store est fixé explicitement sur toute réponse authentifiée contenant des données utilisateur, indépendamment de l'extension apparente de l'URL"
+
+message: >
+  Routeur au path matching permissif combiné à l'absence de Cache-Control
+  restrictif sur les réponses authentifiées — un attaquant peut construire
+  une URL avec une extension statique trompeuse (ex: .css) pour faire
+  mettre en cache par un CDN une réponse personnalisée, puis la servir à
+  d'autres utilisateurs (Web Cache Deception) (voir
+  rules/remediation/web-cache-deception.md).
+
+false_positive_notes:
+  - "Si le cache/CDN en amont met en cache exclusivement sur la base du Content-Type réel de la réponse (et non de l'apparence de l'URL), le risque est neutralisé même avec un routing permissif."
+  - "Si actix_files::Files ou le service de fichiers statiques est monté sur un préfixe strictement disjoint des routes authentifiées, reclasser en `low`."
+
+remediation_ref: rules/remediation/web-cache-deception.md
+knowledge_ref: knowledge/modern/web-cache-deception.md

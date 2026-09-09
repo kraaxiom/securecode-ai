@@ -1,0 +1,37 @@
+id: dom-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, côté serveur Java générant du JavaScript embarqué (template
+    JSP/Thymeleaf émettant un `<script>` inline), l'insertion d'une entrée
+    utilisateur directement dans un contexte JavaScript sans encodage
+    spécifique (encodage HTML seul insuffisant dans un contexte script/JS).
+  patterns:
+    - "<script>var x = '<%= request.getParameter($name) %>';</script>"
+    - "th:inline=\"javascript\" avec [[${param.$name}]] non encodé pour un contexte JS"
+  exclude_if:
+    - "$var passe par un encodeur contextuel JavaScript dédié (OWASP Java Encoder Encode.forJavaScript) avant insertion"
+    - "la valeur est transmise via un attribut data-* HTML échappé puis lue côté client par JS (pas d'insertion directe dans le code script)"
+
+message: >
+  Entrée utilisateur insérée directement dans un bloc `<script>` généré
+  côté serveur sans encodage contextuel JavaScript — l'échappement HTML
+  seul ne protège pas ce contexte ; un attaquant peut sortir de la chaîne
+  JS et exécuter du code arbitraire côté client (DOM XSS) ; utiliser
+  Encode.forJavaScript (OWASP Java Encoder) ou transmettre la donnée via
+  un attribut data-* échappé en HTML plutôt que dans le code script
+  (voir rules/remediation/dom-xss.md).
+
+false_positive_notes:
+  - "Le passage par un attribut data-* HTML (échappé) lu ensuite par JavaScript côté client neutralise ce vecteur côté génération serveur."
+  - "Un encodeur JS contextuel (Encode.forJavaScript) appliqué avant insertion neutralise l'alerte."
+
+remediation_ref: rules/remediation/dom-xss.md
+knowledge_ref: knowledge/xss/dom-xss.md

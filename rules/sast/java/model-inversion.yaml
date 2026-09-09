@@ -1,0 +1,34 @@
+id: model-inversion
+language: java
+category: llm
+cwe: CWE-200
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code de fine-tuning/RAG utilisant des données sensibles
+    (PII, secrets métier), l'absence d'anonymisation avant intégration au
+    modèle ou à l'index, permettant à un attaquant de reconstituer des
+    données d'entraînement par requêtes ciblées répétées (model inversion).
+  patterns:
+    - "fine-tuning ou EmbeddingStore.add(_) alimenté avec des colonnes de base de données contenant des PII brutes (nom, email, SSN) sans anonymisation/pseudonymisation préalable"
+    - "PromptTemplate incluant des données personnelles issues d'une requête SQL directe (Repository.findAll()) sans masquage avant envoi au modèle"
+    - "absence de filtrage de sortie (output guardrail) vérifiant qu'une réponse générée ne réexpose pas de données d'entraînement sensibles mémorisées"
+    - "endpoint permettant des requêtes répétées avec de légères variations de prompt sans limitation, favorisant l'extraction par inférence différentielle"
+
+message: >
+  Données sensibles intégrées à un modèle/index sans anonymisation, combiné
+  à l'absence de garde-fou de sortie — un attaquant peut reconstituer des
+  données d'entraînement par requêtes ciblées (model inversion). Anonymiser
+  les PII avant fine-tuning/indexation, filtrer les sorties et limiter le
+  nombre de requêtes similaires.
+
+false_positive_notes:
+  - "Si les données sont déjà anonymisées/pseudonymisées avant intégration (pipeline de masquage documenté), reclasser en `low`."
+  - "Les modèles entraînés uniquement sur des données publiques non sensibles ne sont pas concernés."
+
+remediation_ref: rules/remediation/model-inversion.md
+knowledge_ref: knowledge/llm/model-inversion.md

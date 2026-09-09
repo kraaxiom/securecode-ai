@@ -1,0 +1,14 @@
+id: jwt-none
+category: auth
+cwe: CWE-347
+type: rasp
+guard:
+  sink: fonction de vérification de signature JWT appelée par le middleware d'authentification
+  block_condition: >
+    L'en-tête du jeton présenté annonce l'algorithme `none` (ou toute valeur absente de la
+    liste fermée d'algorithmes forts explicitement autorisée par la configuration serveur).
+  action: block
+  fail_mode: fail-closed   # un jeton alg:none accepté équivaut à une authentification totalement falsifiable ; blocage strict recommandé par défaut, sans exception
+severity: critical
+remediation_ref: rules/remediation/jwt-none.md
+knowledge_ref: knowledge/auth/jwt-none.md

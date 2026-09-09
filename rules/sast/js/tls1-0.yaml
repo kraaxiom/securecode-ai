@@ -1,0 +1,32 @@
+id: tls1-0
+language: js
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration acceptant explicitement TLS 1.0 ou 1.1 comme
+    version minimale dans un serveur/client https/tls Node.js.
+  patterns:
+    - "https.createServer({\"minVersion\": \"TLSv1\"}, _)"
+    - "https.createServer({\"minVersion\": \"TLSv1.1\"}, _)"
+    - "tls.connect({\"minVersion\": \"TLSv1\"})"
+    - "tls.connect({\"minVersion\": \"TLSv1.1\"})"
+  exclude_if:
+    - "minVersion est en réalité 'TLSv1.2' ou supérieur malgré la présence du mot-clé TLSv1 dans une constante englobante"
+
+message: >
+  TLS 1.0/1.1 sont dépréciés par la RFC 8996 et exclus des référentiels
+  PCI-DSS actuels — fixer minVersion: 'TLSv1.2', idéalement 'TLSv1.3'
+  (voir rules/remediation/tls1-0.md).
+
+false_positive_notes:
+  - "Vérifier que la valeur matchée correspond bien à TLS 1.0/1.1 et non à une constante générique incluant aussi des versions modernes."
+  - "Une compatibilité descendante documentée et temporaire avec un partenaire tiers legacy reste un finding réel, à planifier pour retrait."
+
+remediation_ref: rules/remediation/tls1-0.md
+knowledge_ref: knowledge/crypto/tls1-0.md

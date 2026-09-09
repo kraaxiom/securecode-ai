@@ -1,0 +1,33 @@
+id: php-upload
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Pattern Python generique equivalent (le pattern original vise PHP) -
+    une application Python sert de passerelle vers un backend PHP/Apache ou
+    utilise un stockage partage executable par PHP, et accepte un upload sans
+    restriction d'extension, permettant le depot d'un webshell .php.
+  patterns:
+    - "file.save(...) ecrivant dans un repertoire servi par un vhost PHP (Apache/Nginx+PHP-FPM) sans whitelist d'extension"
+    - "Absence de verification d'extension avant ecriture, quand le repertoire cible est dans le webroot d'un serveur PHP"
+  exclude_if:
+    - "Une whitelist stricte d'extensions non executables est appliquee avant l'ecriture"
+    - "Le stockage des uploads est physiquement hors du webroot et jamais interprete par PHP"
+
+message: >
+  Upload sans restriction d'extension, ecrit dans un repertoire potentiellement
+  executable par un backend PHP en aval - un attaquant peut deposer un
+  webshell .php executable. Appliquer une whitelist stricte d'extensions et
+  stocker les fichiers hors de tout webroot interprete.
+
+false_positive_notes:
+  - "Non applicable si aucun composant PHP n'existe dans l'architecture de deploiement - reclasser en `info`."
+
+remediation_ref: rules/remediation/php-upload.md
+knowledge_ref: knowledge/upload/php-upload.md

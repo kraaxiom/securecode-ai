@@ -1,0 +1,33 @@
+id: open-redirect
+language: php
+category: frontend
+cwe: CWE-601
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à `header('Location: ...')` ou `redirect(...)` construit
+    directement à partir d'un paramètre de requête, sans validation contre une
+    liste blanche.
+  patterns:
+    - "header('Location: ' . $_GET[_])"
+    - "header(\"Location: {$_GET[_]}\")"
+    - "redirect($request->input(_))"
+    - "redirect($request->query(_))"
+  exclude_if:
+    - "la valeur est comparée à une liste blanche statique (in_array avec strict=true) avant usage"
+    - "la valeur passe par Str::startsWith($v, '/') ET rejette explicitement les valeurs commençant par '//' avant redirection"
+
+message: >
+  Redirection construite à partir d'un paramètre client sans validation —
+  risque de redirection ouverte (voir rules/remediation/open-redirect.md).
+
+false_positive_notes:
+  - "Si le paramètre est systématiquement casté vers un identifiant interne (ex: code numérique mappé côté serveur), non applicable — reclasser en `info`."
+  - "Validation par startsWith('/') seule est insuffisante (contournable par //evil.com) — ne pas fermer le finding sur cette seule base."
+
+remediation_ref: rules/remediation/open-redirect.md
+knowledge_ref: knowledge/frontend/open-redirect.md

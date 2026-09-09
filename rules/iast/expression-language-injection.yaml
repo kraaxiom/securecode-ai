@@ -1,0 +1,15 @@
+id: expression-language-injection
+category: injections
+cwe: CWE-917
+type: iast
+instrumentation:
+  hook_points:
+    - "java: javax.el.ExpressionFactory.createValueExpression / createMethodExpression"
+    - "java: ognl.Ognl.getValue / Ognl.setValue"
+    - "java: org.springframework.expression.ExpressionParser.parseExpression"
+    - "java: javax.servlet.http.HttpServletRequest.getParameter comme source de l'expression évaluée"
+  taint_check: trace la propagation depuis une source de requête HTTP (paramètre, en-tête, corps) jusqu'à la chaîne passée à un moteur d'évaluation d'expression (EL/OGNL/SpEL) sans passage par une liste blanche ou un contexte d'évaluation restreint
+  trigger_condition: une expression évaluée par le moteur EL contient un fragment provenant directement d'une entrée utilisateur non neutralisée
+severity: critical
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

@@ -1,0 +1,31 @@
+id: weak-random
+language: rust
+category: crypto
+cwe: CWE-338
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage du crate `rand` (rand::thread_rng, StdRng) pour générer
+    un token, une clé, un sel ou un identifiant de session, au lieu de
+    `ring::rand` ou d'un CSPRNG dédié.
+  patterns:
+    - "rand::thread_rng().gen::<_>() affecté à un token/clé/sel/session"
+    - "StdRng::seed_from_u64(_) utilisé pour un secret"
+  exclude_if:
+    - "l'usage de `rand` sert à une fonctionnalité non sécuritaire (ex: jitter, tirage de jeu sans enjeu financier) et le crate documente clairement ne pas être un CSPRNG dans ce contexte"
+
+message: >
+  Le crate `rand` (StdRng/thread_rng) n'est pas garanti être un CSPRNG adapté
+  aux secrets — pour tout token, clé, sel ou identifiant de session, utiliser
+  ring::rand::SystemRandom ou le crate `getrandom`.
+
+false_positive_notes:
+  - "Si la valeur générée n'a aucun rôle de sécurité (jitter, UI, jeu non compétitif), reclasser en `info`."
+  - "Vérifier le sink final de la valeur (token de reset de mot de passe, clé API) avant de conclure sur la sévérité."
+
+remediation_ref: rules/remediation/weak-random.md
+knowledge_ref: knowledge/crypto/weak-random.md

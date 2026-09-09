@@ -1,0 +1,31 @@
+id: rc4
+language: python
+category: crypto
+cwe: CWE-327
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de RC4/ARC4 via PyCryptodome (Crypto.Cipher.ARC4)
+    pour chiffrer des données applicatives.
+  patterns:
+    - "from Crypto.Cipher import ARC4"
+    - "Crypto.Cipher.ARC4.new(_)"
+    - "ARC4.new($key)"
+  exclude_if:
+    - "L'appel sert uniquement à déchiffrer un flux tiers historique imposé par un protocole externe non modifiable"
+
+message: >
+  Utilisation de RC4/ARC4 (chiffrement par flux cassé, interdit en TLS
+  depuis RFC 7465) — remplacer par AES-GCM ou ChaCha20-Poly1305
+  (voir rules/remediation/rc4.md).
+
+false_positive_notes:
+  - "Si le module ARC4 est importé mais jamais instancié (dead code), reclasser en `info`."
+  - "Si l'usage est confiné à l'interopérabilité en lecture seule avec un format tiers legacy documenté, reclasser en `medium`."
+
+remediation_ref: rules/remediation/rc4.md
+knowledge_ref: knowledge/crypto/rc4.md

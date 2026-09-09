@@ -1,0 +1,35 @@
+id: api-mass-assignment
+language: rust
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler actix-web/axum où une struct Deserialize reçue en
+    entrée est directement identique ou convertie 1:1 vers le modèle de
+    base de données (ex: via Diesel/SeaORM), sans struct DTO d'entrée
+    distincte ni liste blanche de champs autorisés.
+  patterns:
+    - "#[derive(Deserialize)] struct $Input { role: $Type, ... }"
+    - "async fn $handler(Json($input): Json<$DbModel>) -> impl Responder { ... }"
+    - "diesel::update($table).set(&$input).execute($conn)"
+  exclude_if:
+    - "la struct d'entrée (#[derive(Deserialize)]) est distincte du modèle de persistance, avec conversion explicite champ par champ (impl From<$Input> for $DbModel restreint)"
+    - "les champs sensibles du modèle de persistance ne sont jamais présents dans la struct Deserialize d'entrée"
+
+message: >
+  Struct de désérialisation liée directement au modèle de persistance sans
+  DTO d'entrée distinct — un attaquant peut injecter des champs sensibles
+  (role, is_admin, balance) non prévus par le formulaire d'origine
+  (voir rules/remediation/api-mass-assignment.md).
+
+false_positive_notes:
+  - "Si la struct ne contient aucun champ privilégié, le risque est réduit — reclasser en `medium`."
+  - "Vérifier la présence de #[serde(skip_deserializing)] sur les champs sensibles avant de remonter en `high`."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

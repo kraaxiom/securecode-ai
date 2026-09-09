@@ -1,0 +1,32 @@
+id: excessive-data-exposure
+language: php
+category: api
+cwe: CWE-213
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la sérialisation JSON directe d'une entité/modèle ORM complet dans
+    une réponse API, sans projection explicite de champs (DTO, liste blanche).
+  patterns:
+    - "response()->json($model)"        # $model = résultat direct de Model::find/all
+    - "json_encode($model)"             # $model provenant d'un objet ORM/DB
+    - "echo json_encode($row)"          # $row = fetch() brut PDO
+  exclude_if:
+    - "le modèle applique un attribut $hidden ou $visible restreignant les champs sérialisés (Eloquent)"
+    - "un tableau explicite de clés est construit avant l'appel à json_encode/response()->json"
+
+message: >
+  Sérialisation directe d'un modèle/entité complet en réponse API — définir un
+  schéma de sortie explicite en liste blanche (voir
+  rules/remediation/excessive-data-exposure.md).
+
+false_positive_notes:
+  - "Si le modèle définit $hidden sur tous les champs sensibles (Eloquent), le risque est déjà mitigé — reclasser en `info`."
+  - "Endpoint strictement interne/admin avec accès déjà restreint : réduire la sévérité si le champ n'est pas exploitable côté client final."
+
+remediation_ref: rules/remediation/excessive-data-exposure.md
+knowledge_ref: knowledge/api/excessive-data-exposure.md

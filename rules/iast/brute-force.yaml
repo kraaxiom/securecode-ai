@@ -1,0 +1,24 @@
+id: brute-force
+category: auth
+cwe: CWE-307
+type: iast
+instrumentation:
+  hook_points:
+    - "php: point d'entrée du contrôleur d'authentification (login, reset-password, verify-otp)"
+    - "js: gestionnaire de route Express/NestJS/Next.js exposant l'endpoint d'authentification"
+    - "python: vue Django/Flask/FastAPI traitant la soumission d'identifiants"
+    - "java: contrôleur Spring Security personnalisé ou filtre d'authentification"
+    - "csharp: action de contrôleur ASP.NET Core exposant l'authentification"
+    - "go: handler HTTP traitant la vérification d'identifiants"
+  taint_check: >
+    Trace si l'exécution du endpoint d'authentification passe par un middleware/décorateur
+    de limitation de débit ou un compteur d'échecs persistant (source: requête d'authentification
+    entrante) avant d'atteindre la logique de vérification du mot de passe (sink: comparaison
+    d'identifiants).
+  trigger_condition: >
+    La requête atteint la logique de vérification d'identifiants sans qu'aucun hook de
+    rate limiting/compteur d'échecs persistant n'ait été traversé sur le chemin d'exécution,
+    pour un nombre d'échecs consécutifs dépassant un seuil de calibration bas (environnement de test).
+severity: medium
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

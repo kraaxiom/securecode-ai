@@ -1,0 +1,19 @@
+id: markdown-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "js: appel à un moteur de rendu Markdown (ex: option html activée) comme source de transformation"
+    - "php/python/java/csharp/go: équivalents bibliothèque Markdown → HTML côté serveur comme source de transformation"
+    - "tous langages: innerHTML / dangerouslySetInnerHTML / sink de rendu HTML serveur comme sink final"
+  taint_check: >
+    Trace le contenu Markdown fourni par un utilisateur non fiable à travers le moteur de
+    conversion Markdown → HTML jusqu'à son insertion dans le DOM ou la réponse HTML.
+  trigger_condition: >
+    Sortie HTML générée par le moteur Markdown à partir d'une entrée non fiable atteint le sink
+    de rendu sans passer par une bibliothèque de sanitisation HTML dédiée, ou le moteur est
+    configuré avec le support du HTML brut actif sur du contenu non fiable.
+severity: medium
+remediation_ref: rules/remediation/markdown-xss.md
+knowledge_ref: knowledge/xss/markdown-xss.md

@@ -1,0 +1,36 @@
+id: api-mass-assignment
+language: go
+category: api
+cwe: CWE-915
+owasp: API6:2019-Mass Assignment
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler HTTP Go qui désérialise directement le corps JSON de
+    la requête dans une struct utilisée telle quelle pour la persistance en
+    base de données, sans struct d'entrée distincte (DTO) ni liste blanche
+    de champs autorisés.
+  patterns:
+    - "json.NewDecoder(r.Body).Decode(&$dbModel)"
+    - "json.Unmarshal($body, &$dbModel)"
+    - "db.Model(&$dbModel).Updates($input)"
+    - "c.BindJSON(&$dbModel)"
+  exclude_if:
+    - "la struct décodée est un DTO d'entrée distinct de la struct de persistance, avec mapping explicite champ par champ vers le modèle base de données"
+    - "les champs sensibles de la struct de persistance sont tagués json:\"-\" empêchant leur désérialisation depuis la requête"
+
+message: >
+  Désérialisation directe du corps JSON dans la struct de persistance sans
+  DTO d'entrée ni liste blanche de champs — un attaquant peut injecter des
+  champs sensibles (Role, IsAdmin, Balance) non prévus par le formulaire
+  d'origine (voir rules/remediation/api-mass-assignment.md).
+
+false_positive_notes:
+  - "Si la struct ne contient aucun champ privilégié, le risque est réduit — reclasser en `medium`."
+  - "Vérifier les tags json:\"-\" ou json:\",omitempty\" déjà présents sur les champs sensibles avant de remonter en `high`."
+
+remediation_ref: rules/remediation/api-mass-assignment.md
+knowledge_ref: knowledge/api/api-mass-assignment.md

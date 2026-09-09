@@ -1,0 +1,52 @@
+id: dns-rebinding
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: medium
+crs_alignment: "Compatible avec la logique de la règle OWASP CRS 921110/931130 (SSRF/RFI - Attempted access to internal/metadata IP) — ne redéfinit pas les règles CRS, sert de spécification pour une règle ModSecurity-compatible équivalente ciblant le scénario DNS rebinding."
+
+description: >
+  Règle de périmètre (WAF) générée à partir de la taxonomie du skill : bloque au
+  niveau du reverse proxy les motifs syntaxiques les plus révélateurs d'une
+  tentative de DNS rebinding dans les paramètres de requête (URL/hôte pointant vers une
+  plage privée/link-local, un endpoint de métadonnées cloud connu, ou un schéma
+  d'URL non-HTTP dangereux), en amont de l'application. Couche de défense en
+  profondeur — ne remplace jamais la correction du code source
+  (rules/remediation/dns-rebinding.md).
+
+modsecurity_equivalent: |
+  # Spécification de règle, à adapter au moteur WAF réel du projet (ModSecurity/CRS,
+  # ou équivalent cloud type AWS WAF / Cloudflare) — ce bloc documente l'intention,
+  # pas une règle prête à charger telle quelle sans revue.
+  SecRule ARGS "@rx (?i)(169\.254\.169\.254|metadata\.google\.internal|127\.0\.0\.1|localhost|0\.0\.0\.0|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|file://|gopher://|dict://)" \
+    "id:900002,\
+    phase:2,\
+    block,\
+    msg:'Motif SSRF détecté (dns-rebinding)',\
+    logdata:'Matched Data: %{MATCHED_VAR} found within %{MATCHED_VAR_NAME}',\
+    tag:'securecode-ai/ssrf/dns-rebinding',\
+    severity:'CRITICAL'"
+
+detection_patterns:
+  - "Adresse IP link-local de métadonnées cloud (169.254.169.254) ou nom d'hôte de métadonnées connu (metadata.google.internal) dans un paramètre d'URL/hôte"
+  - "Adresse IP appartenant à une plage privée RFC 1918 ou loopback (127.0.0.0/8, 0.0.0.0) dans un paramètre destiné à une requête sortante"
+  - "Schéma d'URL non-HTTP à risque (file://, gopher://, dict://) dans un paramètre attendu comme URL HTTP(S)"
+
+action:
+  default: block
+  options: [block, log_only]
+  description: >
+    `log_only` recommandé en phase de calibration initiale (mesure du taux de
+    faux positifs sur le trafic réel avant `block`) — voir docs/Performance.md
+    pour la méthodologie de déploiement progressif.
+
+exclude_if:
+  - "Le paramètre est un champ de texte libre non destiné à une requête sortante où une IP privée peut apparaître légitimement en tant que donnée métier (ex: formulaire de configuration réseau interne) — nécessite un allow-list contextuel par endpoint plutôt qu'un blocage global"
+
+false_positive_notes:
+  - "Les motifs regex génériques de cette règle sont volontairement plus larges qu'une règle SAST/RASP (qui voit le contexte du code et la résolution DNS effective) — le taux de faux positifs attendu au niveau WAF est plus élevé, d'où confidence_default: medium et la recommandation de calibration en log_only avant activation stricte."
+
+remediation_ref: rules/remediation/dns-rebinding.md
+knowledge_ref: knowledge/ssrf/dns-rebinding.md
+sast_ref: rules/sast/php/dns-rebinding.yaml

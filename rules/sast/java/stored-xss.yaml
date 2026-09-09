@@ -1,0 +1,38 @@
+id: stored-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une entrée utilisateur persistée (JPA/Hibernate) puis restituée
+    sans échappement dans un template (Thymeleaf th:utext, JSP `<%= %>`,
+    FreeMarker `?no_esc`), rendant l'attaque persistante pour tous les
+    utilisateurs consultant la donnée.
+  patterns:
+    - "th:utext=\"${entity.$field}\" où $field est peuplé depuis une entrée utilisateur persistée"
+    - "<%= entity.get$Field() %>"
+    - "${entity.$field?no_esc}"
+  exclude_if:
+    - "th:text (échappement automatique) est utilisé à la place de th:utext"
+    - "$field passe par StringEscapeUtils.escapeHtml4 avant insertion dans le template"
+
+message: >
+  Donnée persistée en base puis rendue sans échappement — un attaquant peut
+  stocker un payload JavaScript exécuté pour tout utilisateur consultant la
+  page (XSS stocké, impact large et persistant) ; utiliser th:text (jamais
+  th:utext) ou échapper explicitement au rendu, et envisager un
+  échappement également à l'écriture pour les contenus riches (whitelist
+  HTML via une librairie type OWASP Java HTML Sanitizer)
+  (voir rules/remediation/stored-xss.md).
+
+false_positive_notes:
+  - "th:text échappe automatiquement — seul th:utext ou l'équivalent JSP/FreeMarker non échappé est concerné."
+  - "Un champ passé par OWASP Java HTML Sanitizer avec une politique stricte avant persistance ou avant rendu n'est pas concerné."
+
+remediation_ref: rules/remediation/stored-xss.md
+knowledge_ref: knowledge/xss/stored-xss.md

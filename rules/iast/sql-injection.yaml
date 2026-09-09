@@ -1,0 +1,15 @@
+id: sql-injection
+category: injections
+cwe: CWE-89
+type: iast
+instrumentation:
+  hook_points:
+    - "Java: java.sql.Statement.execute / executeQuery (par opposition à PreparedStatement)"
+    - "PHP: mysqli_query / PDO::query (sans liaison de paramètres)"
+    - "Python: cursor.execute avec chaîne concaténée (psycopg2, sqlite3, MySQLdb)"
+    - "Node.js: mysql/pg query() avec chaîne interpolée plutôt que placeholders"
+  taint_check: trace la propagation d'une entrée utilisateur non neutralisée jusqu'à sa concaténation directe dans le texte d'une requête SQL exécutée sans liaison de paramètres (bind variables)
+  trigger_condition: la requête SQL évaluée au moment de l'appel contient un fragment directement traçable à une entrée utilisateur, et l'appel d'exécution n'utilise pas d'API de requête préparée/paramétrée
+severity: critical
+remediation_ref: rules/remediation/sql-injection.md
+knowledge_ref: knowledge/injections/sql-injection.md

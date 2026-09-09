@@ -1,0 +1,34 @@
+id: xs-leaks
+language: js
+category: modern
+cwe: CWE-203
+owasp: A01:2021-Broken Access Control
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de session Express/cookie sans sameSite strict,
+    ou une réponse sensible sans en-têtes Cross-Origin-Opener-Policy/
+    Cross-Origin-Resource-Policy.
+  patterns:
+    - "session({ cookie: {...} }) where cookie options lack sameSite"
+    - "res.cookie(name, value, options) where options lacks sameSite"
+    - "authenticated route handler without res.set('Cross-Origin-Resource-Policy', 'same-origin')"
+  exclude_if:
+    - "sameSite: 'strict'|'lax' est défini explicitement dans les options du cookie"
+    - "un middleware global (helmet crossOriginResourcePolicy) applique déjà ces en-têtes"
+
+message: >
+  Cookie de session ou réponse sensible sans protections cross-origin
+  (SameSite, Cross-Origin-Resource-Policy) — expose l'application aux
+  techniques XS-Leaks d'inférence d'état d'authentification (voir
+  rules/remediation/xs-leaks.md).
+
+false_positive_notes:
+  - "Si helmet() ou un middleware équivalent configure déjà ces en-têtes globalement, ne pas remonter."
+  - "Endpoints strictement publics sans notion de session : non applicable."
+
+remediation_ref: rules/remediation/xs-leaks.md
+knowledge_ref: knowledge/modern/xs-leaks.md

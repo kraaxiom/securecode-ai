@@ -1,0 +1,31 @@
+id: postmessage-abuse
+language: js
+category: frontend
+cwe: CWE-346
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un gestionnaire `message` sans vérification de `event.origin`, ou
+    un appel `postMessage` utilisant `'*'` comme `targetOrigin` pour envoyer
+    des données.
+  patterns:
+    - "window.addEventListener('message', (event) => { _ })" # sans référence à event.origin dans le corps
+    - "_.postMessage(_, '*')"
+  exclude_if:
+    - "le corps du handler compare event.origin à une constante ou un Set/tableau statique avant traitement"
+    - "postMessage est appelé avec une origine cible explicite (chaîne littérale différente de '*')"
+
+message: >
+  Gestionnaire postMessage sans vérification d'origine, ou envoi avec
+  targetOrigin '*' — voir rules/remediation/postmessage-abuse.md.
+
+false_positive_notes:
+  - "Message ne contenant aucune donnée sensible et ne déclenchant aucune action (simple log) : reclasser en `low`."
+  - "Vérification d'origine effectuée dans une fonction utilitaire appelée en début de handler (pattern non détecté littéralement) : vérifier manuellement avant de confirmer."
+
+remediation_ref: rules/remediation/postmessage-abuse.md
+knowledge_ref: knowledge/frontend/postmessage-abuse.md

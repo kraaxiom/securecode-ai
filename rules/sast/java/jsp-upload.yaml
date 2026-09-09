@@ -1,0 +1,36 @@
+id: jsp-upload
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un upload de fichier (MultipartFile Spring, ou upload Servlet brut
+    via HttpServletRequest.getPart) écrit dans un répertoire servi par le
+    conteneur JSP (webapp/, WEB-INF exclu) sans restriction d'extension,
+    permettant le dépôt d'un web shell .jsp/.jspx exécutable.
+  patterns:
+    - "MultipartFile.transferTo(new File(webAppRealPath + originalFilename)) sans validation d'extension ni de contenu"
+    - "request.getPart(\"file\").write(...) écrivant dans le webroot (getServletContext().getRealPath(\"/\")) avec le nom de fichier client"
+    - "absence de liste blanche autorisant uniquement des extensions non exécutables (jpg, png, pdf) avant l'écriture dans un répertoire accessible par le conteneur Servlet"
+  exclude_if:
+    - "le fichier est écrit en dehors de tout répertoire déployé par le conteneur (ex: hors WEB-INF/webapp, sur un stockage objet S3/MinIO)"
+    - "une liste blanche stricte d'extensions non exécutables est appliquée et le nom de fichier est régénéré côté serveur (UUID)"
+
+message: >
+  Un fichier uploadé est écrit dans le répertoire servi par le conteneur
+  Servlet/JSP sans validation d'extension — un attaquant peut déposer un web
+  shell .jsp exécutable et obtenir l'exécution de code distante. Stocker les
+  fichiers hors du webroot, appliquer une liste blanche stricte, et renommer
+  le fichier avec un identifiant généré côté serveur.
+
+false_positive_notes:
+  - "Si le stockage cible est un bucket objet (S3, MinIO) ou un répertoire non déployé par le conteneur, ce risque ne s'applique pas directement."
+  - "Une validation par magic bytes réduit le risque mais ne remplace pas la liste blanche d'extension — ne pas exclure sur ce seul critère."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

@@ -1,0 +1,3 @@
+## Secrets exposés dans le code (CWE-798)
+
+Le code vulnérable code en dur la clé API Stripe et le mot de passe de la base de données directement dans le fichier source, et journalise même la clé en clair dans les logs applicatifs, exposant ces secrets à quiconque accède au dépôt Git ou aux journaux du serveur. Cette exposition persiste dans l'historique du dépôt même après suppression ultérieure de la ligne concernée. La correction retire tout secret en dur et les récupère à l'exécution via `@aws-sdk/client-secrets-manager`, sans jamais les journaliser. En complément, tout secret déjà exposé doit être révoqué et régénéré immédiatement, pas seulement retiré du code.

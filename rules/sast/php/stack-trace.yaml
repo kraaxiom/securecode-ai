@@ -1,0 +1,34 @@
+id: stack-trace
+language: php
+category: server
+cwe: CWE-209
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler d'exceptions ou une réponse HTTP/JSON qui propage
+    directement le message ou la trace d'une exception au client
+    ($exception->getTraceAsString(), $e->getMessage() dans une réponse),
+    ou l'absence de handler global d'exceptions combinée à display_errors=On.
+  patterns:
+    - "response_json(contient 'trace' => $exception->getTraceAsString())"
+    - "echo/print($exception->getTraceAsString())"
+    - "ini_setting(display_errors, On) en contexte production sans handler global"
+  exclude_if:
+    - "la trace est uniquement écrite dans un log serveur (Log::error, error_log) et non retournée dans la réponse HTTP"
+    - "le renvoi de la trace est explicitement conditionné à un environnement de développement (ex: if (app()->environment('local')))"
+
+message: >
+  Trace d'exception potentiellement renvoyée directement au client — ne
+  journaliser la trace que côté serveur et renvoyer un message générique
+  avec identifiant de corrélation (voir rules/remediation/stack-trace.md).
+
+false_positive_notes:
+  - "Si le code est protégé par une condition d'environnement fiable (local/dev uniquement), ce n'est pas exploitable en production."
+  - "Vérifier la valeur réelle de APP_DEBUG/display_errors en production avant de conclure à une exposition effective."
+
+remediation_ref: rules/remediation/stack-trace.md
+knowledge_ref: knowledge/server/stack-trace.md

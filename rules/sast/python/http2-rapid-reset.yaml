@@ -1,0 +1,34 @@
+id: http2-rapid-reset
+language: python
+category: modern
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur ASGI Python exposant HTTP/2 (Hypercorn, Daphne avec
+    support HTTP/2, uvicorn derrière un terminateur HTTP/2) sans limite
+    configurée sur le nombre de flux concurrents/réinitialisés par connexion,
+    laissant le serveur applicatif vulnérable à une rafale de RST_STREAM.
+  patterns:
+    - "hypercorn.config.Config() sans max_concurrent_streams limité à une valeur basse ni h2_max_concurrent_streams personnalisé"
+    - "serveur ASGI derrière un reverse proxy HTTP/2 sans limite de taux de nouvelles connexions/flux (rate limiting au niveau du proxy)"
+  exclude_if:
+    - "un reverse proxy en amont (nginx, Envoy) limite explicitement le taux de RST_STREAM ou de nouvelles requêtes par connexion HTTP/2"
+    - "max_concurrent_streams est explicitement plafonné à une valeur basse et surveillée dans la configuration du serveur ASGI"
+
+message: >
+  Serveur HTTP/2 sans limite de flux concurrents/réinitialisés par
+  connexion — vulnérable à une attaque de déni de service par HTTP/2 Rapid
+  Reset (rafale de RST_STREAM) (voir
+  rules/remediation/http2-rapid-reset.md).
+
+false_positive_notes:
+  - "Cette faiblesse dépend fortement de la configuration d'infrastructure (reverse proxy, CDN) qui échappe souvent au code source seul — confirmer via revue de configuration serveur."
+  - "Si le service n'est jamais exposé directement en HTTP/2 côté client (uniquement HTTP/1.1 en interne), le risque ne s'applique pas."
+
+remediation_ref: rules/remediation/http2-rapid-reset.md
+knowledge_ref: knowledge/modern/http2-rapid-reset.md

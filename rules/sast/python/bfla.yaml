@@ -1,0 +1,35 @@
+id: bfla
+language: python
+category: authorization
+cwe: CWE-862
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint exposant une fonction sensible (suppression,
+    export, administration) sans décorateur de contrôle de rôle/permission
+    — vue Django/Flask/DRF gérant une action privilégiée sans
+    @permission_required, @login_required combiné à une vérification de
+    rôle, ou IsAdminUser.
+  patterns:
+    - "def delete_user($request, $id): ...  # sans @permission_required('is_staff')"
+    - "class AdminActionView(APIView): ...  # sans permission_classes = [IsAdminUser]"
+  exclude_if:
+    - "la vue est décorée avec @permission_required, @staff_member_required, ou définit permission_classes incluant IsAdminUser/une permission personnalisée vérifiant le rôle"
+    - "la vérification de rôle est effectuée explicitement en première ligne du corps de la fonction (if not request.user.is_staff: raise PermissionDenied)"
+
+message: >
+  Fonction sensible exposée sans vérification de niveau de fonction —
+  un utilisateur authentifié mais non autorisé (rôle insuffisant) peut
+  potentiellement invoquer cette action (Broken Function Level
+  Authorization). Ajouter une vérification de rôle explicite avant toute
+  action privilégiée (voir rules/remediation/bfla.md).
+
+false_positive_notes:
+  - "Si l'autorisation est appliquée par un middleware global (ex: vérification systématique du rôle sur un préfixe d'URL /admin/), l'absence de décorateur local ne signifie pas absence de contrôle — vérifier la configuration de routage avant d'alerter en `high`."
+
+remediation_ref: rules/remediation/bfla.md
+knowledge_ref: knowledge/authorization/bfla.md

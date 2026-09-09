@@ -1,0 +1,36 @@
+id: css-injection
+language: python
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte une valeur controlee par l'utilisateur injectee dans un attribut
+    style ou une balise <style> via un template Python (Jinja2/Django
+    Templates) sans echappement, avec autoescape desactive ou un marqueur
+    "safe"/mark_safe explicite.
+  patterns:
+    - "{{ user_input|safe }} (Jinja2) utilise pour injecter une valeur dans un attribut style ou une balise <style>"
+    - "mark_safe(f'<style>{user_color}</style>') (Django) sans validation stricte de la valeur"
+    - "Markup(f'style=\"{user_value}\"') (Flask/Jinja2 Markup) avec une entree utilisateur non validee"
+  exclude_if:
+    - "La valeur injectee est strictement validee contre une liste blanche de valeurs CSS autorisees (ex: enum de couleurs)"
+    - "L'autoescape Jinja2/Django par defaut reste actif (pas de |safe / mark_safe sur cette variable)"
+
+message: >
+  Valeur utilisateur injectee sans echappement dans un contexte CSS
+  (attribut style, balise <style>) via mark_safe/|safe — permet une
+  injection CSS pouvant mener a de l'exfiltration de donnees (selecteurs
+  attribut, keylogging CSS) ou a du defacement. Valider strictement la
+  valeur contre une liste blanche et eviter de desactiver l'autoescape sur
+  des entrees utilisateur dans un contexte style.
+
+false_positive_notes:
+  - "Si |safe/mark_safe est applique a une constante interne non derivee d'une entree utilisateur, ce n'est pas exploitable — reclasser en `info`."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

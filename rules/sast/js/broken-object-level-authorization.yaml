@@ -1,0 +1,34 @@
+id: broken-object-level-authorization
+language: js
+category: api
+cwe: CWE-639
+owasp: API1:2023-Broken Object Level Authorization
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une requête Express/Mongoose/Sequelize récupérant ou modifiant un
+    objet par `req.params.id` (ou équivalent) sans filtre sur l'utilisateur
+    authentifié (`req.user.id`).
+  patterns:
+    - "Model.findById(req.params._)"
+    - "Model.findOne({ _id: req.params._ })"
+    - "Model.findByIdAndUpdate(req.params._, _)"
+    - "Model.findByIdAndDelete(req.params._)"
+  exclude_if:
+    - "la requête inclut un champ userId/ownerId/tenantId dérivé de req.user dans le filtre"
+    - "un middleware d'autorisation au niveau objet précède le handler (vérifié par présence d'un appel type checkOwnership())"
+
+message: >
+  Objet récupéré/modifié par identifiant client sans vérification de
+  propriété — filtrer la requête sur l'utilisateur authentifié (voir
+  rules/remediation/broken-object-level-authorization.md).
+
+false_positive_notes:
+  - "Ressource publique sans notion de propriétaire : non applicable, reclasser en `info`."
+  - "Si l'ownership est vérifié via une policy externe (CASL, ABAC) après récupération et avant renvoi, il faut vérifier manuellement l'ordre des opérations."
+
+remediation_ref: rules/remediation/broken-object-level-authorization.md
+knowledge_ref: knowledge/api/broken-object-level-authorization.md

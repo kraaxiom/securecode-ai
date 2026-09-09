@@ -1,0 +1,35 @@
+id: token-leakage
+language: java
+category: llm
+cwe: CWE-522
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code applicatif exposant un service LLM (Spring AI
+    ChatClient derrière un @RestController), le renvoi ou la persistance non
+    protégée de jetons d'authentification (jeton de session utilisateur,
+    jeton API du fournisseur LLM) dans les réponses ou journaux liés aux
+    appels du modèle.
+  patterns:
+    - "ChatResponse ou objet de retour d'endpoint incluant le header Authorization/Bearer token capturé et renvoyé tel quel au client dans la réponse JSON"
+    - "@RestController loggant la requête HTTP entière (y compris headers Authorization) lors d'un appel vers l'endpoint LLM, via un filtre de logging non filtré"
+    - "stockage du jeton d'API du fournisseur LLM (OpenAI, Azure) dans un cache/session partagé (ex: HttpSession) accessible par plusieurs utilisateurs sans cloisonnement"
+    - "ChatMemoryStore persistant par erreur les métadonnées de requête HTTP (headers, jetons) aux côtés des messages de conversation"
+
+message: >
+  Jeton d'authentification exposé ou journalisé sans protection lors d'un
+  appel à un service LLM (token leakage) — risque de vol de session ou de
+  clé API. Filtrer les headers sensibles des logs, ne jamais renvoyer de
+  jeton dans une réponse applicative, et isoler les jetons de fournisseur
+  LLM dans un gestionnaire de secrets dédié par requête/utilisateur.
+
+false_positive_notes:
+  - "Si les logs applicatifs masquent systématiquement le header Authorization (filtre de logging configuré), reclasser en `low`."
+  - "Les jetons de fournisseur LLM gérés côté serveur uniquement, jamais transmis au client, ne sont pas concernés."
+
+remediation_ref: rules/remediation/token-leakage.md
+knowledge_ref: knowledge/llm/token-leakage.md

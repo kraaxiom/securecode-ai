@@ -1,0 +1,34 @@
+id: batch-attack
+language: csharp
+category: graphql
+cwe: CWE-770
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint GraphQL HotChocolate acceptant un batch d'opérations
+    (tableau JSON en entrée) sans limite sur sa taille, typiquement via
+    `MapGraphQL()` avec le support du batching HTTP activé implicitement, ou
+    un middleware personnalisé itérant sur un tableau de requêtes sans borne.
+  patterns:
+    - "endpoints.MapGraphQL() sans configuration limitant MaxAllowedRequestsPerBatch (ou équivalent) dans AddGraphQLServer()"
+    - "app.MapPost(\"/graphql-batch\", async (List<GraphQLRequest> ops, ...) => { foreach (var op in ops) { await executor.ExecuteAsync(op); } }) sans vérification de ops.Count"
+  exclude_if:
+    - "une vérification explicite `if (ops.Count <= N)` (avec N raisonnable, ex: <= 10) est effectuée avant traitement"
+    - "le batching est explicitement désactivé ou non exposé par la configuration du serveur (`AddGraphQLServer()` sans endpoint de batch dédié)"
+
+message: >
+  Endpoint GraphQL acceptant un batch d'opérations sans limite de taille — un
+  attaquant peut soumettre des centaines de tentatives (ex: bruteforce
+  d'identifiants) en une seule requête HTTP, contournant le rate-limiting
+  (voir rules/remediation/batch-attack.md).
+
+false_positive_notes:
+  - "Si un rate-limiting est appliqué au niveau de chaque opération individuelle du batch (et non seulement au niveau HTTP), le risque est réduit."
+  - "Certaines API internes de confiance utilisent le batching pour l'efficacité légitime — vérifier le contexte d'authentification avant de remonter en `high`."
+
+remediation_ref: rules/remediation/batch-attack.md
+knowledge_ref: knowledge/graphql/batch-attack.md

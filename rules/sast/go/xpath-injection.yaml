@@ -1,0 +1,27 @@
+id: xpath-injection
+language: go
+category: injections
+cwe: CWE-643
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un usage non sécurisé d'une entrée utilisateur pouvant conduire à injection xpath.
+  patterns:
+    - "xpath.Compile(string_concat(_, $var, _)) (bibliothèque antchfx/xpath) avec $var concaténé"
+  exclude_if:
+    - "la valeur est validée par liste blanche ou échappée via la fonction dédiée de la stdlib/du framework avant usage"
+    - "$var provient d'une constante interne (pas d'entrée utilisateur), non exploitable"
+
+message: >
+  Injection XPath détectée — valider/échapper strictement toute entrée utilisateur avant usage dans ce contexte (voir rules/remediation/xpath-injection.md).
+
+false_positive_notes:
+  - "Si la valeur est validée par une liste blanche stricte ou échappée via l'API dédiée du framework avant usage, ce n'est pas exploitable."
+  - "Si $var provient d'une constante interne (pas d'entrée utilisateur), reclasser en `info`."
+
+remediation_ref: rules/remediation/xpath-injection.md
+knowledge_ref: knowledge/injections/xpath-injection.md

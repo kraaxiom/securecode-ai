@@ -1,0 +1,3 @@
+## Clés/secrets codés en dur (CWE-798)
+
+Le code vulnérable écrit la clé secrète de l'API de paiement directement dans le fichier source, ce qui l'expose à quiconque a accès au dépôt, à son historique git ou au binaire déployé. Cette pratique annule toute garantie de confidentialité, puisqu'un secret présent dans le code n'est plus réellement secret. La correction déplace la clé vers une variable d'environnement (`process.env.PAYMENT_API_SECRET`), non versionnée, avec un contrôle explicite au démarrage qui empêche l'application de fonctionner si le secret est absent. En cas d'exposition passée, la clé doit également être révoquée et régénérée côté fournisseur, pas seulement retirée du code.

@@ -1,0 +1,36 @@
+id: grpc
+language: java
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un service gRPC Java (io.grpc.ServerBuilder / classe étendant
+    <Service>ImplBase) exposé sans interception d'authentification
+    (ServerInterceptor validant les métadonnées d'auth) ni chiffrement TLS
+    explicite du canal.
+  patterns:
+    - "ServerBuilder.forPort($_).addService($_).build() sans .useTransportSecurity() ni configuration TLS (SslContext)"
+    - "classe étendant XxxGrpc.XxxImplBase implémentant une méthode métier sans vérification des métadonnées d'authentification (Context.current() / Metadata) ni ServerInterceptor enregistré"
+    - "NettyServerBuilder sans intercept(AuthInterceptor) pour valider un jeton/mTLS avant d'atteindre le service métier"
+  exclude_if:
+    - "un ServerInterceptor validant l'authentification (jeton, mTLS) est enregistré via .intercept(...) sur le ServerBuilder"
+    - "useTransportSecurity() ou une configuration TLS explicite est présente, et le canal n'est utilisé qu'en interne sur un réseau isolé documenté (mTLS de maillage de service)"
+
+message: >
+  Le service gRPC est exposé sans interception d'authentification ni
+  chiffrement TLS explicite — tout client réseau peut invoquer les méthodes
+  métier sans être authentifié, et le trafic peut être intercepté en clair.
+  Ajouter un ServerInterceptor de validation d'authentification et configurer
+  TLS (ou mTLS) sur le canal.
+
+false_positive_notes:
+  - "Sur un maillage de service avec mTLS géré en dehors du code applicatif (Istio/Linkerd sidecar), l'absence de TLS explicite en Java peut être compensée — vérifier l'infrastructure avant de remonter en `high`."
+  - "Un service gRPC strictement interne, non exposé au-delà du localhost/réseau de confiance documenté, présente un risque réduit — reclasser en `medium`."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

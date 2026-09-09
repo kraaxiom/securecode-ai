@@ -1,0 +1,33 @@
+id: mime-bypass
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé basée uniquement sur
+    $_FILES[_]['type'], valeur Content-Type entièrement contrôlée par le
+    client, sans corroboration par une détection de type basée sur le
+    contenu réel du fichier (finfo_file, getimagesize).
+  patterns:
+    - "in_array($_FILES[_]['type'], _)"
+    - "$_FILES[_]['type'] === string_literal_mime"
+    - "if (str_contains($_FILES[_]['type'], _))"
+  exclude_if:
+    - "finfo_file() ou getimagesize() est appelé sur le fichier et son résultat comparé à une liste blanche avant acceptation"
+    - "la valeur $_FILES[_]['type'] n'est utilisée qu'à des fins de log/affichage, jamais comme critère d'acceptation"
+
+message: >
+  Validation basée sur le type MIME déclaré par le client ($_FILES['type']),
+  falsifiable — voir rules/remediation/mime-bypass.md.
+
+false_positive_notes:
+  - "Si finfo_file() est appelé plus loin dans la même fonction et sert de critère final, cette occurrence peut être un simple filtre préliminaire non bloquant — vérifier le flux complet."
+  - "Un framework (ex: Symfony UploadedFile::getMimeType()) peut déjà effectuer une détection par contenu sous le capot — vérifier la version/documentation avant de confirmer."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

@@ -1,0 +1,34 @@
+id: rfi
+language: python
+category: file-inclusion
+cwe: CWE-98
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le téléchargement d'un contenu distant dont l'URL est dérivée
+    d'une entrée utilisateur, suivi de son exécution ou de son import
+    (requests.get(url).text passé à exec/eval, ou import dynamique depuis
+    une URL).
+  patterns:
+    - "exec(requests.get($user_url).text)"
+    - "eval(urllib.request.urlopen($user_url).read())"
+    - "importlib.util.spec_from_file_location(_, $user_url)"
+  exclude_if:
+    - "$user_url est comparé à une liste blanche fermée de domaines/URLs internes avant récupération"
+
+message: >
+  Récupération puis exécution de contenu distant dont l'URL est contrôlable
+  par l'utilisateur — inclusion de fichier distant (RFI) menant à
+  l'exécution de code arbitraire. Ne jamais exécuter de contenu téléchargé
+  dynamiquement à partir d'une entrée non fiable (voir
+  rules/remediation/rfi.md).
+
+false_positive_notes:
+  - "Ce pattern est rare en Python moderne mais existe dans les plugins dynamiques ou les systèmes d'auto-update mal conçus — toute correspondance doit être traitée comme critique par défaut."
+
+remediation_ref: rules/remediation/rfi.md
+knowledge_ref: knowledge/file-inclusion/rfi.md

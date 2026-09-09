@@ -1,0 +1,19 @@
+id: regex-dos
+category: injections
+cwe: CWE-1333
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: GET|POST
+  target: champ de formulaire ou paramètre validé côté serveur par une expression régulière (email, URL, mot de passe, format personnalisé)
+  technique: timing-anomaly
+  indicators:
+    - "Temps de réponse croissant de façon super-linéaire (quasi exponentielle ou polynomiale) à mesure que la longueur d'une entrée structurée de manière répétitive/ambiguë augmente, alors que la ligne de base reste stable"
+    - "Blocage ou timeout du thread/processus de traitement observé uniquement pour des entrées présentant des motifs répétitifs imbriqués proches d'une classe de caractères ambiguë"
+    - "Consommation CPU anormalement élevée et prolongée côté serveur corrélée à la soumission d'une entrée de test de longueur croissante sur le même champ"
+false_positive_notes:
+  - "Un traitement asynchrone ou une file d'attente peut introduire de la latence sans rapport avec la regex — confirmer par mesure de CPU serveur si possible."
+  - "Une limite de longueur d'entrée déjà appliquée en amont peut empêcher d'atteindre le seuil de dégradation, masquant la vulnérabilité sans l'éliminer."
+remediation_ref: rules/remediation/regex-dos.md
+knowledge_ref: knowledge/injections/regex-dos.md

@@ -1,0 +1,35 @@
+id: jsp-upload
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Généralise la classe de vulnérabilité "upload de fichier exécutable"
+    (illustrée ici pour les conteneurs servlet Java/Tomcat) telle qu'elle
+    apparaîtrait en PHP: écriture d'un fichier téléversé via
+    move_uploaded_file() sans liste blanche d'extension ni vérification de
+    contenu, dans un répertoire servi par le serveur web.
+  patterns:
+    - "move_uploaded_file($_FILES[_]['tmp_name'], _)"
+    - "move_uploaded_file(_, string_concat(_, $_FILES[_]['name'], _))"
+  exclude_if:
+    - "une liste blanche stricte d'extensions est vérifiée avant l'appel"
+    - "le contenu réel du fichier est vérifié avant l'appel"
+    - "le répertoire de destination est hors du webroot ou non exécutable"
+
+message: >
+  Upload de fichier sans validation de contenu ni de destination — risque
+  d'exécution de code si le fichier atterrit dans un répertoire interprété
+  (voir rules/remediation/jsp-upload.md).
+
+false_positive_notes:
+  - "Cette règle PHP est une généralisation du pattern JSP/Tomcat documenté dans knowledge/upload/jsp-upload.md ; elle ne détecte pas de code Java spécifique."
+  - "Si le répertoire de destination est confirmé hors webroot, la sévérité peut être réduite."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

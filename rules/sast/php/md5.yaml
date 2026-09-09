@@ -1,0 +1,33 @@
+id: md5
+language: php
+category: crypto
+cwe: CWE-328
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage de md5() pour hacher un mot de passe, un token de session
+    ou toute valeur nécessitant une garantie cryptographique.
+  patterns:
+    - "md5($password)"
+    - "md5($_POST['password'])"
+    - "md5(uniqid())"
+    - "hash(\"md5\", _)"
+  exclude_if:
+    - "le résultat est utilisé uniquement comme clé de cache non adversariale (ex: clé de cache de fragment HTML) sans lien avec l'authentification"
+    - "le résultat sert de simple checksum d'intégrité non opposable à un attaquant (ex: détection de doublon de fichier interne)"
+
+message: >
+  MD5 est cryptographiquement cassé — pour un mot de passe utiliser
+  password_hash() (bcrypt/argon2id), pour un token utiliser
+  random_bytes()/hash_hmac('sha256', ...) (voir rules/remediation/md5.md).
+
+false_positive_notes:
+  - "Un usage MD5 pour un ETag HTTP ou une clé de cache non sensible n'est pas un risque de sécurité — reclasser en `info`."
+  - "Confirmer que la donnée hachée est bien sensible (mot de passe, secret, token) avant de remonter en `medium`/`high`."
+
+remediation_ref: rules/remediation/md5.md
+knowledge_ref: knowledge/crypto/md5.md

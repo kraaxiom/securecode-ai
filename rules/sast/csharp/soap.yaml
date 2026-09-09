@@ -1,0 +1,36 @@
+id: soap
+language: csharp
+category: api
+cwe: CWE-611
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un service SOAP/WCF ou un parseur XML .NET (XmlDocument,
+    XmlReader) initialisé sans désactivation explicite de la résolution
+    d'entités externes, exposant le service à une injection XXE, ainsi
+    qu'un service SOAP dépourvu de vérification d'authentification.
+  patterns:
+    - "new XmlDocument() { XmlResolver = new XmlUrlResolver() }"
+    - "XmlReaderSettings settings = new XmlReaderSettings(); settings.DtdProcessing = DtdProcessing.Parse;"
+    - "[ServiceContract] public interface $IService { [OperationContract] $Type $Method(...); }"
+    - "BasicHttpBinding()"
+  exclude_if:
+    - "XmlResolver est explicitement défini à null, ou DtdProcessing est défini à DtdProcessing.Prohibit"
+    - "le service WCF applique un [PrincipalPermission]/vérification d'authentification via un binding sécurisé (WSHttpBinding avec Message Security) et WS-Security configuré"
+
+message: >
+  Parseur XML .NET sans désactivation de la résolution d'entités externes
+  (risque XXE), ou service SOAP/WCF sans authentification/WS-Security —
+  désactiver XmlResolver et le traitement DTD, et sécuriser le binding
+  (voir rules/remediation/soap.md).
+
+false_positive_notes:
+  - "Les versions récentes de .NET Core désactivent XXE par défaut dans XmlDocument/XmlReader — vérifier la version cible avant de remonter en `high`."
+  - "Si le service SOAP ne traite que du XML strictement interne et fiable (jamais issu d'une source externe), le risque XXE est réduit — reclasser en `medium`."
+
+remediation_ref: rules/remediation/soap.md
+knowledge_ref: knowledge/api/soap.md

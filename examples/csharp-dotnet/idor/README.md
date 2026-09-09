@@ -1,0 +1,3 @@
+# Insecure Direct Object Reference (CWE-639)
+
+La version vulnérable récupère le document via `Documents.FirstOrDefault(d => d.Id == id)` en utilisant tel quel un identifiant séquentiel transmis par le client, sans jamais vérifier que le document appartient à l'utilisateur authentifié : il suffit d'incrémenter l'ID pour accéder aux documents de tous les autres comptes. La correction ajoute une clause `d.OwnerId == currentUserId` directement dans la requête de base de données, en complément (et non en remplacement) du passage à un identifiant non séquentiel (`Guid`), ce qui réduit la surface de découverte tout en garantissant que seul le propriétaire réel peut accéder à l'objet.

@@ -1,0 +1,34 @@
+id: missing-rate-limit
+language: go
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une route HTTP Go sensible (login, reset-password) enregistrée
+    sans middleware de limitation de débit (ex: golang.org/x/time/rate,
+    ulule/limiter, ou middleware équivalent).
+  patterns:
+    - "router.HandleFunc(\"/login\", $handler)"
+    - "router.POST(\"/reset-password\", $handler)"
+    - "mux.HandleFunc(\"/api/login\", $handler)"
+  exclude_if:
+    - "la route est enveloppée d'un middleware de rate limiting (ex: rate.NewLimiter, limiter.NewMiddleware) appliqué explicitement sur cette route ou globalement"
+    - "une passerelle API/reverse proxy en amont applique déjà un throttling documenté et vérifié"
+
+message: >
+  Route sensible enregistrée sans middleware de limitation de débit —
+  ajouter un middleware de rate limiting (ex: golang.org/x/time/rate) par
+  IP/utilisateur pour prévenir le bourrage d'identifiants
+  (voir rules/remediation/missing-rate-limit.md).
+
+false_positive_notes:
+  - "Vérifier qu'une limitation de débit n'est pas déjà appliquée globalement au niveau du routeur ou du reverse proxy avant de remonter en `medium`."
+  - "Un endpoint interne accessible uniquement depuis un réseau de confiance restreint peut justifier une exception documentée."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

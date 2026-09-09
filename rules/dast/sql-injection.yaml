@@ -1,0 +1,20 @@
+id: sql-injection
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête, champ de formulaire, en-tête HTTP ou cookie utilisé dans la construction d'une requête vers la base de données relationnelle
+  technique: error-signature
+  indicators:
+    - "Message d'erreur applicatif exposant un fragment de requête SQL ou le nom du moteur de base de données suite à l'injection d'un caractère de contrôle SQL neutre"
+    - "Différentiel de code HTTP (ex. 500 uniquement sur la requête modifiée) par rapport à la ligne de base non modifiée"
+    - "Écart de latence significatif et reproductible (>3 écarts-types de la ligne de base) uniquement sur une variante introduisant un délai conditionnel neutre"
+    - "Nombre d'éléments retournés qui varie de façon cohérente entre deux variantes logiquement différentes du même paramètre, sans qu'aucune donnée tierce ne soit extraite"
+false_positive_notes:
+  - "Un paramètre déjà validé strictement comme identifiant numérique côté client et serveur réduit fortement la probabilité, mais mérite une vérification manuelle avant d'écarter."
+  - "Un WAF ou proxy intermédiaire peut introduire son propre différentiel de latence ou de code d'erreur — corréler avec les logs applicatifs avant de conclure."
+remediation_ref: rules/remediation/sql-injection.md
+knowledge_ref: knowledge/injections/sql-injection.md

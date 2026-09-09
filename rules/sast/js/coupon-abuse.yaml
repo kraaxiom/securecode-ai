@@ -1,0 +1,32 @@
+id: coupon-abuse
+language: js
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le marquage d'usage d'un coupon dans localStorage/cookie côté
+    client, ou une génération de code par concaténation d'un ID prévisible.
+  patterns:
+    - "localStorage.setItem(string_concat(\"coupon_\", $code), _)"
+    - "document.cookie = string_concat(\"coupon_used_\", $code, _)"
+    - "string_concat(\"REF\", $userId.toString().padStart(_, _))"
+  exclude_if:
+    - "Une contrainte d'unicité serveur (insertion en base avec index unique) est vérifiée avant écriture du marqueur client"
+    - "Le code est généré via crypto.randomBytes()"
+
+message: >
+  Usage de coupon marqué uniquement côté client (localStorage/cookie) ou
+  code prévisible — imposer une contrainte d'unicité serveur (voir
+  rules/remediation/coupon-abuse.md).
+
+false_positive_notes:
+  - "localStorage utilisé uniquement pour l'affichage optimiste UI, avec revalidation serveur systématique à l'application, est acceptable."
+  - "Vérifier la présence d'une contrainte UNIQUE(coupon_id, user_id) en base avant de conclure à l'exploitabilité."
+
+remediation_ref: rules/remediation/coupon-abuse.md
+knowledge_ref: knowledge/business-logic/coupon-abuse.md

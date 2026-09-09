@@ -1,0 +1,32 @@
+id: tls1-0
+language: csharp
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'activation explicite de SslProtocols.Tls ou SslProtocols.Tls11
+    (TLS 1.0/1.1) dans une configuration SslStream, HttpClientHandler ou
+    ServicePointManager.SecurityProtocol.
+  patterns:
+    - "SslProtocols.Tls"
+    - "SslProtocols.Tls11"
+    - "ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11"
+  exclude_if:
+    - "présence conjointe et documentée avec un flag legacy explicitement requis par un partenaire tiers, avec ticket de dépréciation planifié"
+
+message: >
+  TLS 1.0/1.1 sont dépréciés par la RFC 8996 et exclus des référentiels PCI-DSS
+  depuis 2018 — retirer SslProtocols.Tls/Tls11 et forcer SslProtocols.Tls12
+  ou supérieur (idéalement laisser .NET négocier automatiquement).
+
+false_positive_notes:
+  - "Si le flag est présent mais recouvert plus loin par une valeur forçant Tls12, vérifier l'ordre d'exécution avant de conclure."
+  - "Compatibilité avec un partenaire legacy documentée ne change pas la sévérité, seulement la priorité de remédiation."
+
+remediation_ref: rules/remediation/tls1-0.md
+knowledge_ref: knowledge/crypto/tls1-0.md

@@ -1,0 +1,39 @@
+id: race-condition
+language: rust
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pattern lire-vérifier-écrire (check-then-act) non atomique sur
+    une ressource partagée (solde, stock, quota) en Rust — lecture via une
+    requête SQL (sqlx/diesel) ou un état partagé (Mutex<T>/RwLock<T>) suivie
+    d'une condition puis d'une écriture séparée, sans transaction ni section
+    critique unique englobant lecture et écriture.
+  patterns:
+    - "let stock: i32 = sqlx::query_scalar(\"SELECT stock FROM products WHERE id = $1\").fetch_one(&pool).await?; if stock > 0 { sqlx::query(\"UPDATE products SET stock = $1 WHERE id = $2\").execute(&pool).await?; } — deux requêtes hors transaction, sans FOR UPDATE ni clause conditionnelle"
+    - "let mut guard = balance.lock().unwrap(); let current = *guard; drop(guard); if current >= amount { let mut guard2 = balance.lock().unwrap(); *guard2 -= amount; } — verrou relâché entre la lecture et l'écriture (fenêtre de course), au lieu d'une seule section critique"
+    - "fn withdraw(&self, id: &str, amount: i64) -> Result<()> { let balance = self.get_balance(id)?; if balance >= amount { self.set_balance(id, balance - amount)?; } } — lecture puis écriture séparées sans transaction sqlx/diesel ni verrou"
+  exclude_if:
+    - "la lecture et l'écriture sont enveloppées dans une transaction sqlx/diesel avec verrou explicite (SELECT ... FOR UPDATE, ou diesel transaction sérialisable) ou dans une unique section critique protégée par un même MutexGuard/RwLockWriteGuard non relâché entre la lecture et l'écriture"
+    - "la mise à jour utilise une requête SQL atomique conditionnelle (UPDATE ... SET stock = stock - $1 WHERE stock >= $1) ou un type atomique (AtomicI64::compare_exchange) pour l'état en mémoire"
+
+message: >
+  Vérification et mise à jour d'une ressource partagée effectuées en deux
+  opérations séparées non atomiques (verrou relâché entre lecture et
+  écriture, ou requêtes SQL hors transaction) — des tâches concurrentes
+  peuvent toutes deux passer la vérification avant l'écriture (double
+  dépense, survente de stock). Conserver un seul MutexGuard/transaction pour
+  toute la section critique, ou utiliser une mise à jour SQL conditionnelle
+  atomique — voir rules/remediation/race-condition.md.
+
+false_positive_notes:
+  - "Si la ressource n'est jamais accédée en concurrence (un seul thread/tâche async, traitement strictement séquentiel) le risque est nul."
+  - "Un verrou tenu par le compilateur au niveau du type (Arc<Mutex<T>> avec toute la logique dans une seule méthode sans drop() intermédiaire) est sûr même si le pattern ressemble superficiellement à un check-then-act — vérifier la portée exacte du guard."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

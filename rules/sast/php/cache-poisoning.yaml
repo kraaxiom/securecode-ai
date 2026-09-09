@@ -1,0 +1,33 @@
+id: cache-poisoning
+language: php
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation directe d'en-têtes X-Forwarded-Host/X-Forwarded-Scheme/
+    X-Original-URL pour construire une URL ou un contenu reflété dans la réponse,
+    sans validation contre une liste blanche d'hôtes.
+  patterns:
+    - "$_SERVER['HTTP_X_FORWARDED_HOST'] used in string_concat(_, $var, _) without in_array($var, $whitelist, true) check"
+    - "$_SERVER['HTTP_X_FORWARDED_SCHEME'] used directly in output"
+    - "$_SERVER['HTTP_X_ORIGINAL_URL'] used directly to build a redirect or link"
+  exclude_if:
+    - "la valeur passe par un in_array(...) contre une liste blanche statique avant utilisation"
+    - "le reverse proxy en amont supprime/normalise déjà ces en-têtes avant qu'ils n'atteignent l'application"
+
+message: >
+  En-tête X-Forwarded-* utilisé sans validation pour construire du contenu —
+  risque d'empoisonnement de cache si la clé de cache du CDN ne reflète pas
+  cet en-tête (voir rules/remediation/cache-poisoning.md).
+
+false_positive_notes:
+  - "Si l'application n'est jamais placée derrière un cache/CDN partagé, le risque est réduit — reclasser en `medium`."
+  - "Si une liste blanche est appliquée dans une fonction utilitaire centrale non visible localement, vérifier manuellement avant de remonter."
+
+remediation_ref: rules/remediation/cache-poisoning.md
+knowledge_ref: knowledge/modern/cache-poisoning.md

@@ -1,0 +1,38 @@
+id: embedding-poisoning
+language: csharp
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'insertion d'embeddings dans une base vectorielle (Azure AI
+    Search, Qdrant .NET, Pinecone .NET) via Semantic Kernel Memory à partir
+    d'un contenu externe non fiable sans validation, permettant à un
+    attaquant d'injecter des vecteurs conçus pour polluer les résultats de
+    similarité et biaiser les réponses du système RAG en aval.
+  patterns:
+    - "await memory.SaveInformationAsync(collection, userSubmittedText, id) sans validation de contenu, quota par source, ni détection de doublons/anomalies avant insertion"
+    - "await searchClient.UploadDocumentsAsync(scrapedDocs) où scrapedDocs provient d'un scraping externe non filtré"
+    - "await qdrantClient.UpsertAsync(collectionName, points) où le vecteur est calculé à partir d'une entrée utilisateur directement soumise, sans limite de fréquence/volume par utilisateur"
+  exclude_if:
+    - "les documents insérés proviennent exclusivement de sources internes validées, ou une étape de modération/déduplication est appliquée avant insertion dans l'index vectoriel"
+
+message: >
+  Insertion de contenu externe non fiable dans une base vectorielle sans
+  validation ni contrôle de volume — un attaquant peut empoisonner les
+  embeddings pour faire remonter du contenu malveillant dans les résultats
+  RAG et influencer les réponses du modèle. Valider/modérer le contenu avant
+  indexation, limiter le volume d'insertion par source, et surveiller les
+  dérives de distribution des embeddings — voir
+  rules/remediation/embedding-poisoning.md.
+
+false_positive_notes:
+  - "Un index alimenté uniquement par des documents internes déjà validés en amont n'est pas concerné."
+  - "Une limite de taux (rate limiting) déjà en place réduit le risque d'empoisonnement massif mais pas l'insertion ciblée unitaire — garder `medium` sauf modération de contenu avérée."
+
+remediation_ref: rules/remediation/embedding-poisoning.md
+knowledge_ref: knowledge/llm/embedding-poisoning.md

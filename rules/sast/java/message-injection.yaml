@@ -1,0 +1,39 @@
+id: message-injection
+language: java
+category: websocket
+cwe: CWE-20
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler `@MessageMapping` (Spring STOMP) ou une méthode
+    `handleTextMessage()` (WebSocketHandler brut) qui réinjecte le contenu
+    d'un message WebSocket entrant dans une commande système, une requête
+    SQL, un moteur de template ou une sortie broadcastée sans validation
+    ni échappement.
+  patterns:
+    - "@MessageMapping($_) $ret $method($payload, ...) { ... Runtime.getRuntime().exec($payload ...) ... }"
+    - "@MessageMapping($_) $ret $method($payload, ...) { ... statement.executeQuery(string_concat(_, $payload, _)) ... }"
+    - "handleTextMessage(WebSocketSession $s, TextMessage $msg) { ... $s.sendMessage(new TextMessage(string_concat(_, $msg.getPayload(), _))) ... } // sans échappement HTML/JS"
+    - "simpMessagingTemplate.convertAndSend($dest, string_concat(_, $payload, _))"
+  exclude_if:
+    - "Le payload est désérialisé via un DTO typé avec validation Bean Validation (@Valid) avant usage"
+    - "Le contenu est échappé (ex: HtmlUtils.htmlEscape) ou passé par un binder préparé avant exécution SQL"
+
+message: >
+  Le contenu d'un message WebSocket entrant est réutilisé directement dans
+  une commande, une requête SQL ou un message rediffusé aux autres clients
+  sans validation — un attaquant contrôlant le canal peut injecter du code
+  ou du contenu malveillant (stored XSS via broadcast, injection SQL,
+  injection de commande). Valider et échapper systématiquement le payload
+  côté serveur avant tout usage ou retransmission.
+
+false_positive_notes:
+  - "Si le payload est validé par un schéma strict (@Valid + contraintes Bean Validation) avant tout traitement, le risque est atténué — reclasser en `low`."
+  - "Si le broadcast passe par un template moteur qui échappe automatiquement le HTML, ce n'est pas exploitable en XSS."
+
+remediation_ref: rules/remediation/message-injection.md
+knowledge_ref: knowledge/websocket/message-injection.md

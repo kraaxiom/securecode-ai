@@ -1,0 +1,36 @@
+id: idor
+language: python
+category: authorization
+cwe: CWE-639
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un accès direct à une ressource via un identifiant fourni par
+    l'utilisateur (paramètre d'URL, corps de requête) dans une vue
+    classique (non-API) sans vérification d'appartenance — téléchargement
+    de fichier, affichage de facture/document par ID sans contrôle du
+    propriétaire.
+  patterns:
+    - "def download_invoice($request, invoice_id): invoice = Invoice.objects.get(id=invoice_id)  # sans vérification owner"
+    - "@app.route('/document/<int:doc_id>')\ndef get_document(doc_id): doc = Document.query.get(doc_id)  # sans vérification owner"
+  exclude_if:
+    - "une vérification explicite de propriété est effectuée après récupération (if invoice.user_id != request.user.id: abort(403))"
+    - "l'identifiant est un jeton opaque non séquentiel généré aléatoirement ET une vérification de propriété est tout de même présente"
+
+message: >
+  Accès à une ressource par identifiant direct sans vérification que
+  l'utilisateur courant en est propriétaire ou autorisé — référence
+  directe non sécurisée à un objet (IDOR), permettant d'accéder aux
+  ressources d'autrui en modifiant l'ID dans l'URL. Vérifier
+  systématiquement l'autorisation après récupération (voir
+  rules/remediation/idor.md).
+
+false_positive_notes:
+  - "Remplacer un ID séquentiel par un UUID réduit la facilité de découverte mais ne remplace pas un contrôle d'autorisation — ne pas déclasser sur ce seul critère si la vérification de propriété reste absente."
+
+remediation_ref: rules/remediation/idor.md
+knowledge_ref: knowledge/authorization/idor.md

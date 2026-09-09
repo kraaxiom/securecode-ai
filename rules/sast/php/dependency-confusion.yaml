@@ -1,0 +1,33 @@
+id: dependency-confusion
+language: php
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans composer.json, une dépendance dont le nom de vendor
+    ressemble à un package interne/privé (pas de vendor réservé connu)
+    sans déclaration de repository privé priorisé ni de canonical=true,
+    ce qui laisse Composer résoudre le nom via Packagist par défaut.
+  patterns:
+    - "require.<vendor>/<package> sans entrée repositories[].canonical=true pour ce vendor"
+    - "require.<vendor>/<package> où vendor correspond à un nom d'organisation interne connu (ex: acme, internal-*)"
+  exclude_if:
+    - "Le fichier repositories[] déclare une source composer privée avec canonical=true couvrant ce vendor"
+    - "Le vendor est un package public établi (présence de repositories[] packagist.org: false explicite ou vendor listé dans une allowlist publique connue)"
+
+message: >
+  Dépendance potentiellement interne résolue sans registre privé prioritaire —
+  vérifier la présence d'un repository composer privé avec canonical=true et
+  réserver le nom sur Packagist (voir rules/remediation/dependency-confusion.md).
+
+false_positive_notes:
+  - "Si le vendor correspond à un package public largement adopté et vérifié, ce n'est pas une confusion de dépendance."
+  - "Si un miroir/proxy interne fait déjà autorité pour toutes les résolutions (registre unique configuré en CI), reclasser en `info`."
+
+remediation_ref: rules/remediation/dependency-confusion.md
+knowledge_ref: knowledge/supply-chain/dependency-confusion.md

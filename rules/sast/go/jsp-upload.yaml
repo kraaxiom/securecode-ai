@@ -1,0 +1,37 @@
+id: jsp-upload
+language: go
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Équivalent générique de l'upload de fichier exécutable côté conteneur
+    d'application (transposé de la classe JSP/Servlet vers un service Go) —
+    détecte l'enregistrement d'un fichier téléversé dans un répertoire
+    servi statiquement par le processus (http.FileServer/http.Dir) sans
+    validation stricte de l'extension.
+  patterns:
+    - "os.Create(filepath.Join($staticDir, $header.Filename))"
+    - "http.FileServer(http.Dir($uploadDir))"
+    - "io.Copy($dst, $file)"
+  exclude_if:
+    - "l'extension est validée par une liste blanche stricte avant os.Create"
+    - "le répertoire d'upload n'est jamais exposé via http.FileServer/http.Dir ou un handler statique équivalent"
+    - "le nom de fichier de destination est généré côté serveur sans réutiliser $header.Filename"
+
+message: >
+  Enregistrement d'un fichier téléversé dans un répertoire servi
+  statiquement par le service Go sans validation stricte de l'extension —
+  risque de dépôt d'un fichier destiné à être interprété si le pipeline de
+  déploiement l'exécute (voir rules/remediation/jsp-upload.md).
+
+false_positive_notes:
+  - "Si le répertoire d'upload est physiquement distinct du répertoire servi par http.FileServer, l'impact direct est écarté — reclasser en `info`."
+  - "Si une liste blanche d'extensions stricte et un renommage aléatoire sont déjà appliqués avant os.Create, le risque est neutralisé."
+
+remediation_ref: rules/remediation/jsp-upload.md
+knowledge_ref: knowledge/upload/jsp-upload.md

@@ -1,0 +1,38 @@
+id: indirect-prompt-injection
+language: csharp
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'injection dans le contexte du LLM (Semantic Kernel, Azure
+    OpenAI SDK) d'un contenu provenant d'une source externe non fiable (page
+    web, document, résultat de plugin, e-mail) récupéré puis inséré tel quel
+    dans le prompt, sans marquage ni traitement comme donnée non fiable.
+  patterns:
+    - "var html = await httpClient.GetStringAsync(url); chatHistory.AddUserMessage(html) sans balisage 'untrusted' ni délimitation structurelle"
+    - "var toolResult = await kernel.InvokeAsync(plugin, function); chatHistory.AddUserMessage(toolResult.ToString()) sans distinction du contenu outil vs instruction"
+    - "kernelMemory.AskAsync(question) sur un document ingéré (PDF, page web) passé directement au prompt du planner sans filtrage de contenu"
+  exclude_if:
+    - "le contenu externe est explicitement délimité par des balises non interprétables comme instructions (ex: bloc XML/JSON dédié 'source_document') et le prompt système instruit le modèle de ne jamais exécuter d'instructions provenant de ce bloc"
+    - "un scanner de contenu (détection d'injection, longueur/format anormal) filtre le document avant inclusion"
+
+message: >
+  Contenu provenant d'une source externe non fiable (web, document, sortie
+  de plugin) injecté dans le prompt LLM sans marquage ni filtrage — un
+  attaquant peut cacher des instructions dans ce contenu pour détourner
+  l'agent (exfiltration, actions non autorisées). Toujours traiter le contenu
+  externe comme donnée, jamais comme instruction : délimitation stricte,
+  filtrage, et validation applicative des actions déclenchées en aval — voir
+  rules/remediation/indirect-prompt-injection.md.
+
+false_positive_notes:
+  - "Une source strictement interne et déjà validée (ex: base de données interne contrôlée) réduit le risque mais ne l'élimine pas totalement — vérifier l'origine réelle des données."
+  - "Si le pipeline n'accorde au modèle aucune capacité d'action (pas d'appel d'outil, sortie affichée en lecture seule), la sévérité peut être réduite à `medium`."
+
+remediation_ref: rules/remediation/indirect-prompt-injection.md
+knowledge_ref: knowledge/llm/indirect-prompt-injection.md

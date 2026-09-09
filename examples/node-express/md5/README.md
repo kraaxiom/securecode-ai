@@ -1,0 +1,3 @@
+## Utilisation de MD5 (CWE-328)
+
+Le code vulnérable hache les mots de passe utilisateurs avec `crypto.createHash('md5')`, une fonction cryptographique cassée depuis 2004, sans sel ni facteur de coût, ce qui la rend triviale à inverser via rainbow tables ou bruteforce GPU en cas de fuite de la base. La correction remplace MD5 par Argon2id, un algorithme dédié au hachage de mots de passe qui intègre un sel automatique et un coût mémoire/temps configurable, résistant aux attaques matérielles modernes. MD5 peut éventuellement rester acceptable pour des checksums non cryptographiques, mais jamais pour des mots de passe, tokens ou signatures.

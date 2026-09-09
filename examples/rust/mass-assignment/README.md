@@ -1,0 +1,3 @@
+# Mass Assignment
+
+`vulnerable.rs` désérialise le corps JSON entier directement dans le modèle `User`, qui inclut les champs sensibles `role` et `is_admin` : un attaquant peut donc les inclure dans la requête pour s'auto-promouvoir, un cas typique de CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes). `fixed.rs` introduit un DTO `UpdateUserDto` distinct du modèle interne, ne contenant que `name` et `email` : les champs sensibles n'existent tout simplement pas dans la structure désérialisée. Cette correction suit `rules/remediation/mass-assignment.md`, qui recommande une liste blanche explicite de champs plutôt qu'un binding automatique complet.

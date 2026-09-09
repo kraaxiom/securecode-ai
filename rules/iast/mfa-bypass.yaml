@@ -1,0 +1,24 @@
+id: mfa-bypass
+category: auth
+cwe: CWE-287
+type: iast
+instrumentation:
+  hook_points:
+    - "php: fonction d'émission de session/token pleinement privilégié après authentification (Auth::login ou équivalent)"
+    - "js: fonction d'établissement de session (req.session.authenticated = true, émission de JWT final)"
+    - "python: fonction login()/login_user() du framework d'authentification"
+    - "java: méthode SecurityContextHolder.setAuthentication ou équivalent Spring Security"
+    - "csharp: méthode SignInAsync (ASP.NET Core Identity)"
+    - "go: fonction d'établissement de session/émission de token final"
+  taint_check: >
+    Trace si l'émission d'une session/token pleinement privilégié (sink) intervient avant
+    ou sans passage effectif par la vérification du second facteur (source: étape de
+    validation MFA), pour un même flux d'authentification.
+  trigger_condition: >
+    Le sink d'émission de session pleinement privilégiée est atteint sur un chemin
+    d'exécution qui n'a pas traversé la vérification du second facteur, ou dont l'état
+    "MFA validé" est lu depuis une source contrôlable côté client plutôt que depuis un
+    état de session serveur infalsifiable.
+severity: high
+remediation_ref: rules/remediation/mfa-bypass.md
+knowledge_ref: knowledge/auth/mfa-bypass.md

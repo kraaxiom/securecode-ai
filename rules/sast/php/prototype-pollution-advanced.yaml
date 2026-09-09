@@ -1,0 +1,33 @@
+id: prototype-pollution-advanced
+language: php
+category: modern
+cwe: CWE-1321
+owasp: A03:2021-Injection
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    La pollution de prototype est spécifique à JavaScript ; cette règle PHP
+    couvre uniquement le cas d'un endpoint PHP exposant/relayant un payload
+    JSON non filtré vers un service Node.js en aval (ex: API interne),
+    propageant des clés __proto__/constructor non neutralisées.
+  patterns:
+    - "json_decode($input, true) result forwarded to an external Node.js service via curl/http_post without stripping __proto__/constructor/prototype keys"
+  exclude_if:
+    - "une fonction de filtrage retire explicitement les clés __proto__, constructor, prototype avant transmission"
+    - "aucune transmission vers un service Node.js/JS n'existe dans ce fichier"
+
+message: >
+  Payload JSON utilisateur relayé sans filtrage des clés __proto__/constructor/
+  prototype vers un service aval — peut permettre une pollution de prototype
+  côté consommateur JavaScript (voir
+  rules/remediation/prototype-pollution-advanced.md).
+
+false_positive_notes:
+  - "Cette classe de vulnérabilité est avant tout pertinente côté JavaScript — en PHP, ne remonter que si transmission avérée vers un service Node.js/JS."
+  - "Si le service aval valide déjà un schéma strict côté réception, risque réduit."
+
+remediation_ref: rules/remediation/prototype-pollution-advanced.md
+knowledge_ref: knowledge/modern/prototype-pollution-advanced.md

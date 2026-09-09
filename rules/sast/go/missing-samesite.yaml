@@ -1,0 +1,33 @@
+id: missing-samesite
+language: go
+category: sessions
+cwe: CWE-1275
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un littéral http.Cookie{} ou une configuration gorilla/sessions
+    sans champ SameSite explicite, ou avec http.SameSiteNoneMode sans Secure.
+  patterns:
+    - "http.Cookie{ Name: $name, Value: $value, _ }" # SameSite absent du littéral
+    - "http.Cookie{ _, SameSite: http.SameSiteNoneMode, _ }" # sans Secure: true dans le même littéral
+    - "store.Options = &sessions.Options{ _ }" # SameSite absent
+  exclude_if:
+    - "SameSite: http.SameSiteLaxMode ou http.SameSiteStrictMode est explicitement présent dans le même littéral"
+    - "SameSite: http.SameSiteNoneMode est associé à Secure: true dans le même littéral, avec justification fonctionnelle (intégration cross-site)"
+
+message: >
+  Cookie créé sans champ SameSite explicite (ou avec SameSiteNoneMode non
+  sécurisé) — le navigateur continuera d'envoyer ce cookie lors de requêtes
+  cross-site, exposant l'application au CSRF (voir
+  rules/remediation/missing-samesite.md).
+
+false_positive_notes:
+  - "Si SameSiteNoneMode est utilisé avec Secure: true pour un besoin cross-site documenté, le risque est acceptable — reclasser en `info` avec justification."
+  - "La valeur zéro de SameSite (http.SameSiteDefaultMode, valeur par défaut de Go si le champ est omis) équivaut à une absence de directive explicite côté navigateur — la considérer comme un vrai positif."
+
+remediation_ref: rules/remediation/missing-samesite.md
+knowledge_ref: knowledge/sessions/missing-samesite.md

@@ -1,0 +1,30 @@
+id: sslv3
+language: rust
+category: crypto
+cwe: CWE-326
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'activation de SSLv3 via les bindings openssl (SslMethod::sslv3)
+    ou une configuration native-tls/openssl-sys exposant ce protocole.
+    rustls n'implémente pas SSLv3 ; ce pattern cible les bindings openssl.
+  patterns:
+    - "SslMethod::sslv3()"
+    - "SslConnector::builder(SslMethod::sslv3())"
+  exclude_if:
+    - "aucune (SSLv3 ne doit jamais être activé, même conditionnellement)"
+
+message: >
+  SSLv3 est interdit par la RFC 7568 et vulnérable à l'attaque POODLE — retirer
+  toute référence à SslMethod::sslv3 et utiliser rustls ou min_proto_version
+  fixé à TLS 1.2.
+
+false_positive_notes:
+  - "Aucun cas légitime connu : toute présence de ce flag doit être remontée en `critical`."
+
+remediation_ref: rules/remediation/sslv3.md
+knowledge_ref: knowledge/crypto/sslv3.md

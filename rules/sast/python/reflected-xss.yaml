@@ -1,0 +1,37 @@
+id: reflected-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le renvoi direct d'une entrée utilisateur (query string, en-tête,
+    paramètre de formulaire) dans une réponse HTML sans échappement, via
+    Flask/Django (Response, HttpResponse, make_response) construite par
+    f-string ou concaténation, hors moteur de template avec autoescape.
+  patterns:
+    - "return f\"<html>{request.args.get('name')}</html>\""
+    - "HttpResponse(\"<div>\" + request.GET.get(\"q\") + \"</div>\")"
+    - "make_response(f\"<p>{request.form['input']}</p>\")"
+    - "render_template_string(f\"<p>{request.args.get('x')}</p>\")"
+  exclude_if:
+    - "la valeur est échappée explicitement (markupsafe.escape(), html.escape()) avant insertion"
+    - "la réponse est générée via un moteur de template avec autoescape activé (Jinja2 autoescape=True par défaut sous Flask pour .html) et la variable est passée en contexte, pas dans le texte du template"
+
+message: >
+  Entrée utilisateur renvoyée directement dans une réponse HTML sans
+  échappement — un attaquant peut injecter du HTML/JavaScript exécuté dans
+  le navigateur de la victime (XSS réfléchi). Échapper systématiquement
+  avec markupsafe.escape()/html.escape() ou utiliser render_template() avec
+  autoescape activé au lieu de construire le HTML par concaténation.
+
+false_positive_notes:
+  - "Jinja2 avec autoescape activé (par défaut pour .html/.xml sous Flask) neutralise le risque tant que la variable est injectée via {{ var }} dans le contexte, pas dans le texte du template lui-même."
+  - "Une réponse au Content-Type non HTML (application/json, text/plain) n'est généralement pas exploitable en XSS."
+
+remediation_ref: rules/remediation/reflected-xss.md
+knowledge_ref: knowledge/xss/reflected-xss.md

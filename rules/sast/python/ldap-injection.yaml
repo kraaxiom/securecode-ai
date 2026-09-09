@@ -1,0 +1,35 @@
+id: ldap-injection
+language: python
+category: injections
+cwe: CWE-90
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un filtre LDAP par interpolation d'une
+    variable non échappée, passée à une méthode de recherche LDAP
+    (python-ldap conn.search_s, ldap3 Connection.search) sans utiliser
+    ldap.filter.escape_filter_chars ou équivalent.
+  patterns:
+    - "conn.search_s(base, ldap.SCOPE_SUBTREE, f\"(uid={var})\")"
+    - "conn.search_s(base, scope, \"(cn=\" + var + \")\")"
+    - "connection.search(base, f\"(&(objectClass=user)(sAMAccountName={var}))\")"
+  exclude_if:
+    - "var passe par ldap.filter.escape_filter_chars() avant d'être inséré dans le filtre"
+    - "var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  Filtre LDAP construit par interpolation directe d'une variable non
+  échappée — un attaquant peut injecter des méta-caractères LDAP
+  (*, (, ), \\, NUL) pour contourner l'authentification ou élargir la
+  recherche. Utiliser ldap.filter.escape_filter_chars() sur chaque valeur.
+
+false_positive_notes:
+  - "Si la variable est strictement un UUID/entier validé par regex avant insertion, le risque est très réduit."
+  - "Vérifier que la bibliothèque utilisée n'échappe pas déjà automatiquement (ce n'est pas le cas par défaut pour python-ldap/ldap3)."
+
+remediation_ref: rules/remediation/ldap-injection.md
+knowledge_ref: knowledge/injections/ldap-injection.md

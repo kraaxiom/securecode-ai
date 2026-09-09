@@ -1,0 +1,36 @@
+id: race-condition
+language: java
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java, un motif "check-then-act" non atomique
+    sur une ressource partagée (stock, réservation, quota) — lecture de
+    l'état, décision métier, puis écriture — sans transaction sérialisée ni
+    verrou, exposé à une exécution concurrente (race condition) exploitable
+    métier.
+  patterns:
+    - "if (product.getStock() > 0) { product.setStock(product.getStock() - 1); productRepository.save(product); } sans @Transactional avec isolation appropriée ni @Lock(PESSIMISTIC_WRITE) sur la lecture"
+    - "réservation de créneau/siège: if (!slotRepository.existsByUserAndTime(_)) { slotRepository.save(newBooking) } sans contrainte UNIQUE en base ni verrou empêchant deux réservations simultanées du même créneau"
+    - "compteur partagé (ex: nombre d'inscriptions à un événement à quota limité) incrémenté via lecture-modification-écriture en mémoire au lieu d'une opération atomique en base (UPDATE ... SET count = count + 1 WHERE count < max)"
+    - "AtomicInteger/variable statique utilisée comme compteur métier partagé entre requêtes HTTP concurrentes dans une application multi-instance (l'état en mémoire n'est pas partagé entre instances)"
+
+message: >
+  Motif de lecture-puis-écriture non atomique sur une ressource métier
+  partagée — exposé à une race condition exploitable (double réservation,
+  dépassement de stock/quota) sous requêtes concurrentes. Utiliser une
+  opération atomique en base (UPDATE conditionnel), un verrou pessimiste
+  (@Lock(PESSIMISTIC_WRITE)) ou une contrainte d'unicité/CHECK en base
+  comme filet de sécurité.
+
+false_positive_notes:
+  - "Si l'opération est réalisée via une requête UPDATE atomique conditionnelle vérifiant les lignes affectées, ce n'est pas un cas positif même sans verrou explicite."
+  - "Les compteurs non critiques (statistiques d'affichage, métriques approximatives) ne justifient pas une sévérité `high`."
+
+remediation_ref: rules/remediation/race-condition.md
+knowledge_ref: knowledge/business-logic/race-condition.md

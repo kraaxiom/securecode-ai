@@ -1,0 +1,36 @@
+id: stacked-query-sqli
+language: java
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de Statement.execute()/executeUpdate() avec une
+    requête concaténée sur un driver JDBC autorisant l'exécution de requêtes
+    empilées (multi-statements activé, ex: MySQL avec
+    allowMultiQueries=true), permettant d'ajouter des instructions SQL
+    arbitraires (DROP, INSERT, UPDATE).
+  patterns:
+    - "Statement.execute(string_concat(_, $var, _))"
+    - "Statement.executeUpdate(string_concat(_, $var, _))"
+    - "connexion JDBC avec allowMultiQueries=true combinée à Statement.execute(string_concat(_, $var, _))"
+  exclude_if:
+    - "$var est un littéral constant"
+    - "allowMultiQueries n'est pas activé sur la chaîne de connexion ET le driver ne supporte pas nativement les requêtes empilées"
+
+message: >
+  Exécution d'une requête SQL concaténée avec support des requêtes empilées
+  — un attaquant peut ajouter des instructions SQL arbitraires après un
+  point-virgule ; désactiver allowMultiQueries et utiliser un
+  PreparedStatement paramétré (voir rules/remediation/stacked-query-sqli.md).
+
+false_positive_notes:
+  - "Sans allowMultiQueries=true (ou équivalent driver), la plupart des drivers JDBC rejettent nativement les requêtes empilées — vérifier la configuration de connexion avant de confirmer en `critical`."
+  - "Si $var ne provient d'aucune entrée externe, ce n'est pas exploitable."
+
+remediation_ref: rules/remediation/stacked-query-sqli.md
+knowledge_ref: knowledge/injections/stacked-query-sqli.md

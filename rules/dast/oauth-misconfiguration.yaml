@@ -1,0 +1,18 @@
+id: oauth-misconfiguration
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+type: dast
+test:
+  method: GET
+  target: paramètres de la requête d'autorisation OAuth/OIDC (redirect_uri, state, nonce)
+  technique: boundary-value
+  indicators:
+    - "Une variation bénigne du paramètre redirect_uri (sous-domaine ou chemin voisin appartenant au même domaine testé, jamais un domaine tiers réel) est acceptée par le serveur d'autorisation, indiquant une validation par préfixe/motif plutôt que par correspondance exacte"
+    - "Le flux d'autorisation aboutit sans qu'un paramètre state (ou nonce en OIDC) unique n'ait été exigé et vérifié au retour, la requête de callback étant acceptée même en son absence ou avec une valeur rejouée"
+    - "Le jeton d'identité (ID token) retourné est accepté par l'application cliente sans que celle-ci ne semble vérifier l'émetteur (iss) ou l'audience (aud), observable via un jeton de test dont ces champs sont volontairement incohérents avec la configuration attendue"
+false_positive_notes:
+  - "Ce test ne détourne jamais réellement un flux d'autorisation vers une victime — il se limite à observer si le serveur/client accepte des variantes de paramètres qui, en conditions réelles, permettraient un détournement."
+remediation_ref: rules/remediation/oauth-misconfiguration.md
+knowledge_ref: knowledge/auth/oauth-misconfiguration.md

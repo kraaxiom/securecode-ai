@@ -1,0 +1,28 @@
+id: deep-query
+language: js
+category: graphql
+cwe: CWE-674
+owasp: A04:2021-Insecure Design
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une instanciation d'ApolloServer/Yoga sans `validationRules`
+    incluant une limite de profondeur (`graphql-depth-limit`).
+  patterns:
+    - "new ApolloServer({ typeDefs, resolvers, ... }) sans validationRules: [depthLimit(_)]"
+  exclude_if:
+    - "validationRules inclut depthLimit(_) ou un plugin graphql-armor-max-depth"
+
+message: >
+  Serveur GraphQL sans limite de profondeur de requête — risque de déni de
+  service par requête récursive (voir rules/remediation/deep-query.md).
+
+false_positive_notes:
+  - "Si la limite de profondeur est configurée via un middleware amont (API gateway) non visible dans ce fichier, vérifier manuellement avant de remonter en `medium`."
+  - "Si le schéma ne comporte aucune relation récursive/circulaire, le risque réel est très faible — reclasser en `low`."
+
+remediation_ref: rules/remediation/deep-query.md
+knowledge_ref: knowledge/graphql/deep-query.md

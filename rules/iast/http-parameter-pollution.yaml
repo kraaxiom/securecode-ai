@@ -1,0 +1,15 @@
+id: http-parameter-pollution
+category: injections
+cwe: CWE-235
+type: iast
+instrumentation:
+  hook_points:
+    - "php: $_GET / $_POST / $_REQUEST comme source lors de l'accès à un paramètre potentiellement dupliqué"
+    - "js: req.query / req.body (Express) comme source lors de la lecture d'un paramètre multi-valeur"
+    - "python: request.args.getlist / request.form.getlist (Flask) comme source"
+    - "java: HttpServletRequest.getParameterValues comme source"
+  taint_check: trace les cas où un paramètre porte plusieurs valeurs et où seule une sous-partie (première/dernière occurrence) est utilisée dans un contrôle de sécurité ou une logique métier sensible sans validation de cohérence
+  trigger_condition: un paramètre de requête possède plusieurs occurrences avec des valeurs différentes et est consommé par une fonction de contrôle d'accès, de validation ou de routage
+severity: medium
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

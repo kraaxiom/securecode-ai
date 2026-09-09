@@ -1,0 +1,3 @@
+# BOLA — Broken Object Level Authorization
+
+La version vulnérable récupère et met à jour une commande uniquement à partir de son identifiant transmis par le client, sans vérifier que l'utilisateur authentifié en est bien le propriétaire, ce qui permet d'accéder aux commandes d'autrui simplement en changeant l'ID dans l'URL. La version corrigée ajoute une clause `ownerId: req.user.id` directement dans la requête de base de données, garantissant qu'aucun objet d'un autre utilisateur ne peut être lu ni modifié. Cela correspond à **CWE-639 (Authorization Bypass Through User-Controlled Key)**, référencé comme API1:2023 Broken Object Level Authorization dans l'OWASP API Security Top 10.

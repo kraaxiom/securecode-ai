@@ -1,0 +1,3 @@
+# Clés cryptographiques codées en dur
+
+`vulnerable.rs` définit la clé de chiffrement AES comme constante littérale (`ENCRYPTION_KEY`) directement dans le code source, la rendant accessible à quiconque consulte le dépôt, son historique Git ou le binaire compilé, ce qui correspond à CWE-798 (Use of Hard-coded Credentials). `fixed.rs` charge la clé exclusivement depuis une variable d'environnement (`ENCRYPTION_KEY`), avec échec explicite si elle est absente, sans jamais recourir à une valeur par défaut codée en dur. Cette correction applique la recommandation de `rules/remediation/hardcoded-keys.md` : charger les secrets depuis un gestionnaire dédié ou des variables d'environnement, et régénérer toute clé ayant été exposée dans le code.

@@ -1,0 +1,32 @@
+id: token-leakage
+language: php
+category: llm
+cwe: CWE-522
+owasp: LLM02:2025-Sensitive-Information-Disclosure
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une clé d'API de fournisseur LLM codée en dur dans du code
+    potentiellement exécuté/exposé côté client, ou journalisée en clair
+    dans les logs applicatifs (en-têtes d'autorisation).
+  patterns:
+    - "new AnthropicClient(['apiKey' => 'sk-ant-...']) ou équivalent avec littéral de clé en dur"
+    - "error_log(print_r($response->getHeaders(), true)) incluant l'en-tête Authorization sans redaction"
+  exclude_if:
+    - "La clé est résolue via un secret manager ou process.env/getenv() plutôt qu'un littéral"
+    - "Les en-têtes journalisés passent par une fonction de redaction (redact_sensitive_headers) avant écriture du log"
+
+message: >
+  Clé d'API LLM codée en dur ou journalisée en clair — révoquer la clé
+  exposée et proxifier les appels via un backend dédié (voir
+  rules/remediation/token-leakage.md).
+
+false_positive_notes:
+  - "Une clé placeholder explicite dans un fichier .env.example ou de documentation n'est pas une fuite réelle."
+  - "Si le fichier concerné est exclusivement un script d'infrastructure interne non déployé, reclasser en `info`."
+
+remediation_ref: rules/remediation/token-leakage.md
+knowledge_ref: knowledge/llm/token-leakage.md

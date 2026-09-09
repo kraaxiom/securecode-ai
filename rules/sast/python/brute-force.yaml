@@ -1,0 +1,34 @@
+id: brute-force
+language: python
+category: auth
+cwe: CWE-307
+owasp: A07:2021-Identification and Authentication Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint d'authentification (vue Flask/Django gérant login)
+    qui vérifie un mot de passe sans aucun mécanisme de limitation de
+    tentatives (pas de décorateur de rate limiting, pas de compteur
+    d'échecs, pas de verrouillage de compte).
+  patterns:
+    - "def login($request): ...; check_password($password, $hash); ...; (absence de @limiter.limit)"
+    - "authenticate(username=$u, password=$p)"
+  exclude_if:
+    - "la vue est décorée avec @limiter.limit(...) (flask-limiter) ou équivalent django-ratelimit"
+    - "un compteur d'échecs avec verrouillage temporaire est implémenté avant l'appel à check_password"
+    - "un CAPTCHA est déclenché après un seuil d'échecs configuré"
+
+message: >
+  Endpoint d'authentification sans limitation du nombre de tentatives —
+  un attaquant peut tester un grand nombre de mots de passe (brute force)
+  sans être bloqué. Ajouter un rate limiting par IP/compte et un
+  verrouillage progressif (voir rules/remediation/brute-force.md).
+
+false_positive_notes:
+  - "Si le rate limiting est appliqué en amont au niveau du reverse proxy/API gateway (non visible dans le code applicatif), le risque peut être atténué — le confirmer avant de reclasser."
+
+remediation_ref: rules/remediation/brute-force.md
+knowledge_ref: knowledge/auth/brute-force.md

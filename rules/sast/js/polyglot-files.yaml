@@ -1,0 +1,35 @@
+id: polyglot-files
+language: javascript
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une combinaison à risque : un fichier issu d'un répertoire
+    d'upload utilisateur écrit tel quel (sans ré-encodage) puis servi ou
+    interprété par un composant dynamique (SVG rendu inline sans
+    sanitization, require() dynamique), exposant l'application au risque de
+    fichier polyglot.
+  patterns:
+    - "fs.writeFileSync(dest, req.file.buffer) // SVG sans sanitization DOMPurify"
+    - "require(string_concat(upload_dir_var, _))"
+    - "res.send(fs.readFileSync(upload_path)) // avec Content-Type text/html ou image/svg+xml sans sanitization"
+  exclude_if:
+    - "le contenu SVG passe par DOMPurify (ou équivalent) avec FORBID_TAGS incluant script avant écriture/envoi"
+    - "l'image est ré-encodée via sharp()/jimp avant stockage définitif"
+
+message: >
+  Fichier utilisateur stocké sans ré-encodage/sanitization puis potentiellement
+  servi ou interprété dynamiquement — risque de fichier polyglot, voir
+  rules/remediation/polyglot-files.md.
+
+false_positive_notes:
+  - "Un fichier servi uniquement avec Content-Disposition: attachment et un Content-Type strict n'est pas interprété par le navigateur comme un autre format — vérifier les en-têtes de réponse avant de confirmer."
+  - "Confiance basse par défaut : la détection ne prouve pas qu'un point d'interprétation dynamique existe réellement, à corréler manuellement."
+
+remediation_ref: rules/remediation/polyglot-files.md
+knowledge_ref: knowledge/upload/polyglot-files.md

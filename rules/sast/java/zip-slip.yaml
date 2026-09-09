@@ -1,0 +1,33 @@
+id: zip-slip
+language: java
+category: file-inclusion
+cwe: CWE-22
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une boucle d'extraction d'archive (`ZipInputStream`, `ZipFile`, `TarArchiveInputStream`)
+    qui construit le chemin de sortie par concaténation directe du nom de l'entrée sans
+    normalisation ni vérification d'appartenance au répertoire de destination.
+  patterns:
+    - "new File(destDir, entry.getName())  # sans validation du chemin résolu"
+    - "new FileOutputStream(new File($destDir, $entry.getName()))"
+    - "Files.copy(zipInputStream, Paths.get($destDir, $entry.getName()))"
+  exclude_if:
+    - "le chemin de sortie est résolu via normalize()/toRealPath() puis vérifié startsWith(destDir.normalize()) avant écriture"
+    - "l'extraction utilise une bibliothèque qui applique nativement ce contrôle (ex. Commons Compress avec validation activée)"
+
+message: >
+  Extraction d'archive écrivant les fichiers à un chemin dérivé du nom d'entrée sans validation
+  — pour chaque entrée, résoudre le chemin canonique et vérifier qu'il reste un sous-chemin
+  strict du répertoire de destination avant écriture (voir rules/remediation/zip-slip.md).
+
+false_positive_notes:
+  - "Si l'archive extraite provient exclusivement d'une source interne de confiance (jamais fournie par un utilisateur), le risque est réduit — vérifier manuellement avant de reclasser."
+  - "Certaines versions récentes de bibliothèques d'extraction rejettent nativement les entrées `../` — vérifier la version utilisée avant de conclure à un vrai positif."
+
+remediation_ref: rules/remediation/zip-slip.md
+knowledge_ref: knowledge/file-inclusion/zip-slip.md

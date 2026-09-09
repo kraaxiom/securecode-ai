@@ -1,0 +1,36 @@
+id: code-injection
+language: js
+category: injections
+cwe: CWE-94
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: regex
+  description: >
+    Détecte l'appel à eval(), new Function(), vm.runInNewContext/vm.runInThisContext,
+    ou setTimeout/setInterval avec une chaîne comme premier argument, construits
+    à partir d'une variable non constante — motif typique de l'injection de code
+    en Node.js/JavaScript.
+  patterns:
+    - "\\beval\\s*\\(\\s*[^'\"`)][^)]*\\)"
+    - "new\\s+Function\\s*\\("
+    - "vm\\.runInNewContext\\s*\\(\\s*[^'\"`)]"
+    - "set(Timeout|Interval)\\s*\\(\\s*['\"`][^'\"`]*\\$\\{"
+  exclude_if:
+    - "L'argument est un littéral de chaîne constant sans interpolation ni concaténation de variable externe"
+    - "La valeur provient exclusivement de constantes applicatives internes, pas d'une entrée req.*/body/query"
+
+message: >
+  Évaluation dynamique de code JavaScript à partir d'une valeur
+  potentiellement contrôlée par l'utilisateur — remplacer par une structure
+  déclarative ou une liste blanche de fonctions autorisées (voir
+  rules/remediation/code-injection.md).
+
+false_positive_notes:
+  - "eval()/Function() appelés uniquement avec des littéraux constants du code source ne sont pas exploitables — reclasser en `info`."
+  - "Certains bundlers/transpileurs insèrent des appels eval() internes (source maps) sans rapport avec une entrée utilisateur — vérifier l'origine de l'argument avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

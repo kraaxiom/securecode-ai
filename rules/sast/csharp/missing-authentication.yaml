@@ -1,0 +1,36 @@
+id: missing-authentication
+language: csharp
+category: websocket
+cwe: CWE-306
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un Hub SignalR ou un handler WebSocket brut qui accepte la
+    connexion et traite des messages sensibles (lecture/écriture de données,
+    actions admin) sans jamais vérifier `Context.User.Identity.IsAuthenticated`
+    (SignalR) ou une authentification équivalente avant `AcceptWebSocketAsync`
+    ou dans les méthodes du Hub.
+  patterns:
+    - "class *Hub : Hub { public override Task OnConnectedAsync() { ... } } sans attribut [Authorize] sur la classe ni vérification de Context.User.Identity.IsAuthenticated"
+    - "if (context.WebSockets.IsWebSocketRequest) { await context.WebSockets.AcceptWebSocketAsync(); ... } sans vérification de context.User.Identity.IsAuthenticated en amont"
+    - "public async Task *(...) { ... } dans un Hub exposant une action sensible (ex: DeleteRecord, UpdateBalance) sans [Authorize] ni vérification de rôle"
+  exclude_if:
+    - "l'attribut [Authorize] est appliqué sur la classe Hub ou sur la méthode sensible, ou Context.User.Identity.IsAuthenticated est vérifié explicitement avant traitement"
+    - "un middleware d'authentification global (app.UseAuthentication()/UseAuthorization()) est appliqué en amont du endpoint WebSocket et le handler refuse explicitement les requêtes non authentifiées"
+
+message: >
+  Canal SignalR/WebSocket traitant des messages sensibles sans vérification
+  d'authentification — n'importe quel client peut se connecter et interagir
+  avec des données ou actions protégées (voir
+  rules/remediation/missing-authentication.md).
+
+false_positive_notes:
+  - "Vérifier si app.UseAuthentication()/UseAuthorization() est appliqué globalement dans Program.cs avant de considérer le Hub comme non protégé."
+  - "Un canal strictement public en lecture seule (ex: flux de cotations publiques) peut légitimement ne pas exiger d'authentification — reclasser en `info` si confirmé."
+
+remediation_ref: rules/remediation/missing-authentication.md
+knowledge_ref: knowledge/websocket/missing-authentication.md

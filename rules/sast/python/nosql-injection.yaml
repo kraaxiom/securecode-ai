@@ -1,0 +1,38 @@
+id: nosql-injection
+language: python
+category: injections
+cwe: CWE-943
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'injection d'une entrée utilisateur brute (dict/JSON provenant
+    de la requête) directement comme filtre dans une requête MongoDB
+    (pymongo) ou l'utilisation d'opérateurs Mongo ($where, $ne, $gt) issus
+    d'une entrée non validée, ainsi que eval() sur une chaîne construite avec
+    des données utilisateur pour un moteur NoSQL.
+  patterns:
+    - "collection.find(request.json)"
+    - "collection.find({\"field\": request.args.get(\"field\")})"
+    - "collection.find({\"$where\": f\"... {var} ...\"})"
+    - "db.collection.update(request.get_json(), ...)"
+  exclude_if:
+    - "les clés/valeurs du filtre sont validées et castées vers des types stricts (ex: str(), int()) avant d'être utilisées"
+    - "le filtre est construit uniquement à partir de constantes applicatives"
+
+message: >
+  Filtre de requête NoSQL construit directement à partir d'une entrée
+  utilisateur non validée — un attaquant peut injecter des opérateurs Mongo
+  ($ne, $gt, $where) pour contourner l'authentification ou exfiltrer des
+  données. Valider et typer strictement chaque champ avant construction du
+  filtre.
+
+false_positive_notes:
+  - "Si un schéma de validation (pydantic, marshmallow) filtre strictement les clés autorisées avant l'appel find/update, le risque est atténué."
+  - "L'utilisation de $where avec une chaîne provenant de l'utilisateur est presque toujours critique — ne pas déclasser sans revue manuelle."
+
+remediation_ref: rules/remediation/nosql-injection.md
+knowledge_ref: knowledge/injections/nosql-injection.md

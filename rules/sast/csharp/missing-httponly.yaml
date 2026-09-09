@@ -1,0 +1,35 @@
+id: missing-httponly
+language: csharp
+category: sessions
+cwe: CWE-1004
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une CookieOptions ou une configuration de session ASP.NET Core
+    n'activant pas explicitement HttpOnly, ou le désactivant, sur un cookie
+    de session ou d'authentification.
+  patterns:
+    - "new CookieOptions { HttpOnly = false, _ }"
+    - "new CookieOptions { _ }" # HttpOnly absent de l'initialisation
+    - "Response.Cookies.Append($name, $value, new CookieOptions { _ })" # sans HttpOnly = true
+    - "services.AddSession(options => { options.Cookie.HttpOnly = false; })"
+    - "options.Cookie.HttpOnly = false" # dans AddAuthentication/AddIdentity/AddSession
+  exclude_if:
+    - "HttpOnly = true est explicitement défini dans le même objet CookieOptions"
+    - "le cookie est délibérément destiné à être lu en JavaScript (ex: préférence UI non sensible) et ne porte aucune donnée de session/authentification"
+
+message: >
+  Cookie créé sans l'attribut HttpOnly (ou avec HttpOnly = false) — un
+  script malveillant injecté via une faille XSS pourrait lire ce cookie de
+  session (voir rules/remediation/missing-httponly.md).
+
+false_positive_notes:
+  - "Si le cookie ne transporte aucune donnée de session ou d'authentification (ex: préférence d'affichage publique), le risque est réduit — reclasser en `low`."
+  - "Vérifier que HttpOnly n'est pas défini globalement au niveau de Program.cs/Startup.cs (CookiePolicyOptions) avant de remonter le signal."
+
+remediation_ref: rules/remediation/missing-httponly.md
+knowledge_ref: knowledge/sessions/missing-httponly.md

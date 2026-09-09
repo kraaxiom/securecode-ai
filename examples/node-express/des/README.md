@@ -1,0 +1,3 @@
+## Utilisation de DES / 3DES (CWE-327)
+
+Le code vulnérable chiffre des données sensibles avec `des-ede3-cbc`, un algorithme dont la clé effective et la taille de bloc (64 bits) sont trop faibles : il est vulnérable au bruteforce et à l'attaque Sweet32 sur les collisions de bloc. La correction remplace DES/3DES par AES-256-GCM, un chiffrement authentifié moderne, avec génération d'un nonce (IV) unique et aléatoire à chaque opération via `crypto.randomBytes(12)`. Le tag d'authentification (`authTag`) est également renvoyé pour permettre la vérification d'intégrité au déchiffrement. En production, la clé doit provenir d'un gestionnaire de secrets plutôt que d'être générée en mémoire à chaque démarrage.

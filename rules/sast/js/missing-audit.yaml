@@ -1,0 +1,29 @@
+id: missing-audit
+language: js
+category: database
+cwe: CWE-778
+owasp: A09:2021-Security-Logging-and-Monitoring-Failures
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un handler de route admin accédant à des données sensibles sans
+    appel correspondant à une fonction de journalisation d'audit.
+  patterns:
+    - "app.get(\"/admin/users/:id\", async (req, res) => { const user = await db.query(_); res.json(user); })"
+  exclude_if:
+    - "Un appel à auditDb.query/logAudit/auditLog est présent dans le même handler"
+    - "Un middleware de journalisation générique est déclaré en amont de la route (app.use(auditMiddleware))"
+
+message: >
+  Accès à des données sensibles sans journalisation d'audit visible — voir
+  rules/remediation/missing-audit.md.
+
+false_positive_notes:
+  - "Confiance faible : un middleware global (app.use) situé dans un autre fichier peut déjà journaliser toutes les requêtes admin."
+  - "Vérifier les logs d'infrastructure (reverse proxy, APM) qui peuvent déjà capturer ces accès de façon centralisée."
+
+remediation_ref: rules/remediation/missing-audit.md
+knowledge_ref: knowledge/database/missing-audit.md

@@ -1,0 +1,34 @@
+id: imap-injection
+language: js
+category: injections
+cwe: CWE-93
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte la construction d'une commande IMAP brute par interpolation d'une
+    entrée requête (req.query/req.params/req.body) dans une chaîne de
+    commande (ex: SEARCH, LOGIN) au lieu d'utiliser l'API structurée d'une
+    bibliothèque cliente IMAP (imapflow, node-imap).
+  patterns:
+    - "(exec|sendCommand)\\s*\\(\\s*[`'\"][^`'\"]*(SEARCH|LOGIN|SELECT)[^`'\"]*\\$\\{?\\s*req\\.(query|params|body)\\."
+    - "\\.search\\s*\\(\\s*\\{[^}]*:\\s*`[^`]*\\$\\{\\s*req\\.(query|params|body)\\."
+  exclude_if:
+    - "La valeur est filtrée (guillemets et \\r\\n supprimés) avant interpolation"
+    - "L'appel utilise l'API structurée de la bibliothèque (paramètres séparés) plutôt qu'une commande texte concaténée"
+
+message: >
+  Commande IMAP construite par interpolation d'une entrée requête non filtrée
+  — utiliser l'API structurée du client IMAP (paramètres séparés, pas de
+  concaténation de commande texte) ou neutraliser guillemets et CR/LF (voir
+  rules/remediation/imap-injection.md).
+
+false_positive_notes:
+  - "Si la valeur provient exclusivement d'une constante applicative interne, ce n'est pas exploitable — reclasser en `info`."
+  - "Les bibliothèques modernes (imapflow, node-imap) encodent nativement les arguments passés en objet — le risque ne concerne que les appels bas niveau construisant la commande en texte brut."
+
+remediation_ref: rules/remediation/imap-injection.md
+knowledge_ref: knowledge/injections/imap-injection.md

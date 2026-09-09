@@ -1,0 +1,36 @@
+id: http-response-splitting
+language: python
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture directe d'une entrée utilisateur dans le flux de
+    réponse HTTP bas niveau (wfile.write, écriture manuelle des en-têtes
+    avant le corps) permettant l'injection de \r\n\r\n pour scinder la
+    réponse et injecter un corps de réponse falsifié.
+  patterns:
+    - "self.wfile.write(f\"HTTP/1.1 302 Found\\r\\nLocation: {var}\\r\\n\\r\\n\".encode())"
+    - "start_response(f\"302 Found\", [(\"Location\", var)])"
+    - "conn.send(f\"HTTP/1.1 200 OK\\r\\n{var}\\r\\n\\r\\n\".encode())"
+  exclude_if:
+    - "var passe par une validation/suppression explicite des caractères \\r et \\n avant écriture"
+    - "la réponse est générée exclusivement par le framework WSGI standard (Flask/Django) sans manipulation bas niveau du flux"
+
+message: >
+  Réponse HTTP construite manuellement avec une entrée utilisateur non
+  filtrée contre \\r\\n — un attaquant peut scinder la réponse et injecter
+  un corps arbitraire (cache poisoning, XSS réfléchi via un second corps de
+  réponse). Filtrer les caractères de contrôle avant toute écriture bas
+  niveau, ou déléguer la génération de la réponse au framework WSGI.
+
+false_positive_notes:
+  - "Les frameworks WSGI modernes valident déjà les en-têtes — cette règle cible spécifiquement le code bas niveau (socket, BaseHTTPServer, WSGI start_response manuel)."
+  - "Vérifier que var provient bien d'une entrée externe avant de confirmer."
+
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

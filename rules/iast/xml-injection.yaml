@@ -1,0 +1,14 @@
+id: xml-injection
+category: injections
+cwe: CWE-91
+type: iast
+instrumentation:
+  hook_points:
+    - "php: concaténation de chaînes construisant un document XML avec SimpleXMLElement/DOMDocument::loadXML à partir d'une entrée utilisateur non échappée"
+    - "python: construction de XML par f-string/concaténation puis xml.etree.ElementTree.fromstring sur le résultat"
+    - "java: concaténation de chaînes pour bâtir un document XML passé à DocumentBuilder.parse sans échappement préalable (StringEscapeUtils.escapeXml)"
+  taint_check: trace la donnée depuis une entrée HTTP jusqu'à sa concaténation directe dans une chaîne de document XML sans passer par une fonction d'échappement XML (escapeXml, htmlspecialchars avec ENT_XML1, etc.)
+  trigger_condition: une donnée taintée contenant des métacaractères XML (<, >, &, ", ') atteint la construction d'un document XML sans échappement préalable
+severity: medium
+remediation_ref: rules/remediation/xml-injection.md
+knowledge_ref: knowledge/injections/xml-injection.md

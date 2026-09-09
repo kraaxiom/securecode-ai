@@ -1,0 +1,3 @@
+# TLS 1.0 — Protocole activé
+
+`vulnerable.rs` configure explicitement TLS 1.0 comme version minimale du connecteur, un protocole déprécié par la RFC 8996, exposé à l'attaque BEAST et exclu de la conformité PCI-DSS depuis 2018, ce qui correspond à CWE-326 (Inadequate Encryption Strength). `fixed.rs` force la version minimale à TLS 1.2 (maximum TLS 1.3) via `set_min_proto_version`/`set_max_proto_version`, retirant tout support de TLS 1.0/1.1. Cette correction applique la recommandation de `rules/remediation/tls1-0.md` : configurer un minimum de TLS 1.2 avec support préférentiel de TLS 1.3 et retirer les suites de chiffrement associées aux anciennes versions.

@@ -1,0 +1,30 @@
+id: css-injection
+language: php
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'interpolation directe d'une variable utilisateur ($_GET/$_POST)
+    dans un bloc `<style>` ou un attribut `style` sans validation de format.
+  patterns:
+    - "echo \"<style>_ $_GET[_] _</style>\""
+    - "\"style=\\\"_ $_GET[_] _\\\"\""
+  exclude_if:
+    - "la variable passe par une validation regex stricte (prég_match sur un format couleur/taille) avant interpolation"
+    - "la variable est échappée via htmlspecialchars ET validée en amont contre une liste blanche de formats"
+
+message: >
+  Valeur utilisateur interpolée directement dans du CSS sans validation de
+  format — voir rules/remediation/css-injection.md.
+
+false_positive_notes:
+  - "Si la valeur provient d'une constante applicative interne (pas d'entrée utilisateur), non applicable — reclasser en `info`."
+  - "Valeur déjà filtrée par une liste blanche de thèmes prédéfinis (enum) plutôt que du texte libre : reclasser en `info`."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

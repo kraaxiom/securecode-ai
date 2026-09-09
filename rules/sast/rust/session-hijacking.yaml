@@ -1,0 +1,36 @@
+id: session-hijacking
+language: rust
+category: sessions
+cwe: CWE-613
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration de session sans expiration raisonnable (durée
+    de vie du cookie/du store), une déconnexion qui ne purge pas la session
+    côté serveur, ou une journalisation de l'identifiant de session en clair.
+  patterns:
+    - "SessionMiddleware::builder($store, $key)._build()" # session_lifecycle absent ou durée excessive
+    - "SessionMiddleware::builder($store, $key).session_lifecycle(PersistentSession::default().session_ttl(Duration::days(365)))._build()"
+    - "async fn logout($session: Session, _) { _ }" # sans session.purge() (actix_session) / session.delete().await (tower-sessions)
+    - "tracing::info!(session_id = %session.id(), _)" # log de l'identifiant de session
+  exclude_if:
+    - "session_ttl est défini à une valeur raisonnable (ex: <= 30 minutes)"
+    - "logout appelle explicitement session.purge() ou session.delete().await, invalidant la session côté serveur"
+    - "l'identifiant loggé est tronqué ou hashé avant journalisation"
+
+message: >
+  Configuration de session ou de déconnexion insuffisamment protégée
+  (expiration excessive, absence de purge côté serveur, ou identifiant de
+  session journalisé en clair) — facilite le détournement de session (voir
+  rules/remediation/session-hijacking.md).
+
+false_positive_notes:
+  - "Si logout appelle purge()/delete().await sur la session, le risque de session persistante côté serveur est neutralisé."
+  - "Une durée de vie courte avec renouvellement automatique (sliding expiration) constitue une configuration acceptable."
+
+remediation_ref: rules/remediation/session-hijacking.md
+knowledge_ref: knowledge/sessions/session-hijacking.md

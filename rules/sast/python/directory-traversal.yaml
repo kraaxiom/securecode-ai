@@ -1,0 +1,37 @@
+id: directory-traversal
+language: python
+category: file-inclusion
+cwe: CWE-22
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un chemin de fichier par concaténation directe
+    d'une entrée utilisateur (paramètre de requête, formulaire, argument CLI)
+    sans normalisation ni validation, passée à une fonction d'accès fichier
+    (open, os.path.join suivi d'un accès, pathlib.Path).
+  patterns:
+    - "open(string_concat(_, $user_input, _))"
+    - "os.path.join($base, $user_input)"
+    - "Path($base) / $user_input"
+  exclude_if:
+    - "$user_input passe par os.path.basename() avant utilisation"
+    - "le chemin résultant est vérifié avec os.path.realpath() puis comparé (startswith) à un répertoire racine autorisé"
+    - "$user_input provient d'une liste blanche fermée (enum, mapping fixe) et non d'une entrée libre"
+
+message: >
+  Construction d'un chemin de fichier à partir d'une entrée utilisateur non
+  normalisée — un attaquant peut injecter des séquences '../' pour sortir du
+  répertoire autorisé. Normaliser avec os.path.realpath() et vérifier
+  l'appartenance au répertoire racine avant tout accès (voir
+  rules/remediation/directory-traversal.md).
+
+false_positive_notes:
+  - "Si l'entrée est systématiquement passée dans os.path.basename() avant la concaténation, le risque de traversée est neutralisé."
+  - "Une simple vérification par regex sur '..' est insuffisante (encodages, chemins absolus) — ne pas reclasser en `info` sur cette seule base."
+
+remediation_ref: rules/remediation/directory-traversal.md
+knowledge_ref: knowledge/file-inclusion/directory-traversal.md

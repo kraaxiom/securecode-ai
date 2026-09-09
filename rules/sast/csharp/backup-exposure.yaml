@@ -1,0 +1,36 @@
+id: backup-exposure
+language: csharp
+category: database
+cwe: CWE-538
+owasp: A05:2021-Security-Misconfiguration
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des sauvegardes de base de données (via SqlCommand BACKUP DATABASE,
+    Process.Start pour pg_dump/mysqldump, ou export Entity Framework) écrites
+    dans un répertoire accessible publiquement (wwwroot, dossier statique IIS)
+    ou transférées vers un stockage cloud sans chiffrement ni contrôle d'accès.
+  patterns:
+    - "new SqlCommand(\"BACKUP DATABASE MyDb TO DISK='C:\\\\inetpub\\\\wwwroot\\\\backup.bak'\", conn) — sauvegarde écrite sous la racine servie par IIS/Kestrel"
+    - "Process.Start(\"pg_dump\", $\"-f {webRootPath}/backup.sql\") — chemin de sortie situé sous wwwroot ou tout dossier StaticFiles"
+    - "new BlobClient(...).UploadAsync(backupStream) / S3 PutObjectRequest sans ServerSideEncryptionMethod ni vérification que le conteneur/bucket est privé"
+  exclude_if:
+    - "le fichier de sauvegarde est écrit hors de wwwroot/StaticFiles ET chiffré (TDE, BACKUP ... ENCRYPTION, ou chiffrement applicatif) avec accès restreint (ACL fichier, conteneur privé, IAM dédié)"
+
+message: >
+  Sauvegarde de base de données écrite dans un emplacement accessible
+  publiquement ou transférée sans chiffrement/contrôle d'accès explicite —
+  un attaquant capable d'atteindre ce chemin peut exfiltrer l'intégralité des
+  données. Écrire les sauvegardes hors de wwwroot/StaticFiles, chiffrer au
+  repos (TDE ou BACKUP ... ENCRYPTION), et restreindre l'accès (IAM,
+  permissions NTFS) — voir rules/remediation/backup-exposure.md.
+
+false_positive_notes:
+  - "Un backup temporaire supprimé immédiatement après transfert vers un stockage sécurisé, jamais exposé entre-temps, réduit le risque — vérifier la fenêtre d'exposition réelle."
+  - "Un conteneur Azure Blob ou bucket S3 avec chiffrement par défaut activé au niveau du service peut ne pas nécessiter de paramètre explicite — vérifier la configuration du service avant de confirmer."
+
+remediation_ref: rules/remediation/backup-exposure.md
+knowledge_ref: knowledge/database/backup-exposure.md

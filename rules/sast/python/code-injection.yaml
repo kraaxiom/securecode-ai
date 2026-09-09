@@ -1,0 +1,39 @@
+id: code-injection
+language: python
+category: injections
+cwe: CWE-94
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'appel à eval(), exec(), compile() suivi d'exec, ou
+    pickle.loads()/yaml.load() sans SafeLoader sur une donnée provenant
+    directement ou indirectement d'une entrée utilisateur, permettant
+    l'exécution de code Python arbitraire.
+  patterns:
+    - "eval(var)"
+    - "exec(var)"
+    - "exec(compile(var, ...))"
+    - "pickle.loads(request.data)"
+    - "yaml.load(var)"
+    - "yaml.load(var, Loader=yaml.Loader)"
+  exclude_if:
+    - "var est un littéral constant (pas une variable/paramètre)"
+    - "yaml.load utilise explicitement yaml.SafeLoader ou yaml.safe_load() est utilisé à la place"
+
+message: >
+  Exécution de code Python dynamique (eval/exec/pickle.loads/yaml.load non
+  sécurisé) à partir d'une donnée potentiellement contrôlée par
+  l'utilisateur — remplacer par une alternative sûre (ast.literal_eval pour
+  des littéraux, yaml.safe_load, json.loads) et ne jamais désérialiser des
+  données non fiables avec pickle.
+
+false_positive_notes:
+  - "ast.literal_eval() n'est PAS concerné par cette règle : il n'évalue que des littéraux Python et est la remédiation recommandée."
+  - "Si var provient exclusivement d'une constante applicative jamais influencée par l'utilisateur, reclasser en `info`."
+
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

@@ -1,0 +1,23 @@
+id: blind-xss
+category: xss
+cwe: CWE-79
+type: iast
+instrumentation:
+  hook_points:
+    - "php: entrée HTTP non authentifiée ($_POST, $_SERVER['HTTP_USER_AGENT']) comme source"
+    - "js: req.body / req.headers (Node/Express) comme source"
+    - "python: request.form / request.headers comme source"
+    - "java: HttpServletRequest.getParameter/getHeader comme source"
+    - "csharp: HttpContext.Request.Form/Headers comme source"
+    - "go: r.FormValue/r.Header comme source"
+    - "tous langages: fonction de rendu HTML d'une interface d'administration/back-office comme sink"
+  taint_check: >
+    Trace la donnée depuis une soumission externe non authentifiée (formulaire, log, en-tête HTTP)
+    jusqu'à son rendu dans une interface interne consultée par un opérateur privilégié.
+  trigger_condition: >
+    Donnée marquée non fiable, originaire d'un point d'entrée externe, atteignant un sink de rendu
+    HTML d'une interface d'administration sans passer par une fonction d'encodage contextuel connue
+    entre la source et le sink, quel que soit le délai écoulé entre soumission et affichage.
+severity: high
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

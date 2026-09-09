@@ -1,0 +1,33 @@
+id: rag-poisoning
+language: javascript
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pipeline d'ingestion de documents pour un système RAG qui
+    indexe du contenu crawlé/externe sans vérification de la source contre
+    une allowlist ni scan de motifs d'instructions suspectes avant indexation
+    vectorielle.
+  patterns:
+    - "await vectorStore.upsert(await embed(chunk), ...) dans une boucle d'ingestion sans vérification préalable de TRUSTED_SOURCES"
+    - "Absence d'appel à contentScanner.containsSuspiciousInstructions avant l'indexation d'un document crawlé"
+  exclude_if:
+    - "La source est vérifiée contre une allowlist de domaines de confiance avant crawl/indexation"
+    - "Le document passe par un scan de contenu suspect (instructions impératives cachées) avant indexation"
+
+message: >
+  Indexation de contenu externe dans la base RAG sans validation de source ni
+  scan de contenu suspect — risque d'empoisonnement de la base documentaire
+  (voir rules/remediation/rag-poisoning.md).
+
+false_positive_notes:
+  - "Si la base documentaire n'est alimentée que par des sources internes strictement contrôlées, le risque est réduit."
+  - "Vérifier si la traçabilité de provenance existe malgré l'absence de scan de contenu avant de conclure à l'absence totale de contrôle."
+
+remediation_ref: rules/remediation/rag-poisoning.md
+knowledge_ref: knowledge/llm/rag-poisoning.md

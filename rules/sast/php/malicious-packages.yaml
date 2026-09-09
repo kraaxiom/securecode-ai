@@ -1,0 +1,33 @@
+id: malicious-packages
+language: php
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte des indicateurs de paquet malveillant dans composer.json : script
+    de cycle de vie (post-install-cmd, pre-install-cmd) exécutant du code
+    réseau ou obscurci, ou dépendance connue comme retirée/compromise sur
+    Packagist.
+  patterns:
+    - "scripts.post-install-cmd ou scripts.pre-install-cmd invoquant curl|wget|base64_decode|eval sur une source distante"
+    - "require.<vendor>/<package> correspondant à un nom de paquet listé comme compromis dans une advisory publique"
+  exclude_if:
+    - "Le script de cycle de vie est un binaire interne versionné et audité (pas d'appel réseau dynamique)"
+    - "La version installée est antérieure à la période de compromission connue du paquet"
+
+message: >
+  Indicateur de paquet malveillant détecté (script d'installation suspect ou
+  paquet listé comme compromis) — auditer et retirer immédiatement, révoquer
+  les secrets potentiellement exposés (voir rules/remediation/malicious-packages.md).
+
+false_positive_notes:
+  - "Un script post-install légitime de compilation (ex: extension native) peut ressembler à un faux positif — vérifier l'absence d'appel réseau externe."
+  - "Confirmer la compromission via l'advisory officielle (Packagist security advisory / GHSA) avant de bloquer un build en CI."
+
+remediation_ref: rules/remediation/malicious-packages.md
+knowledge_ref: knowledge/supply-chain/malicious-packages.md

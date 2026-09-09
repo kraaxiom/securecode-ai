@@ -1,0 +1,39 @@
+id: prompt-injection
+language: python
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un prompt LLM par concaténation/format directe
+    d'une entrée utilisateur non délimitée dans le message système ou le
+    message utilisateur envoyé à un SDK LLM (OpenAI SDK, LangChain, Anthropic
+    SDK), sans séparation structurelle ni garde-fou en aval.
+  patterns:
+    - "openai.ChatCompletion.create(messages=[..., {'role': 'system', 'content': f\"...{user_input}...\"}])"
+    - "client.chat.completions.create(messages=[{'role': 'user', 'content': user_input + _}])"
+    - "PromptTemplate.from_template(f\"...{user_input}...\") — LangChain"
+    - "LLMChain(...).run(user_input) sans validation/allowlist préalable ni template à variables typées"
+  exclude_if:
+    - "l'entrée utilisateur est injectée exclusivement via un paramètre de template typé (LangChain input_variables) sans concaténation de chaîne brute dans le rôle 'system'"
+    - "une couche de détection/filtrage d'injection (regex, classifieur, guardrails) est appliquée sur user_input avant l'appel"
+
+message: >
+  Entrée utilisateur intégrée directement dans le prompt envoyé au LLM sans
+  délimitation structurelle ni filtrage — un attaquant peut faire passer ses
+  propres instructions pour des instructions système ou détourner le
+  comportement du modèle. Séparer strictement instructions système / contenu
+  utilisateur (rôles API dédiés), valider/filtrer l'entrée, et ne jamais faire
+  confiance à la sortie du modèle pour des actions sensibles sans validation
+  applicative — voir rules/remediation/prompt-injection.md.
+
+false_positive_notes:
+  - "Si l'entrée utilisateur ne contient que des données strictement contrôlées côté serveur (ex: ID interne validé), le risque est réduit — reclasser en `low`."
+  - "L'usage du rôle 'user' de l'API (au lieu de concaténer dans 'system') réduit mais n'élimine pas le risque — le modèle reste influençable, vérifier la présence de garde-fous en sortie."
+
+remediation_ref: rules/remediation/prompt-injection.md
+knowledge_ref: knowledge/llm/prompt-injection.md

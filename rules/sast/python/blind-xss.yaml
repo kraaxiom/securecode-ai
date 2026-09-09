@@ -1,0 +1,40 @@
+id: blind-xss
+language: python
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la persistance non échappée d'une entrée utilisateur dans un
+    canal consulté par un back-office/back-end privilégié non exposé
+    publiquement (panneau d'administration, outil de support, logs affichés
+    dans un dashboard interne) — champs typiques : User-Agent, nom
+    d'utilisateur, message de contact — rendus ensuite avec mark_safe/|safe
+    dans une interface d'administration.
+  patterns:
+    - "AdminModel.objects.create(user_agent=request.headers.get(\"User-Agent\"))"
+    - "log_entry.message = request.form[\"feedback\"]; log_entry.save()"
+    - "{{ support_ticket.subject|safe }}"
+  exclude_if:
+    - "la donnée est échappée avant stockage ou son rendu dans le back-office utilise l'autoescape par défaut (pas de |safe ni mark_safe)"
+    - "le canal cible n'est jamais rendu en HTML dans une interface consultée par un opérateur privilégié"
+
+message: >
+  Entrée utilisateur non échappée persistée puis potentiellement rendue
+  sans échappement dans une interface d'administration ou de support
+  consultée par un opérateur privilégié — un attaquant peut exécuter du
+  JavaScript dans le contexte de session de l'administrateur (XSS aveugle,
+  impact critique car cible un compte à privilèges élevés). Échapper
+  systématiquement toute donnée affichée, y compris dans les
+  back-offices internes.
+
+false_positive_notes:
+  - "Si le back-office affiche systématiquement ces champs en texte échappé (autoescape actif, pas de |safe), le risque est neutralisé."
+  - "Les champs jamais consultés par un humain (uniquement traités programmatiquement) ne sont pas concernés."
+
+remediation_ref: rules/remediation/blind-xss.md
+knowledge_ref: knowledge/xss/blind-xss.md

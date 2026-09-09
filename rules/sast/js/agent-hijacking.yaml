@@ -1,0 +1,33 @@
+id: agent-hijacking
+language: javascript
+category: llm
+cwe: CWE-1427
+owasp: LLM01:2025-Prompt-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un agent LLM invoquant directement un outil à fort impact
+    (paiement, suppression, exécution système) issu d'un plan/décision du
+    modèle, sans validation métier applicative ni confirmation humaine
+    intermédiaire.
+  patterns:
+    - "await step.tool.execute(step.args) dans une boucle sur plan.steps sans appel préalable à requireHumanConfirmation/validateAgainstBusinessRules"
+    - "toolRegistry[llmResponse.toolCall.name].execute(llmResponse.toolCall.args) sans validation intermédiaire"
+  exclude_if:
+    - "L'appel est précédé d'une validation contre des règles métier indépendantes (ex: validateAgainstBusinessRules())"
+    - "L'outil invoqué est explicitement classé à faible impact (lecture seule, pas d'effet de bord)"
+
+message: >
+  Action à fort impact déclenchée directement par la décision du LLM sans
+  validation métier ni confirmation humaine — séparer décision et exécution
+  (voir rules/remediation/agent-hijacking.md).
+
+false_positive_notes:
+  - "Un outil strictement en lecture seule invoqué sans confirmation n'est pas un risque de hijacking critique."
+  - "Si une validation de schéma et une allowlist contextuelle sont appliquées en amont, reclasser en `medium`."
+
+remediation_ref: rules/remediation/agent-hijacking.md
+knowledge_ref: knowledge/llm/agent-hijacking.md

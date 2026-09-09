@@ -1,0 +1,34 @@
+id: polyglot-files
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence de neutralisation de contenu (re-encodage) après upload
+    d'un fichier accepté comme image/document, laissant passer des fichiers
+    polyglots valides simultanément comme image et comme script/archive/JAR.
+  patterns:
+    - "MultipartFile accepté après seule vérification d'extension/magic bytes, stocké tel quel sans ré-encodage (decode/re-encode) via ImageIO ou bibliothèque équivalente"
+    - "fichier uploadé potentiellement interprété par plusieurs consommateurs (navigateur, visionneuse, JVM classloader) sans isolement de type strict"
+  exclude_if:
+    - "le fichier est systématiquement décodé puis ré-encodé par une bibliothèque stricte (ImageIO.read/write) qui élimine tout octet superflu hors format"
+    - "le fichier uploadé n'est jamais servi/exécuté par un composant tiers (JAR loader, interprète) qui pourrait l'interpréter différemment"
+
+message: >
+  Aucun re-encodage n'est appliqué au fichier uploadé — un fichier polyglot
+  (valide simultanément comme image et comme JAR/script) peut être accepté par
+  le filtre puis exploité par un autre composant qui l'interprète différemment.
+  Décoder puis ré-encoder systématiquement le contenu via une bibliothèque
+  stricte (ImageIO) plutôt que de stocker le flux brut.
+
+false_positive_notes:
+  - "Le risque polyglot est difficile à confirmer par analyse statique seule — confidence par défaut basse, à valider manuellement selon les consommateurs en aval du fichier stocké."
+  - "Si le fichier n'est jamais servi tel quel (uniquement des métadonnées extraites), le risque ne s'applique pas."
+
+remediation_ref: rules/remediation/polyglot-files.md
+knowledge_ref: knowledge/upload/polyglot-files.md

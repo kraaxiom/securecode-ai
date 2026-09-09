@@ -1,0 +1,15 @@
+id: nosql-injection
+category: injections
+cwe: CWE-943
+type: iast
+instrumentation:
+  hook_points:
+    - "Node.js: MongoDB driver Collection.find / findOne / updateOne avec objet de requête construit à partir de req.body"
+    - "PHP: MongoDB\\Driver\\Query / MongoDB\\Collection::find"
+    - "Python: pymongo Collection.find / find_one"
+    - "Java: com.mongodb.client.MongoCollection.find avec Document issu d'entrées utilisateur"
+  taint_check: trace la propagation d'une entrée utilisateur non validée par un schéma strict jusqu'à sa présence en tant que clé ou valeur d'opérateur (`$where`, `$ne`, `$gt`, `$regex`, `$or`) dans l'objet de requête soumis au driver NoSQL
+  trigger_condition: l'objet de requête évalué au moment de l'appel contient une clé commençant par `$` ou un objet imbriqué directement issu du corps de requête utilisateur sans passer par une validation de type/schéma reconnue
+severity: high
+remediation_ref: rules/remediation/nosql-injection.md
+knowledge_ref: knowledge/injections/nosql-injection.md

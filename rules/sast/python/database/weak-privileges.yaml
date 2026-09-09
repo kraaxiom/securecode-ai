@@ -1,0 +1,36 @@
+id: weak-privileges
+language: python
+category: database
+cwe: CWE-269
+owasp: A01:2021-Broken-Access-Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une connexion Python à la base de données effectuée avec un
+    compte disposant de privilèges excessifs (superuser/admin/owner) pour des
+    opérations applicatives courantes qui ne nécessitent que des droits
+    restreints (SELECT/INSERT/UPDATE sur un périmètre limité de tables).
+  patterns:
+    - "create_engine('postgresql://postgres:...@...') / psycopg2.connect(user='root', ...) — connexion applicative utilisant le compte superadmin du SGBD pour des requêtes CRUD courantes"
+    - "DATABASES['default']['USER'] = 'root' (Django settings) sans compte applicatif dédié à privilèges restreints"
+    - "script Python d'exécution de requêtes utilisateur (reporting, API en lecture) connecté avec un compte disposant de droits DROP/ALTER/GRANT non nécessaires à sa fonction"
+  exclude_if:
+    - "le compte applicatif utilisé dispose uniquement des privilèges strictement nécessaires à son périmètre fonctionnel (principe du moindre privilège), le compte superuser étant réservé aux migrations/opérations d'administration séparées"
+
+message: >
+  Connexion applicative à la base de données effectuée avec un compte à
+  privilèges excessifs (superuser/root) pour des opérations courantes — en
+  cas de compromission de l'application (ex: injection SQL), l'impact est
+  maximal. Créer un compte applicatif dédié avec uniquement les privilèges
+  requis (principe du moindre privilège), réserver le compte superuser aux
+  migrations administratives — voir rules/remediation/weak-privileges.md.
+
+false_positive_notes:
+  - "Un script de migration/administration exécuté ponctuellement avec des privilèges élevés est attendu — la préoccupation porte sur les connexions applicatives permanentes utilisées pour le trafic utilisateur courant."
+  - "Les privilèges réels du compte ne sont parfois définis qu'au niveau du SGBD (GRANT côté base) et non visibles dans le code Python — vérifier la configuration serveur avant de confirmer `high`."
+
+remediation_ref: rules/remediation/weak-privileges.md
+knowledge_ref: knowledge/database/weak-privileges.md

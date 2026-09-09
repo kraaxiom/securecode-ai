@@ -1,0 +1,33 @@
+id: tool-injection
+language: javascript
+category: llm
+cwe: CWE-1427
+owasp: LLM06:2025-Excessive-Agency
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel d'outil (function calling) dont les arguments proviennent
+    directement de la sortie du modèle et sont transmis à l'exécution sans
+    validation de schéma, ou des définitions d'outils chargées depuis une
+    source externe non vérifiée.
+  patterns:
+    - "await toolRegistry[call.name].execute(call.args) sans validation de schéma préalable (ex: toolSchemas[call.name].validate())"
+    - "loadToolDefinitions(source) sans vérification de source contre TRUSTED_TOOL_SOURCES"
+  exclude_if:
+    - "Les arguments sont validés contre un schéma typé strict avant exécution"
+    - "Les définitions d'outils ne sont chargées que depuis une source de confiance vérifiée (registre interne)"
+
+message: >
+  Appel d'outil exécuté sans validation de schéma, ou définitions d'outils
+  chargées depuis une source non vérifiée — risque d'injection d'outil (voir
+  rules/remediation/tool-injection.md).
+
+false_positive_notes:
+  - "Si l'outil est purement en lecture seule et sans effet de bord, le risque d'impact est réduit malgré l'absence de validation."
+  - "Si le registre d'outils est figé au build et non modifiable dynamiquement, le risque de chargement non vérifié est nul."
+
+remediation_ref: rules/remediation/tool-injection.md
+knowledge_ref: knowledge/llm/tool-injection.md

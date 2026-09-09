@@ -1,0 +1,3 @@
+# SHA-1 — Fonction de hachage affaiblie
+
+`vulnerable.rs` hache le mot de passe utilisateur avec SHA-1 avant stockage, un algorithme considéré comme cryptographiquement cassé depuis la démonstration d'une collision pratique ("SHAttered", 2017), ce qui correspond à CWE-328 (Use of Weak Hash). `fixed.rs` remplace ce hachage par Argon2id, avec sel automatique et coût adaptatif, adapté au stockage de mots de passe. Cette correction applique la recommandation de `rules/remediation/sha1.md` : utiliser Argon2id pour les mots de passe, et réserver SHA-256/SHA-3 aux usages d'intégrité générale et de signature.

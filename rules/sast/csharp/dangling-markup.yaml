@@ -1,0 +1,36 @@
+id: dangling-markup
+language: csharp
+category: modern
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une donnée utilisateur insérée dans une page HTML sans
+    échappement, via `@Html.Raw()` dans une vue Razor, `Response.Write()`
+    direct, ou construction manuelle de HTML par concaténation de chaînes
+    dans un contrôleur/middleware, permettant l'injection d'une balise non
+    fermée qui capture le contenu suivant de la page.
+  patterns:
+    - "@Html.Raw(Model.UserInput) dans une vue Razor sans validation/sanitisation préalable"
+    - "Response.Write(\"<div>\" + userInput + \"</div>\") sans encodage HTML (HttpUtility.HtmlEncode)"
+    - "IHtmlContent construit par concaténation de chaînes incluant une entrée utilisateur non encodée"
+  exclude_if:
+    - "le contenu passé à Html.Raw provient exclusivement d'une source interne de confiance (pas d'entrée utilisateur directe ou indirecte)"
+    - "une politique CSP stricte avec base-uri et object-src restreints est en place ET le contenu est filtré contre les caractères < > \" avant l'appel à Html.Raw"
+
+message: >
+  Donnée utilisateur insérée dans le HTML sans échappement (`@Html.Raw`,
+  `Response.Write` non encodé) — un attaquant peut injecter une balise non
+  fermée pour exfiltrer le contenu de la page sans exécution de JavaScript
+  (voir rules/remediation/dangling-markup.md).
+
+false_positive_notes:
+  - "Une CSP stricte limite l'impact mais ne neutralise pas totalement le dangling markup si les directives img-src/form-action restent permissives."
+  - "Si le contenu passé à Html.Raw est systématiquement filtré par un sanitizer HTML (ex: HtmlSanitizer) qui supprime les balises non fermées, reclasser en `low`."
+
+remediation_ref: rules/remediation/dangling-markup.md
+knowledge_ref: knowledge/modern/dangling-markup.md

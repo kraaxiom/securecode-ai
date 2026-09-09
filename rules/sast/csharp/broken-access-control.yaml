@@ -1,0 +1,34 @@
+id: broken-access-control
+language: csharp
+category: authorization
+cwe: CWE-284
+owasp: A01:2021-Broken Access Control
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code C#/.NET, des patterns caractéristiques de contrôle d'accès défaillant
+    lorsqu'une entrée non fiable (utilisateur, requête HTTP, paramètre externe)
+    atteint une opération sensible sans validation ni contrôle préalable.
+  patterns:
+    - "[Authorize]  // absent sur une action exposant des donnees par ID"
+    - "context.Users.Find($routeId)  // sans verifier ownership vs User.Identity"
+    - "[HttpPost] public IActionResult Update(User model) { _db.Update(model); }  // bind direct sans DTO/whitelist"
+  exclude_if:
+    - "l'action est protégée par un middleware/attribut d'autorisation vérifié en amont dans le pipeline"
+    - "l'identifiant est dérivé du contexte utilisateur authentifié et non d'une entrée contrôlable par le client"
+
+message: >
+  Pattern potentiellement vulnérable à contrôle d'accès défaillant détecté — une entrée non validée
+  semble atteindre une opération sensible. Vérifier la provenance de la donnée
+  et appliquer une validation/liste blanche avant utilisation
+  (voir rules/remediation/broken-access-control.md). Recommandation : vérifier explicitement l'appartenance (ownership) et les droits de l'utilisateur authentifié avant tout accès à la ressource.
+
+false_positive_notes:
+  - "Si la valeur incriminée provient exclusivement d'une constante interne ou d'une configuration serveur, ce n'est pas exploitable — reclasser en `info`."
+  - "Si une validation stricte (liste blanche, normalisation de chemin, vérification de signature/ownership) est appliquée immédiatement avant l'opération sensible, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/broken-access-control.md
+knowledge_ref: knowledge/authorization/broken-access-control.md

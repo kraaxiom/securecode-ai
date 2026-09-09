@@ -1,0 +1,36 @@
+id: browser-storage-leak
+language: java
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une vue Thymeleaf/JSP côté serveur Java qui injecte une donnée
+    sensible (jeton, secret, PII) directement dans un script inline destiné à
+    être stocké en localStorage/sessionStorage côté client.
+  patterns:
+    - "template Thymeleaf (th:inline=\"javascript\") injectant [[${sensitiveModelAttribute}]] dans un appel localStorage.setItem(...)"
+    - "JSP scriptlet <%= session.getAttribute(\"token\") %> émis dans un bloc <script> écrivant en sessionStorage/localStorage"
+    - "Model.addAttribute(\"apiSecret\", secretValue) exposé dans une vue rendue côté client sans nécessité fonctionnelle"
+  exclude_if:
+    - "seules des données non sensibles (préférences UI, identifiants publics) sont écrites en storage navigateur"
+    - "le jeton exposé est un jeton de courte durée à usage unique déjà considéré comme exposable côté client (ex: jeton CSRF public)"
+
+message: >
+  Une donnée sensible générée côté serveur (Thymeleaf/JSP) est injectée dans
+  un script destiné au stockage navigateur (localStorage/sessionStorage) —
+  ce stockage est accessible à tout script exécuté sur la page (XSS) et
+  persiste sans expiration contrôlée. Ne jamais placer de jeton d'accès
+  longue durée ou de secret en storage navigateur ; préférer un cookie
+  HttpOnly+Secure côté serveur.
+
+false_positive_notes:
+  - "Un jeton CSRF public à usage anti-forgery (non secret par nature) n'est pas concerné — reclasser en `low`."
+  - "Si la donnée exposée est déjà publique (nom d'utilisateur affiché), ce risque ne s'applique pas."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

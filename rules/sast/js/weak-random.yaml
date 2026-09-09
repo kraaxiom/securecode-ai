@@ -1,0 +1,31 @@
+id: weak-random
+language: js
+category: crypto
+cwe: CWE-338
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage de Math.random() pour produire un token, une clé ou un
+    identifiant de sécurité.
+  patterns:
+    - "const *token = Math.random()"
+    - "const *_key = Math.random()"
+    - "$*token = Math.random().toString(_)"
+  exclude_if:
+    - "la valeur générée sert uniquement à un usage non sécuritaire (variation UI, jitter de retry, données de test/fixture)"
+
+message: >
+  Math.random() n'est pas un générateur cryptographiquement sûr — utiliser
+  crypto.randomBytes()/crypto.randomUUID() pour tout token, clé ou
+  identifiant de sécurité (voir rules/remediation/weak-random.md).
+
+false_positive_notes:
+  - "Math.random() utilisé pour du tirage non sensible (jeu, A/B testing, mélange d'affichage) n'est pas un risque de sécurité."
+  - "Vérifier que la valeur générée est bien utilisée comme token/clé/session avant de remonter en `medium`."
+
+remediation_ref: rules/remediation/weak-random.md
+knowledge_ref: knowledge/crypto/weak-random.md

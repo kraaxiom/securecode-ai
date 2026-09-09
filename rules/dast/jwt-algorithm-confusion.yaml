@@ -1,0 +1,17 @@
+id: jwt-algorithm-confusion
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+type: dast
+test:
+  method: GET
+  target: en-tête d'autorisation portant un jeton JWT (Authorization: Bearer)
+  technique: differential-response
+  indicators:
+    - "L'application expose publiquement une clé publique RSA/EC (endpoint JWKS ou équivalent) tout en acceptant, d'après la documentation/les en-têtes de réponse, plusieurs familles d'algorithmes de signature pour la vérification des jetons"
+    - "Absence de rejet explicite observé lorsqu'un jeton dont l'en-tête annonce un algorithme différent de celui documenté par l'API est présenté (test de comportement du vérificateur, sans forger de jeton fonctionnel exploitant réellement la confusion)"
+false_positive_notes:
+  - "Ce test observe uniquement le comportement de rejet/acceptation déclaré par le vérificateur, jamais la construction d'un jeton falsifié fonctionnel — la confirmation définitive nécessite une revue de code (voir règle SAST/IAST correspondante)."
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

@@ -1,0 +1,31 @@
+id: phpinfo-exposure
+language: php
+category: server
+cwe: CWE-215
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel direct à `phpinfo()` dans un fichier source atteignable
+    publiquement sans contrôle d'authentification préalable.
+  patterns:
+    - "phpinfo()"
+    - "call('phpinfo') sans garde d'authentification (isset($_SERVER['PHP_AUTH_USER']), middleware auth) dans le même fichier"
+  exclude_if:
+    - "l'appel à phpinfo() est précédé d'une vérification d'authentification stricte et d'une restriction IP"
+    - "le fichier n'est pas atteignable depuis le webroot (ex: inclus uniquement par un script CLI interne)"
+
+message: >
+  Appel à phpinfo() détecté, potentiellement accessible sans authentification —
+  supprimer ou protéger strictement cet endpoint de diagnostic (voir
+  rules/remediation/phpinfo-exposure.md).
+
+false_positive_notes:
+  - "Si phpinfo() est appelé uniquement dans un contexte CLI (php-cli, script d'installation exécuté une seule fois puis supprimé), ce n'est pas exploitable via HTTP."
+  - "Si l'appel est protégé par une authentification stricte et une restriction IP vérifiable dans le code, reclasser en `low`/`info`."
+
+remediation_ref: rules/remediation/phpinfo-exposure.md
+knowledge_ref: knowledge/server/phpinfo-exposure.md

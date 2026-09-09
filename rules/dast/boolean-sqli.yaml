@@ -1,0 +1,19 @@
+id: boolean-sqli
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: high
+type: dast
+test:
+  method: GET|POST
+  target: paramètre de requête ou champ de formulaire comparé dans une clause WHERE SQL
+  technique: differential-response
+  indicators:
+    - Réponse différente (contenu, longueur, code HTTP) entre une condition vraie forcée et une condition fausse forcée injectées dans le même paramètre.
+    - Bloc de contenu ("aucun résultat" vs liste de résultats) qui apparaît ou disparaît selon la valeur de vérité injectée.
+    - Redirection ou état de session qui change selon la valeur de vérité testée, sans erreur SQL visible.
+false_positive_notes:
+  - Contenu dynamique (pagination, cache) pouvant produire une différence de réponse non liée à l'injection.
+  - Comportement A/B testing ou personnalisation pouvant fausser la comparaison différentielle.
+remediation_ref: rules/remediation/boolean-sqli.md
+knowledge_ref: knowledge/injections/boolean-sqli.md

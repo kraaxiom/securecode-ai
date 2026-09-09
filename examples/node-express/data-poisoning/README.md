@@ -1,0 +1,3 @@
+## Data Poisoning (CWE-349)
+
+Le code vulnérable construit un jeu de données de fine-tuning en récupérant et en intégrant directement le contenu de n'importe quelle URL fournie, sans vérifier la provenance ni l'intégrité des sources, ce qui permet à un attaquant d'injecter des biais, des portes dérobées comportementales ou des données dégradées dans le modèle. La correction restreint l'ingestion à une liste de sources de confiance identifiées, vérifie l'intégrité de chaque source via un hash signé, et applique un filtrage des valeurs aberrantes avant d'intégrer les données au pipeline d'entraînement, réduisant ainsi le risque de compromission persistante du modèle.

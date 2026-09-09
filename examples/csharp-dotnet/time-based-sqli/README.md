@@ -1,0 +1,3 @@
+# Time-Based Blind SQL Injection (CWE-89)
+
+La version vulnérable concatène `id` dans la requête SQL et masque les erreurs par un `catch` générique ; l'attaquant n'obtient aucune donnée ni message d'erreur exploitable, mais peut injecter une condition provoquant une pause conditionnelle (ex: `WAITFOR DELAY`) et en déduire des informations en observant le délai de réponse. La correction remplace la concaténation par un paramètre lié (`@id`), qui élimine la classe de vulnérabilité dans son ensemble, et fixe un `CommandTimeout` strict sur la commande pour limiter l'impact de toute injection résiduelle ailleurs dans le code.

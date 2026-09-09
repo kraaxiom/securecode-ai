@@ -1,0 +1,34 @@
+id: session-fixation
+language: csharp
+category: sessions
+cwe: CWE-384
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une fonction de connexion (login) ASP.NET Core qui authentifie
+    l'utilisateur (SignInAsync) sans régénérer l'identifiant de session au
+    préalable, ou qui accepte un identifiant de session fourni par le client.
+  patterns:
+    - "async Task Login(_) { _ await _signInManager.PasswordSignInAsync(_); _ }" # sans HttpContext.Session.Clear() / nouvel identifiant avant SignIn
+    - "await HttpContext.SignInAsync($scheme, $principal, _)" # sans appel préalable à Session.Clear() ou régénération d'ID
+    - "Request.Query[\"sessionid\"]" # identifiant de session accepté depuis l'URL
+  exclude_if:
+    - "HttpContext.Session.Clear() ou un appel équivalent de régénération précède immédiatement l'authentification"
+    - "l'authentification repose entièrement sur ASP.NET Core Identity avec SignInAsync qui régénère le cookie d'authentification par défaut (comportement standard non modifié)"
+
+message: >
+  Authentification effectuée sans régénération de l'identifiant de session —
+  un attaquant ayant préalablement imposé un identifiant à la victime
+  pourrait réutiliser ce même identifiant après connexion (voir
+  rules/remediation/session-fixation.md).
+
+false_positive_notes:
+  - "Le SignInAsync standard d'ASP.NET Core Identity régénère déjà le cookie d'authentification ; ne signaler que les implémentations de login personnalisées qui contournent ce mécanisme."
+  - "Si HttpContext.Session.Clear() est appelé juste avant l'authentification, le risque est neutralisé."
+
+remediation_ref: rules/remediation/session-fixation.md
+knowledge_ref: knowledge/sessions/session-fixation.md

@@ -1,0 +1,3 @@
+# Conteneur Azure Blob Storage public
+
+La version vulnérable crée le conteneur `invoices` avec un niveau d'accès public `CONTAINER_AND_BLOBS`, ce qui permet à quiconque de lister et de lire tous les blobs du conteneur via une URL HTTP directe, sans authentification ni SAS, exposant potentiellement des factures et documents sensibles (CWE-284, Improper Access Control). La version corrigée crée le conteneur avec un accès public `NONE` (privé) et ne partage un blob que via une signature d'accès partagé (SAS) en lecture seule, restreinte au HTTPS et valable une heure seulement, générée à la demande pour l'utilisateur autorisé.

@@ -1,0 +1,3 @@
+# SSRF classique
+
+`vulnerable.rs` expose un endpoint qui transmet directement une URL de callback fournie par l'utilisateur au client HTTP `reqwest`, sans whitelist de destinations ni validation de l'adresse IP résolue, ce qui correspond à CWE-918 (Server-Side Request Forgery). `fixed.rs` restreint les destinations à une whitelist explicite de domaines métier, impose le schéma HTTPS, résout le DNS puis vérifie que l'adresse IP obtenue n'est ni privée, ni loopback, ni link-local, et désactive les redirections automatiques du client HTTP. Cette correction applique la recommandation de `rules/remediation/ssrf-classique.md` : ne jamais laisser une entrée utilisateur déterminer l'hôte/IP/port d'une requête sortante sans validation stricte de la destination.

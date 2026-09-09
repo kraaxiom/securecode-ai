@@ -1,0 +1,12 @@
+id: xpath-injection
+category: injections
+cwe: CWE-643
+type: rasp
+guard:
+  sink: évaluation d'une expression XPath construite par concaténation de chaînes
+  block_condition: l'expression XPath évaluée contient des métacaractères ou un motif de tautologie booléenne (ex. "' or '1'='1", "[position()") provenant d'une donnée taintée
+  action: block
+  fail_mode: fail-closed
+severity: high
+remediation_ref: rules/remediation/xpath-injection.md
+knowledge_ref: knowledge/injections/xpath-injection.md

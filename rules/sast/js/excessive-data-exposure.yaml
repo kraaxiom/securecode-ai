@@ -1,0 +1,33 @@
+id: excessive-data-exposure
+language: js
+category: api
+cwe: CWE-213
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte `res.json(model)`/`res.send(model)` où `model` est le résultat
+    direct d'une requête ORM/DB (Mongoose, Sequelize, Prisma) sans projection
+    de champs (`.select()`, DTO, mapping explicite).
+  patterns:
+    - "res.json(await Model.findById(_))"
+    - "res.json(await Model.find(_))"
+    - "res.send(userDoc)"
+  exclude_if:
+    - "la requête ORM inclut .select('champ1 champ2') restreignant les champs retournés"
+    - "un objet de sortie est construit explicitement (mapping vers un DTO) avant l'appel à res.json"
+
+message: >
+  Réponse API construite à partir d'un document/modèle complet sans
+  projection de champs — appliquer une liste blanche de sortie (voir
+  rules/remediation/excessive-data-exposure.md).
+
+false_positive_notes:
+  - "Si le schéma Mongoose exclut déjà les champs sensibles via `select: false` par défaut, le risque est mitigé — reclasser en `info`."
+  - "Endpoint interne consommé uniquement par des services de confiance : évaluer l'exposition réelle avant de maintenir en `medium`."
+
+remediation_ref: rules/remediation/excessive-data-exposure.md
+knowledge_ref: knowledge/api/excessive-data-exposure.md

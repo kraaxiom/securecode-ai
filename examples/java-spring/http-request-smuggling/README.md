@@ -1,0 +1,3 @@
+# HTTP Request Smuggling (CWE-444)
+
+Le filtre vulnérable transmet toute requête reçue au reste de la chaîne applicative sans vérifier la cohérence des en-têtes `Content-Length` et `Transfer-Encoding`, laissant la porte ouverte à une divergence d'interprétation entre le frontal et le backend qu'un attaquant peut exploiter pour dissimuler une seconde requête. La version corrigée détecte la présence conjointe de ces deux en-têtes et rejette immédiatement la requête avec un code 400, en défense en profondeur complémentaire à la configuration recommandée du proxy en amont (rejet des requêtes ambiguës, HTTP/2 de bout en bout).

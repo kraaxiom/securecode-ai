@@ -1,0 +1,32 @@
+id: git-exposure
+language: php
+category: server
+cwe: CWE-538
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Vérification config/infra : détecte la présence d'un dossier `.git` dans
+    le webroot servi par le serveur, ou l'absence de règle Nginx/Apache
+    bloquant explicitement l'accès à `/.git`.
+  patterns:
+    - "dossier_webroot(nom == '.git')"
+    - "config_nginx_ou_apache(absence de bloc `location ~ /\\.git` ou `<DirectoryMatch \"\\.git\">`)"
+  exclude_if:
+    - "le dossier .git est situé strictement en dehors du DocumentRoot/root du serveur web"
+    - "une règle serveur bloque déjà explicitement l'accès à /.git ou à tous les dotdirs"
+
+message: >
+  Répertoire .git potentiellement accessible publiquement dans le webroot —
+  déployer via un artefact séparé du dépôt et bloquer /.git au niveau
+  serveur (voir rules/remediation/git-exposure.md).
+
+false_positive_notes:
+  - "Si le dépôt .git détecté est utilisé uniquement en environnement de développement local (non exposé publiquement), ce n'est pas exploitable."
+  - "Vérifier que la requête HTTP sur /.git/HEAD renvoie réellement un contenu (pas une redirection ou une page 404 custom) avant de confirmer l'exploitabilité."
+
+remediation_ref: rules/remediation/git-exposure.md
+knowledge_ref: knowledge/server/git-exposure.md

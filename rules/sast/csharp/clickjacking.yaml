@@ -1,0 +1,37 @@
+id: clickjacking
+language: csharp
+category: frontend
+cwe: CWE-1021
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'absence ou la suppression explicite de l'en-tête anti-framing
+    (X-Frame-Options ou CSP frame-ancestors) dans la configuration du pipeline
+    ASP.NET Core (Program.cs/Startup.cs) ou dans un middleware personnalisé.
+  patterns:
+    - "app.Use(async (context, next) => { _; context.Response.Headers.Remove(\"X-Frame-Options\"); _ })"
+    - "app.UseEndpoints(_)  # sans app.Use(...) définissant X-Frame-Options ou frame-ancestors en amont"
+    - "context.Response.Headers[\"X-Frame-Options\"] = \"ALLOWALL\""
+    - "services.AddMvc(options => { _ })  # sans filtre global XFrameOptionsAttribute ni middleware d'en-tête"
+  exclude_if:
+    - "un middleware ou filtre applique explicitement X-Frame-Options: DENY ou SAMEORIGIN sur toutes les routes"
+    - "la CSP configurée contient une directive frame-ancestors restrictive"
+    - "la route concernée sert exclusivement des ressources non-HTML (API JSON, fichiers statiques binaires)"
+
+message: >
+  Le pipeline ASP.NET Core ne semble pas définir l'en-tête X-Frame-Options ou
+  la directive CSP frame-ancestors sur les réponses HTML — la page peut être
+  intégrée dans un iframe tiers et exposée au clickjacking (voir
+  rules/remediation/clickjacking.md).
+
+false_positive_notes:
+  - "Si un middleware global (ex: NWebsec ou middleware maison) ajoute déjà X-Frame-Options ou frame-ancestors sur toutes les réponses, ce n'est pas un vrai positif."
+  - "Les endpoints d'API pure (JSON, non rendus dans un navigateur) ne sont pas concernés par le clickjacking."
+  - "Vérifier si l'intégration en iframe est un besoin métier documenté (widget SSO) avant de remonter en `high`."
+
+remediation_ref: rules/remediation/clickjacking.md
+knowledge_ref: knowledge/frontend/clickjacking.md

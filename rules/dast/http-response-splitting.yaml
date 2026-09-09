@@ -1,0 +1,18 @@
+id: http-response-splitting
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+type: dast
+test:
+  method: GET
+  target: paramètre utilisé dans la construction d'un en-tête Location ou Set-Cookie d'une redirection
+  technique: differential-response
+  indicators:
+    - présence d'une seconde section d'en-têtes ou d'un corps de réponse distinct injecté après la réponse HTTP légitime dans le flux brut
+    - réponse scindée en deux messages HTTP distincts observée par un client bas niveau lisant le flux TCP brut
+  false_positive_notes:
+    - un proxy intermédiaire peut déjà filtrer les séquences CR/LF, masquant la vulnérabilité en façade sans l'éliminer côté origine
+    - tester en connexion directe au serveur d'origine pour écarter les faux négatifs dus à un filtrage périmétrique
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

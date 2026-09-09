@@ -1,0 +1,28 @@
+id: dns-rebinding
+language: php
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'adresse IP effectuée via une résolution DNS séparée de celle utilisée par le client HTTP pour la requête effective, sans épinglage (DNS pinning).
+  patterns:
+    - "gethostbyname($host) ... curl_init($url) // sans CURLOPT_RESOLVE"
+    - "checkdnsrr($host) ... file_get_contents($url)"
+  exclude_if:
+    - "La requête réelle est forcée sur l'IP validée (CURLOPT_RESOLVE, agent HTTP avec lookup personnalisé, ou équivalent)"
+    - "La destination est également filtrée par whitelist stricte de domaines constants"
+
+message: >
+  Validation IP réalisée par une résolution DNS distincte de la requête réelle — contournable par DNS rebinding, voir rules/remediation/dns-rebinding.md.
+
+false_positive_notes:
+  - "Si l'IP validée est explicitement épinglée pour la requête réelle (CURLOPT_RESOLVE, agent avec lookup fixe), reclasser en `info`."
+  - "Si la destination provient uniquement d'une whitelist de domaines constants (pas d'entrée utilisateur), le risque est réduit."
+
+remediation_ref: rules/remediation/dns-rebinding.md
+knowledge_ref: knowledge/ssrf/dns-rebinding.md

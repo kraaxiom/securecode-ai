@@ -1,0 +1,34 @@
+id: http-response-splitting
+language: php
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'appel à header() (ou setcookie()) avec une valeur d'en-tête
+    Location/Set-Cookie construite par concaténation d'une entrée utilisateur
+    ($_GET/$_POST/$_REQUEST) sans filtrage préalable des caractères CR/LF.
+  patterns:
+    - "header(string_concat('Location:', _, $var, _))"
+    - "header(string_concat('Set-Cookie:', _, $var, _))"
+    - "header($var)"
+  exclude_if:
+    - "$var passe par une liste blanche de valeurs autorisées avant l'appel à header()"
+    - "$var est filtré par une regex ou un str_replace supprimant \\r et \\n avant l'appel"
+    - "$var est un littéral constant (pas une variable/paramètre)"
+
+message: >
+  En-tête HTTP (Location/Set-Cookie) construit avec une valeur utilisateur
+  non filtrée — valider par liste blanche et neutraliser les caractères CR/LF
+  avant l'appel à header() (voir rules/remediation/http-response-splitting.md).
+
+false_positive_notes:
+  - "PHP >= 5.1.2 rejette nativement les en-têtes contenant des CR/LF bruts (warning + refus), ce qui réduit le risque direct mais le pattern reste un signal de mauvaise pratique de conception."
+  - "Si la variable provient exclusivement d'une constante applicative interne (pas d'entrée utilisateur), ce n'est pas exploitable — reclasser en `info`."
+
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

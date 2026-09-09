@@ -1,0 +1,35 @@
+id: missing-rate-limit
+language: java
+category: api
+cwe: CWE-770
+owasp: API4:2023-Unrestricted Resource Consumption
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint Spring REST sensible (authentification, réinitialisation
+    de mot de passe, recherche coûteuse, envoi d'email/SMS) sans mécanisme de
+    limitation de débit (Bucket4j, Resilience4j RateLimiter, filtre custom) ni
+    protection anti-brute-force.
+  patterns:
+    - "@PostMapping(\"/login\") ou \"/reset-password\" sans annotation/filtre de rate limiting (Bucket4j, Resilience4j @RateLimiter) ni verrouillage de compte après échecs répétés"
+    - "endpoint effectuant une opération coûteuse (recherche full-text, génération de rapport, appel externe) sans limite de débit par utilisateur/IP"
+  exclude_if:
+    - "un filtre/intercepteur de rate limiting (Bucket4j, Resilience4j, ou équivalent au niveau gateway API/reverse proxy documenté) protège explicitement l'endpoint"
+    - "l'endpoint est strictement interne, non exposé publiquement, et protégé par une authentification mTLS de service à service"
+
+message: >
+  Aucune limitation de débit n'est visible pour cet endpoint sensible — expose
+  à des attaques par force brute, de credential stuffing, ou à un épuisement
+  de ressources (DoS applicatif). Ajouter un rate limiter (Bucket4j,
+  Resilience4j @RateLimiter) par utilisateur/IP, ou s'appuyer sur une
+  passerelle API en amont avec limite documentée.
+
+false_positive_notes:
+  - "Si le rate limiting est appliqué au niveau de la passerelle API/reverse proxy (Kong, Spring Cloud Gateway, WAF) en amont du code applicatif, ce risque peut être atténué — vérifier la configuration d'infrastructure avant de remonter en `high`."
+  - "Un endpoint interne strictement réservé aux services de confiance présente un risque réduit."
+
+remediation_ref: rules/remediation/missing-rate-limit.md
+knowledge_ref: knowledge/api/missing-rate-limit.md

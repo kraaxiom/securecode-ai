@@ -1,0 +1,3 @@
+# XSS via SVG (CWE-79)
+
+Un avatar SVG uploadé était stocké et servi sans aucune sanitisation de son contenu XML, permettant à un fichier contenant `<script>` ou un attribut `onload` de s'exécuter dans le contexte d'origine de l'application lors de sa consultation. La correction sanitise le SVG à l'upload avec `enshrined/svg-sanitize` (suppression des balises et gestionnaires actifs) et sert le fichier avec `Content-Disposition: attachment` au lieu d'un affichage inline. Ces deux mesures traitent le CWE-79 (Improper Neutralization of Input During Web Page Generation) appliqué au vecteur spécifique des fichiers SVG uploadés.

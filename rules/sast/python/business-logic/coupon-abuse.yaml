@@ -1,0 +1,36 @@
+id: coupon-abuse
+language: python
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une application Python de code promo/coupon sans contrôle
+    d'usage unique par utilisateur ni verrouillage transactionnel du compteur
+    d'utilisation, permettant une application multiple ou concurrente du même
+    coupon au-delà de sa limite prévue.
+  patterns:
+    - "coupon = Coupon.objects.get(code=code); if coupon.uses < coupon.max_uses: coupon.uses += 1; coupon.save() — lecture puis incrément non atomique, sans select_for_update() ni contrainte transactionnelle"
+    - "def apply_coupon(user, code): if not Order.objects.filter(user=user, coupon=code).exists(): ... — vérification d'unicité par requête séparée sans contrainte UNIQUE en base (user_id, coupon_id), contournable en requêtes concurrentes"
+    - "validation du coupon reposant uniquement sur un cookie/session côté client pour éviter la réutilisation (pas de vérification serveur liée à l'identité du compte)"
+  exclude_if:
+    - "l'incrément du compteur d'usage est protégé par select_for_update()/UPDATE atomique conditionnel (WHERE uses < max_uses) et une contrainte UNIQUE en base empêche la double association coupon-utilisateur"
+
+message: >
+  Application de coupon/code promo sans verrouillage atomique du compteur
+  d'usage ni contrainte d'unicité en base — des requêtes concurrentes ou
+  répétées peuvent appliquer le même coupon plus de fois que prévu. Utiliser
+  une contrainte UNIQUE (utilisateur, coupon) et un UPDATE atomique
+  conditionnel pour le compteur d'usage — voir
+  rules/remediation/coupon-abuse.md.
+
+false_positive_notes:
+  - "Un coupon à usage illimité par conception (pas de max_uses) n'est pas concerné."
+  - "Si la contrainte d'unicité est déjà imposée au niveau base de données (index UNIQUE) même sans verrou explicite dans le code, le risque de dépassement massif est réduit — reclasser en `low`."
+
+remediation_ref: rules/remediation/coupon-abuse.md
+knowledge_ref: knowledge/business-logic/coupon-abuse.md

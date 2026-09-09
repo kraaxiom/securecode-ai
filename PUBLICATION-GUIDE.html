@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publier SecureCode AI</title>
+<style>
+:root{
+  --bg:#f1f4f3;
+  --surface:#e8ede9;
+  --panel:#0d1517;
+  --panel-2:#122024;
+  --ink:#10181a;
+  --ink-soft:#3c4a49;
+  --line:rgba(16,24,26,0.14);
+  --accent:#157f6f;
+  --accent-soft:#d8ece6;
+  --warn:#9c4a1f;
+  --warn-soft:#f3ddca;
+  --code-text:#d9f2ec;
+  --code-dim:#7fa89d;
+  --radius:10px;
+  --font-mono:'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-sans:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1112;
+    --surface:#101a1c;
+    --panel:#050a0b;
+    --panel-2:#0c1517;
+    --ink:#e7eeec;
+    --ink-soft:#a6bab6;
+    --line:rgba(231,238,236,0.14);
+    --accent:#4fd3bd;
+    --accent-soft:#122824;
+    --warn:#e8a06a;
+    --warn-soft:#2c1c10;
+    --code-text:#d9f2ec;
+    --code-dim:#5f8b81;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1112;
+  --surface:#101a1c;
+  --panel:#050a0b;
+  --panel-2:#0c1517;
+  --ink:#e7eeec;
+  --ink-soft:#a6bab6;
+  --line:rgba(231,238,236,0.14);
+  --accent:#4fd3bd;
+  --accent-soft:#122824;
+  --warn:#e8a06a;
+  --warn-soft:#2c1c10;
+  --code-text:#d9f2ec;
+  --code-dim:#5f8b81;
+}
+
+*{box-sizing:border-box;}
+html{background:var(--bg);}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  font-size:16px;
+  line-height:1.6;
+}
+h1,h2,h3,h4{
+  font-family:var(--font-mono);
+  text-wrap:balance;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+  margin:0;
+}
+a{color:var(--accent);}
+code, pre, kbd{font-family:var(--font-mono);}
+
+.shell{
+  display:grid;
+  grid-template-columns:270px minmax(0,1fr);
+  max-width:1180px;
+  margin:0 auto;
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;}
+  .nav{position:static !important; height:auto !important; border-right:none !important; border-bottom:1px solid var(--line);}
+}
+
+/* ---- NAV ---- */
+.nav{
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+  padding:32px 20px 40px 28px;
+  border-right:1px solid var(--line);
+}
+.nav-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:28px;
+}
+.nav-brand .mark{
+  width:30px;height:30px;
+  border-radius:7px;
+  background:var(--accent);
+  color:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);
+  font-weight:700;
+  font-size:14px;
+  flex:none;
+}
+.nav-brand .name{
+  font-family:var(--font-mono);
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:0.02em;
+}
+.nav-brand .name span{color:var(--accent);}
+.nav ol{
+  list-style:none;
+  margin:0;padding:0;
+  counter-reset:step;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.nav li{counter-increment:step;}
+.nav a{
+  display:flex;
+  gap:10px;
+  align-items:baseline;
+  color:var(--ink-soft);
+  text-decoration:none;
+  font-size:13.5px;
+  padding:7px 8px;
+  border-radius:6px;
+}
+.nav a:hover{background:var(--surface); color:var(--ink);}
+.nav a:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+.nav a::before{
+  content:counter(step, decimal-leading-zero);
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--accent);
+  flex:none;
+  padding-top:1px;
+}
+.nav-foot{
+  margin-top:24px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+  font-size:12px;
+  color:var(--ink-soft);
+}
+
+/* ---- MAIN ---- */
+main{padding:56px 48px 120px 48px; min-width:0;}
+@media (max-width:640px){ main{padding:40px 20px 90px;} }
+
+.hero{margin-bottom:56px; max-width:640px;}
+.hero .eyebrow{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:14px;
+  display:block;
+}
+.hero h1{font-size:clamp(28px,4vw,40px); line-height:1.15; margin-bottom:16px;}
+.hero p{color:var(--ink-soft); font-size:16.5px; max-width:60ch;}
+.hero .status-row{
+  display:flex; gap:10px; margin-top:22px; flex-wrap:wrap;
+}
+.pill{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  padding:5px 10px;
+  border-radius:100px;
+  border:1px solid var(--line);
+  color:var(--ink-soft);
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+section{
+  max-width:680px;
+  margin-bottom:64px;
+  scroll-margin-top:24px;
+}
+section .num{
+  font-family:var(--font-mono);
+  color:var(--accent);
+  font-size:13px;
+  display:block;
+  margin-bottom:8px;
+}
+section h2{font-size:22px; margin-bottom:6px;}
+section .sub{color:var(--ink-soft); font-size:14.5px; margin:6px 0 22px;}
+section h3{font-size:16px; margin:28px 0 10px; font-weight:600;}
+p{margin:0 0 14px;}
+ul,ol{margin:0 0 14px; padding-left:22px;}
+li{margin-bottom:6px;}
+strong{font-weight:600;}
+
+.panel{
+  background:var(--panel);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  margin:16px 0;
+  overflow-x:auto;
+}
+.panel .path{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  color:var(--code-dim);
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.panel .path::before{content:"$"; color:var(--accent);}
+pre{
+  margin:0;
+  font-size:13px;
+  line-height:1.65;
+  color:var(--code-text);
+  white-space:pre;
+}
+.panel-file{background:var(--panel-2);}
+.panel-file .path::before{content:"";}
+
+.callout{
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin:18px 0;
+  border:1px solid var(--line);
+  font-size:14.5px;
+}
+.callout.warn{
+  background:var(--warn-soft);
+  border-color:transparent;
+}
+.callout .label{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--warn);
+  display:block;
+  margin-bottom:6px;
+}
+.callout.info .label{color:var(--accent);}
+.callout.info{background:var(--accent-soft); border-color:transparent;}
+
+.checklist{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  margin:16px 0;
+}
+.checklist label{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  padding:12px 16px;
+  border-bottom:1px solid var(--line);
+  font-size:14px;
+  cursor:pointer;
+}
+.checklist label:last-child{border-bottom:none;}
+.checklist input{margin-top:3px; accent-color:var(--accent);}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  font-size:13.5px;
+}
+th,td{
+  text-align:left;
+  padding:9px 12px;
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+th{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  font-weight:500;
+}
+td code{
+  font-size:12.5px;
+  background:var(--surface);
+  padding:1px 6px;
+  border-radius:4px;
+}
+
+.agent-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin:18px 0;
+}
+@media (max-width:560px){.agent-grid{grid-template-columns:1fr;}}
+.agent-card{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px 18px;
+}
+.agent-card h4{
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+.agent-card h4 .tag{
+  font-size:10px;
+  padding:2px 7px;
+  border-radius:100px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  font-family:var(--font-mono);
+  font-weight:500;
+}
+.agent-card p{font-size:13px; color:var(--ink-soft); margin:0 0 10px;}
+.agent-card .panel{margin:0; padding:12px 14px;}
+.agent-card pre{font-size:12px;}
+
+.glossary{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  margin:16px 0;
+}
+.glossary .row{
+  display:grid;
+  grid-template-columns:150px 1fr;
+  gap:16px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--line);
+  font-size:14px;
+}
+.glossary .row:last-child{border-bottom:none;}
+@media (max-width:560px){.glossary .row{grid-template-columns:1fr;}}
+.glossary dt{
+  font-family:var(--font-mono);
+  font-weight:600;
+  color:var(--accent);
+  font-size:13px;
+}
+.glossary dd{margin:0; color:var(--ink-soft);}
+
+.tree{
+  background:var(--panel);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  margin:16px 0;
+  overflow-x:auto;
+}
+.tree pre{
+  font-size:12.8px;
+  line-height:1.75;
+  color:var(--code-text);
+}
+.tree .d{color:var(--accent); font-weight:600;}
+.tree .n{color:var(--code-dim);}
+.tree .k{color:#e0a860;}
+
+.stepline{
+  display:flex;
+  gap:12px;
+  margin:14px 0;
+  align-items:flex-start;
+}
+.stepline .idx{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--accent);
+  background:var(--accent-soft);
+  width:22px;height:22px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex:none;
+  margin-top:1px;
+}
+.stepline .body{font-size:14.5px;}
+.stepline .body code{font-size:13px;}
+
+.divider{height:1px; background:var(--line); margin:0 0 64px; max-width:680px;}
+
+.footline{
+  max-width:680px;
+  padding-top:24px;
+  border-top:1px solid var(--line);
+  font-size:13px;
+  color:var(--ink-soft);
+}
+
+::selection{background:var(--accent-soft);}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="shell">
+
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="mark">SC</div>
+      <div class="name">SecureCode<span>AI</span></div>
+    </div>
+    <ol>
+      <li><a href="#glossaire">Les mots à connaître</a></li>
+      <li><a href="#etape-0">Avant de commencer</a></li>
+      <li><a href="#etape-1">Préparer le dépôt local</a></li>
+      <li><a href="#etape-2">Créer le dépôt GitHub</a></li>
+      <li><a href="#arborescence">Arborescence sur GitHub</a></li>
+      <li><a href="#etape-3">Verrouiller la branche main</a></li>
+      <li><a href="#etape-4">Cadre de contribution</a></li>
+      <li><a href="#etape-5">Fichiers communautaires</a></li>
+      <li><a href="#etape-6">Publier</a></li>
+      <li><a href="#installation">Installer dans un agent</a></li>
+      <li><a href="#usage">Utiliser le skill</a></li>
+      <li><a href="#checklist">Checklist finale</a></li>
+    </ol>
+    <div class="nav-foot">Fiche technique de publication<br>SecureCode AI Enterprise Skill</div>
+  </nav>
+
+  <main>
+
+    <div class="hero">
+      <span class="eyebrow">Fiche technique — Publication GitHub</span>
+      <h1>Publier SecureCode&nbsp;AI en open source, sans en perdre le contrôle</h1>
+      <p>Ce guide couvre, dans l'ordre, la création du dépôt public, le verrouillage de la branche <code>main</code> pour qu'aucune modification externe ne s'applique sans ta revue, le cadre de contribution pour les devs et vibe coders, et l'installation du skill dans un agent de code (Claude Code, Cursor, Codex, Windsurf).</p>
+      <div class="status-row">
+        <span class="pill"><span class="dot"></span>222 fiches de connaissance</span>
+        <span class="pill"><span class="dot"></span>7 langages couverts</span>
+        <span class="pill"><span class="dot"></span>Licence à valider — étape 5</span>
+      </div>
+    </div>
+
+    <section id="glossaire">
+      <span class="num">Avant tout</span>
+      <h2>Les mots à connaître</h2>
+      <p class="sub">Tu n'as jamais utilisé GitHub — voici exactement ce que veut dire chaque terme employé dans ce guide, dans l'ordre où tu vas les rencontrer.</p>
+      <dl class="glossary">
+        <div class="row"><dt>Git</dt><dd>Le logiciel installé sur <em>ton ordinateur</em> qui garde en mémoire chaque version de tes fichiers au fil du temps. Il fonctionne même sans connexion internet — c'est un carnet de versions local.</dd></div>
+        <div class="row"><dt>GitHub</dt><dd>Le site web (github.com) qui héberge en ligne une copie de ce carnet Git, pour que d'autres personnes puissent le consulter, le télécharger, ou proposer des changements. Git est l'outil, GitHub est l'endroit où tu le mets en ligne.</dd></div>
+        <div class="row"><dt>Dépôt (repo)</dt><dd>Le dossier complet de ton projet, une fois mis en ligne sur GitHub. Le tien s'appellera <code>securecode-ai</code> et contiendra tous les fichiers que tu as déjà construits.</dd></div>
+        <div class="row"><dt>Commit</dt><dd>Une "photo" d'un ensemble de changements, avec un message qui explique ce qui a changé et pourquoi. Ton premier commit contiendra tout le skill tel qu'il existe aujourd'hui.</dd></div>
+        <div class="row"><dt>Branche (<code>main</code>)</dt><dd>Une ligne de développement indépendante. <code>main</code> est la branche par défaut — celle que voit tout le monde qui visite ton dépôt. C'est elle qu'on va protéger.</dd></div>
+        <div class="row"><dt>Fork</dt><dd>Quand quelqu'un d'autre clique sur "Fork" sur ton dépôt, GitHub lui crée <strong>sa propre copie complète</strong>, sous son compte. Il modifie sa copie — jamais la tienne directement.</dd></div>
+        <div class="row"><dt>Pull Request (PR)</dt><dd>Une fois que ce quelqu'un a modifié sa copie (son fork), il t'envoie une <strong>demande</strong> : "voici ce que j'ai changé, veux-tu l'intégrer chez toi ?" C'est une proposition, jamais une modification automatique.</dd></div>
+        <div class="row"><dt>Merge (fusion)</dt><dd>Le moment où <strong>toi</strong> — et personne d'autre si la protection est activée — acceptes la Pull Request et l'intègres réellement dans ton dépôt. Avant ce clic, rien n'a changé chez toi.</dd></div>
+      </dl>
+      <div class="callout info">
+        <span class="label">Ce qu'il faut retenir de tout ça</span>
+        Le chemin d'une contribution externe est toujours : <strong>fork → modification chez l'autre → Pull Request → ta lecture → ton clic "Merge"</strong>. Il n'existe aucun raccourci qui saute ton clic final, une fois la protection de branche activée (étape 3).
+      </div>
+    </section>
+
+    <section id="etape-0">
+      <span class="num">Avant de commencer</span>
+      <h2>Ce que ce guide suppose déjà en place</h2>
+      <p class="sub">Un compte, un logiciel, dix minutes. Le CLI (<code>gh</code>) est optionnel — chaque étape qui l'utilise a son équivalent au clic sur le site web.</p>
+
+      <div class="stepline">
+        <span class="idx">1</span>
+        <div class="body"><strong>Crée ton compte GitHub</strong> si tu n'en as pas déjà un : va sur <a href="https://github.com/signup">github.com/signup</a>, choisis un nom d'utilisateur (ce sera visible dans les liens de ton projet, ex. <code>github.com/<em>ton-pseudo</em>/securecode-ai</code>), une adresse e-mail, un mot de passe. Confirme l'e-mail reçu.</div>
+      </div>
+      <div class="stepline">
+        <span class="idx">2</span>
+        <div class="body"><strong>Installe Git</strong> sur ta machine (le logiciel local, différent du site) : <a href="https://git-scm.com/downloads">git-scm.com/downloads</a>, version Windows, installation avec les options par défaut. Vérifie ensuite dans un terminal (PowerShell) :
+          <div class="panel"><pre>git --version</pre></div>
+        </div>
+      </div>
+      <div class="stepline">
+        <span class="idx">3</span>
+        <div class="body"><strong>Dis à Git qui tu es</strong> — la première fois seulement, ces informations s'attachent à chacun de tes commits :
+          <div class="panel"><pre>git config --global user.name "Ton Nom"
+git config --global user.email "ton-email@exemple.com"</pre></div>
+        </div>
+      </div>
+      <div class="stepline">
+        <span class="idx">4</span>
+        <div class="body"><strong>(Optionnel) Installe GitHub CLI</strong> — <code>gh</code> permet de créer le dépôt et ses règles de protection sans quitter le terminal : <a href="https://cli.github.com/">cli.github.com</a>, puis <code>gh auth login</code> et suis les instructions (choisis <em>GitHub.com</em> → <em>HTTPS</em> → <em>Login with a web browser</em>). Si tu préfères tout faire au clic sur le site, passe cette étape — ce guide donne les deux chemins partout où <code>gh</code> apparaît.</div>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Ouvre PowerShell, pas l'Invite de commandes</span>
+        Windows propose deux terminaux différents. <strong>L'Invite de commandes</strong> (fenêtre noire, l'invite ressemble à <code>C:\laragon\www\skils&gt;</code>) ne comprend pas la syntaxe utilisée par la plupart des outils en ligne de commande modernes. Utilise <strong>PowerShell</strong> à la place : dans l'Explorateur de fichiers, ouvre le dossier <code>security-ai-skill</code>, <strong>Shift + clic droit</strong> dans un espace vide → <strong>Ouvrir la fenêtre PowerShell ici</strong> (ou <strong>Ouvrir dans le terminal</strong> selon ta version de Windows). L'invite ressemble alors à <code>PS C:\laragon\www\skils\security-ai-skill&gt;</code>. Toutes les commandes de ce guide sont écrites pour PowerShell.
+      </div>
+
+      <div class="callout info">
+        <span class="label">Point de départ</span>
+        Toutes les commandes ci-dessous partent du dossier <code>c:/laragon/www/skils/security-ai-skill/</code> — le contenu du skill est déjà complet (base de connaissance, règles, prompts, exemples). Ce guide ne touche pas à ce contenu, il ne fait que le publier correctement.
+      </div>
+    </section>
+
+    <section id="etape-1">
+      <span class="num">Étape 1</span>
+      <h2>Préparer le dépôt local</h2>
+      <p class="sub">Initialiser git et exclure ce qui ne doit jamais quitter ta machine.</p>
+
+      <p>Le dossier n'est pas encore un dépôt git. On l'initialise, on ajoute un <code>.gitignore</code>, et on fait le premier commit.</p>
+
+      <div class="panel">
+        <span class="path">terminal</span>
+        <pre>cd security-ai-skill
+git init
+git branch -M main</pre>
+      </div>
+
+      <p>Crée un fichier <code>.gitignore</code> à la racine :</p>
+
+      <div class="panel panel-file">
+        <span class="path">.gitignore</span>
+        <pre># Environnements locaux
+.env
+.env.*
+node_modules/
+__pycache__/
+*.pyc
+
+# Registre zero-day — appartient au projet AUDITÉ, jamais à ce skill
+.securecode/
+
+# Fichiers d'éditeur
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db</pre>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Vérification avant le premier commit</span>
+        Relis <code>git status</code> avant d'ajouter quoi que ce soit. Ce skill ne contient normalement aucun secret réel — les exemples utilisent des placeholders (<code>REPLACE_WITH_YOUR_API_KEY</code>, etc.) — mais c'est le seul moment où une clé oubliée dans un fichier de test passerait inaperçue pour toujours.
+      </div>
+
+      <div class="panel">
+        <span class="path">terminal</span>
+        <pre>git add .
+git status              # relire la liste avant de commiter
+git commit -m "Initial commit — SecureCode AI Enterprise Skill v0.2.0"</pre>
+      </div>
+    </section>
+
+    <section id="etape-2">
+      <span class="num">Étape 2</span>
+      <h2>Créer le dépôt GitHub</h2>
+      <p class="sub">Deux façons d'arriver au même résultat — choisis celle où tu es à l'aise.</p>
+
+      <h3>Option A — au clic, depuis github.com <span style="font-weight:400; color:var(--ink-soft); font-size:13px;">(recommandé, aucun outil à installer)</span></h3>
+      <div class="stepline">
+        <span class="idx">1</span>
+        <div class="body">Connecté sur <a href="https://github.com/new">github.com/new</a>, remplis : <strong>Repository name</strong> → <code>securecode-ai</code>. <strong>Description</strong> → <em>« Skill de sécurité applicative pour agents de code IA (Claude Code, Cursor, Codex) — détection, explication, correction et scoring OWASP/ASVS. »</em>. Sélectionne <strong>Public</strong>. <strong>Ne coche aucune case</strong> ("Add a README", ".gitignore", "license") — tes fichiers existent déjà localement, cocher ces cases créerait un conflit inutile. Clique <strong>Create repository</strong>.</div>
+      </div>
+      <div class="stepline">
+        <span class="idx">2</span>
+        <div class="body">GitHub affiche une page "Quick setup" avec une section <strong>"…or push an existing repository from the command line"</strong> — elle contient deux commandes toutes prêtes, avec ton pseudo déjà inclus. Copie-les telles quelles depuis cette page (elles sont plus fiables que celles recopiées d'un guide), colle-les dans PowerShell (voir l'encadré ci-dessus), une ligne à la fois :
+          <div class="panel"><pre>git remote add origin https://github.com/ton-pseudo/securecode-ai.git
+git push -u origin main</pre></div>
+          <p style="margin-top:10px; font-size:13.5px;">PowerShell te demandera peut-être de te connecter à GitHub à ce moment — une fenêtre de navigateur s'ouvre, clique <strong>Authorize</strong>, reviens au terminal.</p>
+        </div>
+      </div>
+
+      <h3>Option B — en une commande, avec GitHub CLI</h3>
+      <p>Si tu as installé <code>gh</code> (étape 0, point 4) :</p>
+      <div class="panel">
+        <span class="path">terminal</span>
+        <pre>gh repo create securecode-ai --public --source=. --remote=origin --push</pre>
+      </div>
+      <p>Cette seule commande crée le dépôt sur GitHub, l'associe à ton dossier local, et envoie ton premier commit — tout en une fois. Ajoute la description ensuite sur la page du dépôt (<strong>bouton engrenage ⚙️ à côté de "About"</strong>, en haut à droite de la page).</p>
+
+      <p>Une fois le push terminé (par l'une ou l'autre option), actualise la page du dépôt : tes dossiers <code>knowledge/</code>, <code>rules/</code>, <code>examples/</code>… apparaissent. Active ensuite dans <strong>Settings → General → Features</strong> :</p>
+      <ul>
+        <li><strong>Issues</strong> — pour que les devs signalent des faux positifs, des CWE mal mappés, ou proposent une catégorie manquante.</li>
+        <li><strong>Discussions</strong> — pour les questions d'usage qui ne sont pas des bugs.</li>
+        <li><strong>Preserve this repository</strong> (GitHub Archive Program) — optionnel, mais cohérent pour un projet destiné à durer.</li>
+      </ul>
+    </section>
+
+    <section id="arborescence">
+      <span class="num">Ce que ça donne</span>
+      <h2>L'arborescence exacte de ton dépôt GitHub</h2>
+      <p class="sub">Exactement ce que verra un visiteur en ouvrant <code>github.com/ton-pseudo/securecode-ai</code> — comptages réels de ton skill actuel.</p>
+      <div class="tree">
+<pre><span class="n">securecode-ai/</span>
+├── <span class="d">.github/</span>                    <span class="n"># ajouté à l'étape 3-4 : CODEOWNERS, gabarit de PR</span>
+│   └── CODEOWNERS
+├── <span class="d">docs/</span>                       <span class="n"># 11 fichiers — architecture, workflow, CLI, FAQ, zero-day…</span>
+├── <span class="d">examples/</span>                   <span class="n"># 7 stacks × 92 dossiers vulnerable/fixed/README</span>
+│   ├── <span class="d">php-laravel/</span>
+│   ├── <span class="d">node-express/</span>
+│   ├── <span class="d">python-django/</span>
+│   ├── <span class="d">java-spring/</span>
+│   ├── <span class="d">csharp-dotnet/</span>
+│   ├── <span class="d">go/</span>
+│   └── <span class="d">rust/</span>
+├── <span class="d">knowledge/</span>                  <span class="n"># 222 fiches vulnérabilité, 25 catégories</span>
+│   ├── <span class="d">injections/</span>  <span class="d">xss/</span>  <span class="d">auth/</span>  <span class="d">authorization/</span>  <span class="d">ssrf/</span>
+│   ├── <span class="d">crypto/</span>  <span class="d">cloud/</span>  <span class="d">llm/</span>  <span class="d">business-logic/</span>  ...
+│   └── <span class="n">(25 catégories au total)</span>
+├── <span class="d">prompts/</span>                    <span class="n"># detect, explain, patch, generate-tests, score,</span>
+│                                <span class="n"># report, architecture-review, zeroday-detect, zeroday-verify</span>
+├── <span class="d">rules/</span>
+│   ├── <span class="d">sast/</span>                   <span class="n"># 7 langages — php js python java csharp go rust</span>
+│   ├── <span class="d">dast/</span>  <span class="d">iast/</span>  <span class="d">rasp/</span>       <span class="n"># catégories prioritaires (injections, xss, auth, ssrf...)</span>
+│   ├── <span class="d">waf/</span>                    <span class="n"># règles ModSecurity/CRS-compatibles (.conf)</span>
+│   └── <span class="d">remediation/</span>             <span class="n"># 222 recettes de correction avant/après</span>
+├── <span class="d">schemas/</span>                    <span class="n"># finding, patch, report, score, mission, zeroday (.json)</span>
+├── <span class="d">templates/</span>                  <span class="n"># report-owasp-top10, report-asvs, zeroday-report...</span>
+├── <span class="d">tests/</span>
+│   ├── <span class="d">fixtures/</span>                <span class="n"># mini-projets volontairement vulnérables (démo)</span>
+│   └── eval-set.json
+├── .gitignore
+├── <span class="k">CHANGELOG.md</span>
+├── <span class="k">CONTRIBUTING.md</span>
+├── <span class="k">LICENSE.md</span>
+├── <span class="k">README.md</span>                    <span class="n"># première chose que voit un visiteur</span>
+├── ROADMAP.md
+├── <span class="k">SECURITY.md</span>                 <span class="n"># ajouté à l'étape 5</span>
+├── <span class="k">SKILL.md</span>                    <span class="n"># point d'entrée du skill lui-même</span>
+└── SPEC.md</pre>
+      </div>
+      <div class="callout info">
+        <span class="label">Ce que ça veut dire concrètement</span>
+        Rien de plus que ce que tu as déjà construit dans <code>c:/laragon/www/skils/security-ai-skill/</code> — cette étape ne fait que rendre cette arborescence visible en ligne, avec quatre fichiers ajoutés autour (<code>.gitignore</code>, <code>.github/CODEOWNERS</code>, <code>SECURITY.md</code>, et l'ajout au <code>CONTRIBUTING.md</code> existant — étapes 3 à 5).
+      </div>
+    </section>
+
+    <section id="etape-3">
+      <span class="num">Étape 3 — le cœur de la sécurité du dépôt</span>
+      <h2>Verrouiller <code>main</code> avant toute chose</h2>
+      <p class="sub">Aucune modification, d'où qu'elle vienne, ne doit atteindre <code>main</code> sans passer par ta revue.</p>
+
+      <div class="callout info">
+        <span class="label">Ce qui te protège réellement, avant même cette étape</span>
+        Un inconnu sur internet <strong>n'a jamais la permission d'écrire directement</strong> dans ton dépôt — seul un compte que tu ajoutes explicitement comme collaborateur l'a. Pour tout le monde d'autre, le seul chemin possible est déjà <em>fork → Pull Request → ton clic "Merge"</em> (glossaire ci-dessus), même sans aucune règle en plus. Cette étape 3 ajoute un filet de sécurité supplémentaire : elle t'oblige <em>toi aussi</em> à passer par une PR plutôt qu'un push direct — une discipline utile, mais pas la barrière principale contre un acteur malveillant.
+      </div>
+
+      <p>GitHub appelle cette règle une <strong>règle de protection de branche</strong>.</p>
+
+      <p><strong>Chemin pour y arriver au clic :</strong> sur la page de ton dépôt → onglet <strong>Settings</strong> (en haut, tout à droite) → dans le menu de gauche, <strong>Branches</strong> → bouton <strong>Add branch protection rule</strong> (ou <strong>Add rule</strong>). Dans le champ <strong>Branch name pattern</strong>, tape <code>main</code>. Coche ensuite les cases du tableau ci-dessous, puis <strong>Create</strong> en bas de page.</p>
+
+      <div class="callout warn">
+        <span class="label">Suis le chemin au clic ci-dessus</span>
+        Il existe une version en une seule commande <code>gh api ...</code> pour ce réglage, mais elle est fragile à recopier correctement dans un terminal Windows (guillemets, crochets). Vu que <code>gh</code> n'est de toute façon pas indispensable pour publier ce dépôt, ce guide ne la détaille pas — le chemin au clic ci-dessus donne exactement le même résultat, de façon plus fiable.
+      </div>
+
+      <table>
+        <tr><th>Case à cocher</th><th>Effet</th></tr>
+        <tr><td>Require a pull request before merging</td><td>Plus aucun push direct sur <code>main</code> — même pour toi</td></tr>
+        <tr><td>Require approvals → <code>1</code></td><td>Une PR ne se merge pas sans une revue explicite</td></tr>
+        <tr><td>Dismiss stale approvals on new commits</td><td>Un dernier commit ajouté après approbation redemande une revue</td></tr>
+        <tr><td>Require review from Code Owners</td><td>Voir <code>CODEOWNERS</code> ci-dessous — une PR touchant <code>rules/</code>, <code>prompts/</code> ou <code>SKILL.md</code> te désigne automatiquement comme relecteur</td></tr>
+        <tr><td>Allow force pushes → <em>désactivé</em></td><td>L'historique de <code>main</code> ne peut pas être réécrit</td></tr>
+        <tr><td>Allow deletions → <em>désactivé</em></td><td><code>main</code> ne peut pas être supprimée accidentellement ou malicieusement</td></tr>
+      </table>
+
+      <div class="callout warn">
+        <span class="label">Ne coche pas "Do not allow bypassing the above settings"</span>
+        Cette case appliquerait la règle même à toi en tant qu'administrateur — en solo, "Require approvals: 1" te bloquerait alors toi-même, puisque personne d'autre ne peut approuver ta propre PR. Laisse-la <strong>décochée</strong> : les contributeurs externes restent entièrement bloqués (ils n'ont jamais la permission d'écrire directement, voir ci-dessus), et toi seul gardes la possibilité de fusionner tes propres correctifs sans attendre une deuxième personne. Si tu ajoutes un jour un co-mainteneur de confiance avec accès en écriture, reviens cocher cette case à ce moment-là.
+      </div>
+
+      <h3>CODEOWNERS — toi comme dernier verrou sur le contenu sensible</h3>
+      <p>Ce fichier force ta revue spécifiquement sur les dossiers qui définissent le comportement de l'agent — les contributions sur <code>examples/</code> ou <code>docs/</code> restent plus légères à approuver, celles sur <code>rules/</code>, <code>prompts/</code>, ou <code>SKILL.md</code> ne peuvent jamais te contourner.</p>
+
+      <div class="panel panel-file">
+        <span class="path">.github/CODEOWNERS</span>
+        <pre># Toute PR nécessite ta revue par défaut
+* @ton-pseudo-github
+
+# Le comportement de l'agent — jamais mergé sans ta revue explicite
+/SKILL.md @ton-pseudo-github
+/rules/ @ton-pseudo-github
+/prompts/ @ton-pseudo-github
+/schemas/ @ton-pseudo-github</pre>
+      </div>
+
+      <p><strong>Pour créer ce fichier sans terminal :</strong> sur la page du dépôt, clique <strong>Add file → Create new file</strong>, tape <code>.github/CODEOWNERS</code> comme nom (le <code>/</code> crée automatiquement le dossier), colle le contenu ci-dessus en remplaçant <code>@ton-pseudo-github</code> par ton pseudo réel, puis <strong>Commit changes directly to the main branch</strong> en bas de page — cette action reste possible même une fois la protection activée, car GitHub te reconnaît comme le propriétaire ; un contributeur externe, lui, ne verra jamais ce bouton.</p>
+
+      <div class="callout warn">
+        <span class="label">Pourquoi ça bloque vraiment les mauvaises manipulations</span>
+        Un contributeur malintentionné peut toujours <em>proposer</em> une règle de détection affaiblie ou un prompt qui pousse l'agent à ignorer une catégorie de vulnérabilité — mais sa PR reste une proposition tant que tu ne l'as pas fusionnée. Rien de ce qu'il écrit n'atteint quiconque installe le skill avant ta relecture ligne à ligne.
+      </div>
+    </section>
+
+    <section id="etape-4">
+      <span class="num">Étape 4</span>
+      <h2>Le cadre de contribution</h2>
+      <p class="sub">Ce que voit un dev qui veut proposer une amélioration.</p>
+
+      <p><code>CONTRIBUTING.md</code> existe déjà dans le dépôt et décrit le gabarit attendu pour une nouvelle entrée <code>knowledge/</code> ou <code>rules/</code>. Ajoute en tête de ce fichier le rappel explicite du flux — c'est la phrase que chaque contributeur doit lire avant d'ouvrir une PR :</p>
+
+      <div class="panel panel-file">
+        <span class="path">CONTRIBUTING.md — à ajouter en introduction</span>
+        <pre>## Flux de contribution
+
+Ce dépôt n'accepte aucune modification directe sur `main`. Toute
+contribution passe par une Pull Request depuis un fork, et n'est
+fusionnée qu'après revue explicite d'un mainteneur — jamais
+automatiquement, quel que soit l'état des vérifications automatiques.
+
+1. Fork du dépôt, branche dédiée (`feat/xxe-rust-example`,
+   `fix/cwe-mapping-idor`, ...).
+2. Une PR par sujet — pas de PR qui mélange dix vulnérabilités
+   différentes, ça ralentit la revue et retarde ta contribution.
+3. Respecte le gabarit de la vulnérabilité concernée (voir plus bas) :
+   CWE réel et vérifié, portée strictement défensive, pas de payload
+   d'exploitation fonctionnel.
+4. Un mainteneur revoit, demande des ajustements si besoin, fusionne.
+   Aucune contribution n'est appliquée sans cette étape.</pre>
+      </div>
+
+      <h3>Ce que le mainteneur vérifie systématiquement</h3>
+      <div class="checklist">
+        <label><input type="checkbox" checked disabled> Le CWE cité existe réellement et correspond au pattern décrit</label>
+        <label><input type="checkbox" checked disabled> Aucun payload d'exploitation fonctionnel, aucune technique de contournement (WAF bypass, EDR evasion)</label>
+        <label><input type="checkbox" checked disabled> La PR ne modifie pas silencieusement <code>SKILL.md</code> pour changer le comportement par défaut de l'agent</label>
+        <label><input type="checkbox" checked disabled> Le format suit exactement le gabarit du fichier de référence (<code>knowledge/injections/sqli-union.md</code> pour une fiche, <code>rules/sast/php/sqli-union.yaml</code> pour une règle)</label>
+      </div>
+    </section>
+
+    <section id="etape-5">
+      <span class="num">Étape 5</span>
+      <h2>Fichiers communautaires à finaliser</h2>
+      <p class="sub">Deux fichiers doivent être une vraie décision, pas un gabarit oublié.</p>
+
+      <h3>LICENSE.md</h3>
+      <p><code>LICENSE.md</code> contient déjà une proposition de licence commerciale (usage autorisé sans redistribution des règles). <strong>C'est une proposition à valider avant publication</strong>, pas un texte prêt à l'emploi — relis-le et décide explicitement :</p>
+      <ul>
+        <li>Le code source du skill est-il librement redistribuable (MIT/Apache-2.0), ou seulement son usage (licence propriétaire avec clause d'attribution) ?</li>
+        <li>Si tu comptes vendre une version premium ailleurs (Capafy, voir <code>SPEC.md</code> section 10), le dépôt public doit rester cohérent avec cette distinction — ne publie pas en MIT un contenu que tu comptes vendre ensuite sous licence fermée.</li>
+      </ul>
+
+      <h3>SECURITY.md — signalement de vulnérabilité, pour ce dépôt lui-même</h3>
+      <p>Un skill de sécurité qui n'a pas sa propre procédure de signalement responsable est incohérent avec son propre objet. Ajoute :</p>
+      <div class="panel panel-file">
+        <span class="path">SECURITY.md</span>
+        <pre># Signalement de vulnérabilité
+
+Si tu identifies une vulnérabilité dans le moteur du skill lui-même
+(par exemple une règle qui masquerait un pattern dangereux, ou une
+faille dans le format des schémas permettant une injection dans le
+pipeline de patch), signale-la en privé via l'onglet **Security**
+de ce dépôt GitHub (Security → Report a vulnerability), pas via une
+issue publique.
+
+Pour un faux négatif ou un faux positif ordinaire sur une règle de
+détection, une issue publique classique convient.</pre>
+      </div>
+      <p>Même méthode que pour <code>CODEOWNERS</code> : <strong>Add file → Create new file</strong>, nom <code>SECURITY.md</code>, colle, <strong>Commit changes</strong>. Une fois ce fichier présent, l'onglet <strong>Security</strong> du dépôt propose automatiquement <strong>Report a vulnerability</strong> aux visiteurs.</p>
+    </section>
+
+    <section id="etape-6">
+      <span class="num">Étape 6</span>
+      <h2>Publier</h2>
+      <p class="sub">Dans l'ordre — l'ordre évite de pousser sur une branche pas encore protégée.</p>
+      <ol>
+        <li>Étape 1 (init local) → Étape 2 (créer + premier push) — <code>main</code> existe désormais côté GitHub, encore non protégée.</li>
+        <li>Étape 3 immédiatement après — protège <code>main</code> avant qu'un tiers ait eu la moindre chance d'y accéder.</li>
+        <li>Ajoute <code>CODEOWNERS</code>, <code>SECURITY.md</code>, la mise à jour de <code>CONTRIBUTING.md</code> via une PR normale (même toi tu passes maintenant par ce chemin — c'est la preuve que la protection fonctionne).</li>
+        <li>Ajoute les <em>topics</em> GitHub du dépôt (Settings → topics) : <code>security</code>, <code>ai-agent</code>, <code>claude-code</code>, <code>sast</code>, <code>owasp</code> — c'est ce qui te rend trouvable par les devs qui cherchent.</li>
+      </ol>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="installation">
+      <span class="num">Installation</span>
+      <h2>Utiliser le skill dans un agent de code</h2>
+      <p class="sub">Le point d'entrée est toujours <code>SKILL.md</code> — chaque agent le charge différemment.</p>
+
+      <div class="callout warn">
+        <span class="label">Commandes ci-dessous en PowerShell</span>
+        Mêmes règles qu'à l'étape 0 : ouvre PowerShell dans le dossier de <em>ton projet</em> (celui où tu veux utiliser le skill — pas <code>security-ai-skill/</code> lui-même), pas l'Invite de commandes.
+      </div>
+
+      <div class="agent-grid">
+        <div class="agent-card">
+          <h4>Claude Code <span class="tag">dossier de skill</span></h4>
+          <p>Claude Code charge automatiquement tout skill placé dans <code>.claude/skills/</code>, à la racine du projet.</p>
+          <div class="panel">
+            <pre>git clone https://github.com/ton-pseudo/securecode-ai .claude/skills/securecode-ai</pre>
+          </div>
+          <p>Claude Code détecte le skill au prochain lancement — il se déclenche automatiquement selon la <code>description</code> de <code>SKILL.md</code>, ou explicitement via <code>/securecode-ai</code>.</p>
+        </div>
+
+        <div class="agent-card">
+          <h4>Cursor <span class="tag">règle de contexte</span></h4>
+          <p>Cursor n'a pas de notion native de "skill" — on référence le skill comme règle de projet toujours chargée.</p>
+          <div class="panel">
+            <pre>git clone https://github.com/ton-pseudo/securecode-ai vendor/securecode-ai
+mkdir .cursor\rules</pre>
+          </div>
+          <p>Puis crée le fichier <code>.cursor/rules/securecode-ai.mdc</code> (dans ton éditeur, ou <strong>Add file → Create new file</strong> si le projet est aussi sur GitHub) avec ce contenu :</p>
+          <div class="panel panel-file">
+            <span class="path">.cursor/rules/securecode-ai.mdc</span>
+            <pre>---
+description: Sécurité applicative — SecureCode AI
+alwaysApply: true
+---
+Charge et applique le skill décrit dans
+vendor/securecode-ai/SKILL.md pour toute tâche
+touchant à la sécurité du code.</pre>
+          </div>
+        </div>
+
+        <div class="agent-card">
+          <h4>Codex (CLI / IDE) <span class="tag">AGENTS.md</span></h4>
+          <p>Codex lit <code>AGENTS.md</code> à la racine du projet comme instruction système persistante.</p>
+          <div class="panel">
+            <pre>git clone https://github.com/ton-pseudo/securecode-ai vendor/securecode-ai</pre>
+          </div>
+          <p>Puis ouvre (ou crée) <code>AGENTS.md</code> à la racine du projet et ajoute à la fin :</p>
+          <div class="panel panel-file">
+            <span class="path">AGENTS.md — à la suite du fichier existant</span>
+            <pre>## Sécurité
+Suis le skill vendor/securecode-ai/SKILL.md pour tout
+code touchant à l'authentification, aux entrées
+utilisateur, ou à la configuration cloud/Docker.</pre>
+          </div>
+        </div>
+
+        <div class="agent-card">
+          <h4>Windsurf / autre agent <span class="tag">fallback universel</span></h4>
+          <p>Pour un agent sans mécanisme de règle persistante, colle directement le contenu de <code>SKILL.md</code> en tout début de session — le fichier est conçu pour ça : frontmatter + workflow autonome.</p>
+          <div class="panel">
+            <pre>git clone https://github.com/ton-pseudo/securecode-ai vendor/securecode-ai
+Get-Content vendor/securecode-ai/SKILL.md</pre>
+          </div>
+          <p style="font-size:13px; color:var(--ink-soft);">Copie ce que la commande affiche, colle-le comme premier message ou instruction système de la session.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="usage">
+      <span class="num">Utilisation</span>
+      <h2>Ce que ça donne une fois installé</h2>
+      <p class="sub">Trois modes, activés par le langage naturel de la demande — jamais par une commande à mémoriser.</p>
+
+      <table>
+        <tr><th>Mode</th><th>Se déclenche quand…</th><th>Exemple de demande</th></tr>
+        <tr><td><strong>Développement assisté</strong></td><td>l'agent écrit ou modifie du code — c'est le mode par défaut en session de code</td><td><em>« Ajoute un endpoint qui recherche un utilisateur par email »</em></td></tr>
+        <tr><td><strong>Audit</strong></td><td>demande explicite, ou aucune tâche de dev en cours</td><td><em>« Audite src/ et donne-moi un rapport OWASP »</em></td></tr>
+        <tr><td><strong>Recherche zero-day</strong></td><td>demande explicite, en complément d'un audit déjà passé</td><td><em>« Cherche des failles zero-day sur le module de paiement »</em></td></tr>
+      </table>
+
+      <div class="callout info">
+        <span class="label">Rappel structurel du skill</span>
+        Le skill ne corrige jamais silencieusement du code préexistant sans confirmation, et ne pose jamais lui-même un statut <code>confirmed</code>/<code>false_positive</code> sur une faille zero-day — ces décisions restent humaines. C'est documenté dans <code>docs/FAQ.md</code> et <code>docs/ZeroDay.md</code>, à faire lire à quiconque installe le skill pour la première fois.
+      </div>
+    </section>
+
+    <section id="checklist" style="margin-bottom:40px;">
+      <span class="num">Avant de partager le lien</span>
+      <h2>Checklist finale</h2>
+      <div class="checklist">
+        <label><input type="checkbox"> <code>.gitignore</code> en place, <code>git status</code> relu avant le premier commit</label>
+        <label><input type="checkbox"> Dépôt créé en public, description et topics renseignés</label>
+        <label><input type="checkbox"> Protection de branche active sur <code>main</code> — testée en essayant un push direct (doit être refusé)</label>
+        <label><input type="checkbox"> <code>CODEOWNERS</code> commité, revue obligatoire confirmée sur <code>rules/</code> et <code>SKILL.md</code></label>
+        <label><input type="checkbox"> <code>CONTRIBUTING.md</code> mis à jour avec le rappel de flux PR-only</label>
+        <label><input type="checkbox"> <code>SECURITY.md</code> ajouté, onglet Security → Report a vulnerability activé</label>
+        <label><input type="checkbox"> <code>LICENSE.md</code> relu et validé comme décision définitive, pas comme brouillon</label>
+        <label><input type="checkbox"> README à jour — statut réel du projet, pas la mention "en développement" laissée par erreur</label>
+      </div>
+    </section>
+
+    <div class="footline">
+      SecureCode AI Enterprise Skill — fiche de publication rédigée pour accompagner la mise en ligne du dépôt. À suivre dans l'ordre des sections.
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+id: csv-injection
+language: java
+category: injections
+cwe: CWE-1236
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture d'une valeur utilisateur non neutralisée dans un
+    export CSV/Excel (via un CSVWriter, OpenCSV, Apache POI) où la valeur
+    commence potentiellement par `=`, `+`, `-` ou `@`, exploitable en
+    injection de formule ouverte à l'ouverture du fichier dans un tableur.
+  patterns:
+    - "CSVWriter.writeNext(new String[]{$var})"
+    - "Cell.setCellValue($var) (Apache POI) sans préfixe de neutralisation"
+    - "PrintWriter.println(string_concat($var, \",\"))"
+  exclude_if:
+    - "$var passe par une fonction de neutralisation des caractères déclencheurs (=, +, -, @) en début de champ avant écriture"
+    - "$var est strictement numérique (validé par type Java, pas une chaîne libre)"
+
+message: >
+  Valeur utilisateur écrite sans neutralisation dans un export CSV/Excel —
+  un attaquant peut injecter une formule (`=CMD(...)`, `=HYPERLINK(...)`)
+  exécutée à l'ouverture du fichier par la victime dans un tableur ;
+  préfixer d'une apostrophe ou neutraliser les caractères =, +, -, @ en
+  début de champ avant export (voir rules/remediation/csv-injection.md).
+
+false_positive_notes:
+  - "Un champ strictement numérique (type Java, pas une chaîne) ne peut pas porter de formule."
+  - "Si l'export est destiné exclusivement à un usage machine (jamais ouvert dans un tableur), le risque pratique est réduit — signaler tout de même en défense en profondeur."
+
+remediation_ref: rules/remediation/csv-injection.md
+knowledge_ref: knowledge/injections/csv-injection.md

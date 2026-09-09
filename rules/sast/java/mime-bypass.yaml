@@ -1,0 +1,32 @@
+id: mime-bypass
+language: java
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation d'upload reposant exclusivement sur l'en-tête
+    Content-Type déclaré par le client (MultipartFile.getContentType()), qui
+    est entièrement contrôlable par l'attaquant et ne reflète pas le contenu réel.
+  patterns:
+    - "if (multipartFile.getContentType().equals(\"image/png\")) sans vérification complémentaire du contenu binaire"
+    - "@RequestMapping(consumes = ...) filtrant uniquement sur le Content-Type HTTP déclaré, sans validation applicative du fichier reçu"
+  exclude_if:
+    - "une vérification du contenu réel (magic bytes via Tika, ou décodage/ré-encodage ImageIO) complète la vérification du Content-Type"
+    - "le Content-Type n'est utilisé qu'à titre indicatif pour l'affichage, sans incidence sur le stockage ou l'exécution du fichier"
+
+message: >
+  La validation repose uniquement sur le Content-Type déclaré par le client,
+  entièrement falsifiable — combiner avec une vérification du contenu réel du
+  fichier (Apache Tika, ou décodage via ImageIO) avant d'accepter l'upload.
+
+false_positive_notes:
+  - "Si le fichier est immédiatement re-décodé par une bibliothèque stricte (ImageIO.read renvoyant null en cas d'échec) qui rejette tout contenu non conforme, le risque est atténué — reclasser en `medium`."
+  - "Un usage interne, en confiance mutuelle entre services (mTLS, réseau fermé), réduit le risque — à documenter avant de reclasser."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

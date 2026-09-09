@@ -1,0 +1,35 @@
+id: imagetragick
+language: java
+category: upload
+cwe: CWE-78
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le traitement d'une image uploadée par un binaire externe
+    ImageMagick/GraphicsMagick invoqué depuis Java (via Runtime.exec, ProcessBuilder,
+    ou bibliothèque wrapper im4java) sans neutralisation du contenu/format,
+    exposant à l'exploit ImageTragick (CVE-2016-3714 et dérivés).
+  patterns:
+    - "ProcessBuilder(\"convert\", $userUploadedFile, ...) ou Runtime.exec(\"convert ...\") sur un fichier uploadé sans validation stricte du format"
+    - "im4java ConvertCmd/IMOperation exécuté sur un MultipartFile sans désactivation des coders dangereux (MSL, EPHEMERAL, URL, HTTPS, MVG)"
+    - "org.im4java ou appel externe à ImageMagick sans policy.xml restrictif référencé"
+  exclude_if:
+    - "le traitement d'image passe exclusivement par une bibliothèque Java pure (ImageIO, Thumbnailator, TwelveMonkeys) sans appel à un binaire externe"
+    - "une policy.xml ImageMagick restrictive désactivant MSL/EPHEMERAL/URL/HTTPS/MVG est en place et référencée dans la configuration de déploiement"
+
+message: >
+  Une image uploadée est traitée par ImageMagick/GraphicsMagick invoqué en
+  ligne de commande sans policy restrictive — expose à l'exécution de commande
+  distante (ImageTragick). Préférer une bibliothèque Java pure (ImageIO,
+  TwelveMonkeys) ou appliquer une policy.xml désactivant les coders dangereux.
+
+false_positive_notes:
+  - "Si aucun appel à un binaire ImageMagick/GraphicsMagick n'existe dans le code (traitement 100% Java pur), ce risque ne s'applique pas."
+  - "La présence d'une policy.xml restrictive documentée réduit fortement le risque — vérifier son contenu avant de confirmer en `critical`."
+
+remediation_ref: rules/remediation/imagetragick.md
+knowledge_ref: knowledge/upload/imagetragick.md

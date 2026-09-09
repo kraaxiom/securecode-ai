@@ -1,0 +1,34 @@
+id: header-injection
+language: js
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: regex
+  description: >
+    Détecte l'appel à res.setHeader/res.set/res.header avec une valeur
+    directement issue de req.query/req.body/req.params sans filtrage
+    préalable des caractères de contrôle. Regex utilisée car ces API
+    acceptent une expression de valeur arbitraire dont l'origine (filtrée ou
+    non) n'est pas toujours déterminable en ast-pattern générique.
+  patterns:
+    - "res\\.(setHeader|set|header)\\s*\\(\\s*[\"'][\\w-]+[\"']\\s*,\\s*req\\.(query|body|params)"
+    - "\\.writeHead\\s*\\(.*req\\.(query|body|params)"
+  exclude_if:
+    - "La valeur passe par un .replace(/[\\r\\n]/g, '') ou une validation par expression régulière stricte avant l'appel setHeader/set/header"
+    - "La valeur est un littéral constant, pas issue de req.query/body/params"
+
+message: >
+  Écriture d'un en-tête HTTP avec une valeur utilisateur non filtrée —
+  supprimer les caractères \r et \n avant écriture, ou valider par liste
+  blanche (voir rules/remediation/header-injection.md).
+
+false_positive_notes:
+  - "Node.js récent (>= 10) lève une erreur TypeError si \\r ou \\n sont présents dans une valeur d'en-tête via http.ServerResponse — le risque direct est réduit mais le pattern reste à corriger en défense en profondeur."
+  - "Si la valeur est castée/validée par un schéma (ex: Joi, zod) n'autorisant pas les caractères de contrôle avant l'appel, reclasser en `info`."
+
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

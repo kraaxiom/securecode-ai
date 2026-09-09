@@ -1,0 +1,15 @@
+id: bola
+category: authorization
+cwe: CWE-639
+type: iast
+instrumentation:
+  hook_points:
+    - "php: appel de méthode ORM de récupération par identifiant (ex. find(), findOrFail()) dans un contrôleur/resolver d'API"
+    - "js: requête de base de données paramétrée par un identifiant issu de req.params/req.body dans un handler de route API"
+    - "python: appel ORM get()/get_object_or_404() dans une vue/resolver DRF ou GraphQL paramétré par un identifiant client"
+    - "java: appel repository.findById() dans un contrôleur REST sans filtre de propriétaire associé"
+  taint_check: "identifiant d'objet non fiable (source: paramètre de requête HTTP/champ JSON) atteignant un appel de lecture/écriture/suppression d'objet (sink) sans passer par une clause de filtrage sur l'utilisateur/tenant courant"
+  trigger_condition: "la requête de données exécutée au sink ne contient aucune condition liant l'objet à l'identité de l'appelant (ex. absence de WHERE user_id=/tenant_id=) alors que l'identifiant provient directement de l'entrée non fiable"
+severity: high
+remediation_ref: rules/remediation/bola.md
+knowledge_ref: knowledge/authorization/bola.md

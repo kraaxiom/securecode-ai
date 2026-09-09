@@ -1,0 +1,15 @@
+id: code-injection
+category: injections
+cwe: CWE-94
+type: iast
+instrumentation:
+  hook_points:
+    - "php: eval() / create_function() / assert() avec chaîne"
+    - "python: eval() / exec() / compile()"
+    - "js: eval() / new Function() / vm.runInNewContext"
+    - "java: ScriptEngine.eval / ObjectInputStream.readObject (désérialisation)"
+  taint_check: Suivi de la donnée depuis une source HTTP ou un champ désérialisé jusqu'à un sink d'évaluation/exécution dynamique de code.
+  trigger_condition: Une valeur taintée atteint un sink d'évaluation dynamique (eval/exec/Function) sans passer par une liste blanche stricte ou un bac à sable isolé.
+severity: critical
+remediation_ref: rules/remediation/code-injection.md
+knowledge_ref: knowledge/injections/code-injection.md

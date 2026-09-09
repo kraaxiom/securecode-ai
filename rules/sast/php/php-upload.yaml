@@ -1,0 +1,33 @@
+id: php-upload
+language: php
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à move_uploaded_file() ou copy() écrivant un fichier
+    téléversé dans un répertoire du webroot sans validation préalable
+    d'une liste blanche d'extensions ni du type réel du fichier.
+  patterns:
+    - "move_uploaded_file($_FILES[_]['tmp_name'], _)"
+    - "copy($_FILES[_]['tmp_name'], _)"
+    - "move_uploaded_file(_, string_concat(_, $_FILES[_]['name'], _))"
+  exclude_if:
+    - "une extraction d'extension via pathinfo() est comparée à une liste blanche exacte avant l'appel"
+    - "le type réel du fichier est vérifié via finfo_file() ou getimagesize() avant l'appel"
+    - "le nom de destination est généré aléatoirement côté serveur (pas dérivé du nom client)"
+
+message: >
+  Upload de fichier sans validation stricte d'extension/contenu ni renommage
+  côté serveur — voir rules/remediation/php-upload.md pour la correction.
+
+false_positive_notes:
+  - "Si le répertoire de destination est hors du webroot ET que l'exécution de scripts y est désactivée par configuration serveur, le risque d'exécution directe est réduit mais la validation du contenu reste recommandée."
+  - "Si une bibliothèque d'upload dédiée (ex: League/Flysystem avec validation) encapsule l'appel, vérifier la configuration de cette bibliothèque avant de confirmer."
+
+remediation_ref: rules/remediation/php-upload.md
+knowledge_ref: knowledge/upload/php-upload.md

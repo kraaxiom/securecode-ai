@@ -1,0 +1,33 @@
+id: session-replay
+language: go
+category: sessions
+cwe: CWE-294
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de jeton (JWT via github.com/golang-jwt/jwt ou
+    jeton à usage unique) qui ne vérifie pas l'expiration ni ne marque le
+    jeton comme consommé après utilisation.
+  patterns:
+    - "jwt.Parse($tokenString, $keyFunc)" # sans vérification explicite de claims[\"exp\"] ni options WithExpirationRequired
+    - "jwt.ParseWithClaims($tokenString, $claims, $keyFunc)" # sans vérification post-parse de l'expiration
+    - "func ResetPassword($token, _) { _ }" # sans marquage du token comme utilisé (pas d'appel à une fonction MarkUsed/Delete)
+  exclude_if:
+    - "les claims sont explicitement vérifiées après parsing (ex: claims.VerifyExpiresAt ou jwt.WithExpirationRequired())"
+    - "le token à usage unique est marqué consommé (suppression en base, colonne used_at) immédiatement après une utilisation réussie"
+
+message: >
+  Jeton d'authentification ou de réinitialisation validé sans contrôle
+  d'expiration ou sans mécanisme anti-rejeu — un jeton intercepté pourrait
+  être réutilisé par un attaquant (voir rules/remediation/session-replay.md).
+
+false_positive_notes:
+  - "La bibliothèque golang-jwt vérifie exp par défaut lors du Parse si le claim est présent, mais ne rejette pas un jeton sans exp du tout ; vérifier la présence de WithExpirationRequired() ou d'une validation manuelle."
+  - "Si le token à usage unique est supprimé/marqué en base immédiatement après consommation, ce n'est pas un vrai positif."
+
+remediation_ref: rules/remediation/session-replay.md
+knowledge_ref: knowledge/sessions/session-replay.md

@@ -1,0 +1,32 @@
+id: message-injection
+language: php
+category: websocket
+cwe: CWE-20
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage direct du contenu d'un message WebSocket (onMessage) dans
+    une requête SQL concaténée ou dans une rediffusion (broadcast/send) sans
+    validation ni échappement.
+  patterns:
+    - "function onMessage($from, $msg) { ... $pdo->query(string_concat(_, $data[...], _)) ... }"
+    - "function onMessage($from, $msg) { ... $client->send($data[...]) ... }"
+  exclude_if:
+    - "Le contenu du message passe par une validation de schéma (type/longueur/format) avant utilisation"
+    - "La requête SQL utilise un paramètre lié (prepare/execute) au lieu d'une concaténation"
+    - "Le contenu rediffusé est passé par htmlspecialchars ou un encodeur équivalent avant envoi"
+
+message: >
+  Contenu de message WebSocket utilisé sans validation ni échappement — risque
+  d'injection SQL ou XSS diffusé (voir rules/remediation/message-injection.md).
+
+false_positive_notes:
+  - "Si le message provient exclusivement d'un service interne de confiance (pas d'un client externe), le risque est réduit — reclasser en `info`."
+  - "Si une couche de validation de schéma est appliquée dans un middleware amont non visible dans ce fichier, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/message-injection.md
+knowledge_ref: knowledge/websocket/message-injection.md

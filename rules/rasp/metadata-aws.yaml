@@ -1,0 +1,63 @@
+id: metadata-aws
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+action_default: block
+
+description: >
+  Règle de protection runtime (RASP) : hooke les appels du client HTTP sortant
+  (et, le cas échéant, les connexions socket bas niveau) juste avant l'émission
+  effective de la requête, résout la destination et bloque en temps réel toute
+  connexion vers une plage d'adresses privée/link-local (RFC 1918, 127.0.0.0/8,
+  169.254.0.0/16), vers un endpoint de métadonnées cloud connu (AWS/Azure/GCP),
+  ou vers un port associé à un service interne sensible (ex: Redis, Elasticsearch)
+  lorsqu'il ne fait pas partie d'une allow-list applicative explicite — dernière
+  ligne de défense en production pour le scénario SSRF metadata AWS, complémentaire au
+  correctif dans le code source (rules/remediation/metadata-aws.md), jamais un
+  substitut à celui-ci.
+
+hook_points:
+  - "Interception de l'appel au client HTTP sortant (bibliothèque/framework standard) juste avant résolution DNS et connexion TCP"
+  - "Interception de l'ouverture de socket bas niveau lorsque le client HTTP applicatif délègue la connexion à une couche réseau instrumentable"
+
+detection_condition: >
+  La destination résolue (après résolution DNS effective, pas seulement l'hôte
+  textuel fourni) appartient à une plage d'adresse privée, loopback, link-local,
+  ou correspond à un nom d'hôte/IP de service de métadonnées cloud connu, ET
+  cette destination provient directement ou indirectement d'une donnée reçue
+  dans la requête HTTP courante (query/body/header/cookie) sans passage par une
+  allow-list applicative explicite.
+
+action:
+  default: block
+  options: [block, log_only, alert_only]
+  description: >
+    `block` interrompt la tentative de connexion sortante et retourne une erreur
+    générique à l'appelant applicatif (jamais le détail de l'adresse cible
+    résolue) ; `log_only`/`alert_only` sont des modes de mise en observation
+    avant activation du blocage en production, recommandés pendant les premières
+    semaines de déploiement pour calibrer les faux positifs sur les intégrations
+    internes légitimes.
+
+response_on_block:
+  http_status: 502
+  message: "Ressource distante inaccessible."
+  log_fields: ["timestamp", "route", "rule_id", "resolved_destination_truncated", "source_ip_if_available"]
+
+exclude_if:
+  - "La destination résolue correspond à une entrée de l'allow-list applicative de destinations sortantes explicitement configurée par l'équipe produit (faux positif de configuration)"
+
+false_positive_notes:
+  - "Des intégrations internes légitimes (ex: appel à un microservice sur le même réseau privé) peuvent déclencher un faux positif si elles ne sont pas déclarées dans l'allow-list — privilégier un mode `alert_only` en phase de calibration avant `block` strict."
+
+performance_notes: >
+  La résolution DNS et la vérification de plage d'adresse à chaque appel sortant
+  ont un coût par requête généralement négligeable, mais doivent être mesurées
+  sur le profil de charge réel du projet avant activation en production — voir
+  docs/Performance.md.
+
+remediation_ref: rules/remediation/metadata-aws.md
+knowledge_ref: knowledge/ssrf/metadata-aws.md
+sast_ref: rules/sast/php/metadata-aws.yaml

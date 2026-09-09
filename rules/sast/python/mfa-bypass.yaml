@@ -1,0 +1,36 @@
+id: mfa-bypass
+language: python
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un flux d'authentification à deux étapes où la session est
+    marquée comme authentifiée (login(request, user) de Django, ou
+    session['user_id'] = ...) avant la vérification effective du second
+    facteur, ou un paramètre permettant de sauter la vérification MFA
+    (ex: paramètre skip_mfa contrôlé par le client).
+  patterns:
+    - "login($request, $user); ...; verify_otp($code)"
+    - "if $request.GET.get('skip_mfa'): ..."
+    - "session['mfa_verified'] = True  # positionné avant vérification du code"
+  exclude_if:
+    - "la session n'accorde un accès complet qu'après confirmation explicite du second facteur (état intermédiaire distinct type 'pending_mfa' jusqu'à validation)"
+
+message: >
+  Le second facteur d'authentification peut être contourné — la session
+  est établie ou marquée valide avant la vérification effective du code
+  MFA, ou un paramètre client permet de sauter cette étape. Séparer
+  strictement l'état 'authentifié niveau 1' de l'état 'pleinement
+  authentifié' jusqu'à validation du second facteur (voir
+  rules/remediation/mfa-bypass.md).
+
+false_positive_notes:
+  - "Un état de session intermédiaire explicitement restreint (accès limité à la seule page de saisie du code OTP, aucune autre route accessible) n'est pas un contournement complet — vérifier le périmètre réel accordé."
+
+remediation_ref: rules/remediation/mfa-bypass.md
+knowledge_ref: knowledge/auth/mfa-bypass.md

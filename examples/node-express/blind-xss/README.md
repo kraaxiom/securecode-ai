@@ -1,0 +1,3 @@
+# Blind XSS
+
+`vulnerable.js` affiche des données externes (User-Agent, message d'un visiteur non authentifié) dans un dashboard admin par simple concaténation de chaînes, sans aucun encodage de sortie. `fixed.js` fait passer le même affichage par un moteur de templates (EJS) à échappement automatique, neutralisant toute balise HTML injectée avant qu'elle n'atteigne le navigateur de l'administrateur. Il s'agit d'une variante de CWE-79 (Improper Neutralization of Input During Web Page Generation) où l'exécution a lieu dans un contexte que l'attaquant ne peut pas observer directement, d'où l'importance d'échapper systématiquement même les vues internes.

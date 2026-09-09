@@ -1,0 +1,34 @@
+id: vulnerable-libraries
+language: java
+category: supply-chain
+cwe: CWE-1035
+owasp: A06:2021-Vulnerable-and-Outdated-Components
+severity: medium
+confidence_default: high
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte des dépendances obsolètes ou non maintenues (pas de mise à jour
+    depuis plusieurs années, absence de version fixée = résolution de la
+    dernière version transitoire imprévisible) dans pom.xml/build.gradle,
+    sans CVE précise identifiée mais représentant un risque de maintenance
+    et de surface d'attaque non auditée.
+  patterns:
+    - "pom.xml: <dependency> sans balise <version> explicite, dépendant du parent POM ou du BOM sans épinglage (résolution non déterministe)"
+    - "build.gradle: implementation 'group:artifact:+' ou 'group:artifact:latest.release' (version dynamique non figée)"
+    - "pom.xml: version majeure très ancienne d'un framework central (ex: spring-framework 3.x, struts 1.x, hibernate 3.x) toujours en dépendance directe"
+    - "absence de plugin d'audit de dépendances (owasp-dependency-check-maven, gradle-versions-plugin) configuré dans le build"
+
+message: >
+  Dépendance sans version figée ou notoirement obsolète, dont la surface de
+  vulnérabilité n'est pas auditée automatiquement. Épingler des versions
+  précises et intégrer un scan de dépendances (OWASP Dependency-Check,
+  Snyk, Dependabot) dans le pipeline CI/CD.
+
+false_positive_notes:
+  - "Les BOM (Bill of Materials, ex: spring-boot-dependencies) gèrent volontairement les versions de façon centralisée — ce n'est pas un problème en soi si le BOM lui-même est à jour."
+  - "Si un plugin d'audit de dépendances est configuré ailleurs dans le build multi-module (parent POM), vérifier avant de remonter la règle sur chaque module enfant."
+
+remediation_ref: rules/remediation/vulnerable-libraries.md
+knowledge_ref: knowledge/supply-chain/vulnerable-libraries.md

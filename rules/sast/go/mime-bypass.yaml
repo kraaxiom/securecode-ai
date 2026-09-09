@@ -1,0 +1,36 @@
+id: mime-bypass
+language: go
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une validation de fichier téléversé basée uniquement sur
+    l'en-tête Content-Type déclaré par le client dans la partie
+    multipart (header.Header.Get("Content-Type")), sans vérification du
+    contenu réel.
+  patterns:
+    - "$header.Header.Get(\"Content-Type\") == $mime"
+    - "strings.Contains($header.Header.Get(\"Content-Type\"), $mime)"
+    - "$allowedTypes[$header.Header.Get(\"Content-Type\")]"
+  exclude_if:
+    - "le type réel du fichier est déterminé côté serveur à partir du contenu (ex: http.DetectContentType sur les octets réellement lus) en complément de l'en-tête déclaré"
+    - "une incohérence entre extension déclarée, Content-Type déclaré et contenu détecté côté serveur entraîne un rejet explicite"
+
+message: >
+  Validation d'un fichier téléversé basée uniquement sur l'en-tête
+  Content-Type de la partie multipart (valeur entièrement contrôlée par
+  le client, falsifiable) — combiner avec http.DetectContentType sur le
+  contenu réel et une liste blanche d'extensions (voir
+  rules/remediation/mime-bypass.md).
+
+false_positive_notes:
+  - "Si le header Content-Type déclaré n'est utilisé qu'à titre indicatif et que l'acceptation repose sur http.DetectContentType appliqué au contenu réel, ce n'est pas exploitable — reclasser en `info`."
+  - "Si un middleware générique applique déjà une vérification de contenu systématique en amont, vérifier manuellement avant de remonter en `high`."
+
+remediation_ref: rules/remediation/mime-bypass.md
+knowledge_ref: knowledge/upload/mime-bypass.md

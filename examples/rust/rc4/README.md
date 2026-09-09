@@ -1,0 +1,3 @@
+# RC4 — Chiffrement par flux cassé
+
+`vulnerable.rs` chiffre un flux de données avec RC4, un algorithme présentant des biais statistiques connus dans son flux de sortie et interdit dans TLS depuis la RFC 7465, ce qui correspond à CWE-327 (Use of a Broken or Risky Cryptographic Algorithm). `fixed.rs` migre vers AES-256-GCM avec un nonce unique et aléatoire à chaque chiffrement, éliminant tout usage de RC4. Cette correction applique la recommandation de `rules/remediation/rc4.md` : désactiver toute suite RC4 côté serveur/client et migrer vers AES-GCM ou ChaCha20-Poly1305 pour le chiffrement symétrique applicatif.

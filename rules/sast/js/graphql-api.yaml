@@ -1,0 +1,31 @@
+id: graphql-api
+language: js
+category: api
+cwe: CWE-200
+owasp: API3:2023-Broken Object Property Level Authorization
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'instanciation d'un serveur Apollo/GraphQL Yoga sans
+    `introspection: false` en production, et sans règles de validation
+    limitant la profondeur/complexité des requêtes.
+  patterns:
+    - "new ApolloServer({ typeDefs, resolvers })" # sans introspection: false / validationRules
+    - "new ApolloServer({ _, introspection: true, _ })"
+  exclude_if:
+    - "introspection est conditionné à process.env.NODE_ENV !== 'production' ou équivalent"
+    - "validationRules inclut depthLimit(...) ou createComplexityLimitRule(...)"
+
+message: >
+  Serveur GraphQL sans désactivation conditionnelle de l'introspection ni
+  limite de profondeur de requête (voir rules/remediation/graphql-api.md).
+
+false_positive_notes:
+  - "Environnement de développement local explicitement isolé du déploiement production : non applicable si le fichier n'est jamais buildé pour prod."
+  - "Si une passerelle API en amont applique déjà cost analysis/depth limiting, réduire la sévérité après vérification manuelle."
+
+remediation_ref: rules/remediation/graphql-api.md
+knowledge_ref: knowledge/api/graphql-api.md

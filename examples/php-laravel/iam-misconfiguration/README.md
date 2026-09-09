@@ -1,0 +1,3 @@
+# Mauvaise configuration IAM
+
+La version vulnérable authentifie le service applicatif avec des identifiants statiques rattachés à une policy IAM `Action: *, Resource: *`, accordant un contrôle administrateur complet sur le compte cloud pour une simple opération de lecture S3, ce qui viole le principe du moindre privilège et amplifie l'impact d'une éventuelle fuite de clés (CWE-269, Improper Privilege Management). La version corrigée obtient des identifiants temporaires via `AssumeRole` sur un rôle applicatif scoped (`app-read-role`), limité aux actions nécessaires et valable seulement 15 minutes, éliminant l'usage de clés statiques à privilèges larges.

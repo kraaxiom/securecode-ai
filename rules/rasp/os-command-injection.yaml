@@ -1,0 +1,12 @@
+id: os-command-injection
+category: injections
+cwe: CWE-78
+type: rasp
+guard:
+  sink: appel d'exécution de commande shell (exec, system, popen, subprocess avec shell=True, Runtime.exec, child_process.exec)
+  block_condition: la commande évaluée à l'exécution contient un ou plusieurs métacaractères shell (`;`, `|`, `&`, `` ` ``, `$(`, `>`, `<`) directement traçables à une entrée utilisateur de la requête courante
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/os-command-injection.md
+knowledge_ref: knowledge/injections/os-command-injection.md

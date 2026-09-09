@@ -1,0 +1,36 @@
+id: missing-authentication
+language: python
+category: websocket
+cwe: CWE-306
+owasp: A01:2021-Broken Access Control
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un consumer/handler WebSocket qui accepte la connexion et traite
+    des messages sensibles (lecture/écriture de données, actions admin) sans
+    jamais vérifier `self.scope['user'].is_authenticated` (Django Channels),
+    un jeton de session, ou une authentification équivalente avant `accept()`
+    ou dans les handlers de message.
+  patterns:
+    - "class *(AsyncWebsocketConsumer): def connect(self): self.accept() without checking self.scope['user'].is_authenticated"
+    - "async def handler(websocket, path): ... without any auth check before processing privileged messages"
+    - "@socketio.on('connect') def handler(): ... without checking flask_login.current_user.is_authenticated or session token"
+  exclude_if:
+    - "self.scope['user'].is_authenticated (ou équivalent) est vérifié avant self.accept() ou au début de chaque handler de message"
+    - "un middleware ASGI (AuthMiddlewareStack) applique une vérification globale et le consumer refuse explicitement les AnonymousUser"
+
+message: >
+  Canal WebSocket traitant des messages sensibles sans vérification
+  d'authentification — n'importe quel client peut se connecter et interagir
+  avec des données ou actions protégées (voir
+  rules/remediation/missing-authentication.md).
+
+false_positive_notes:
+  - "Vérifier si AuthMiddlewareStack est appliqué globalement dans asgi.py avant de considérer le consumer comme non protégé."
+  - "Un canal strictement public en lecture seule (ex: flux de données publiques) peut légitimement ne pas exiger d'authentification — reclasser en `info` si confirmé."
+
+remediation_ref: rules/remediation/missing-authentication.md
+knowledge_ref: knowledge/websocket/missing-authentication.md

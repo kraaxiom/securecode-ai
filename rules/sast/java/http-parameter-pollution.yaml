@@ -1,0 +1,37 @@
+id: http-parameter-pollution
+language: java
+category: injections
+cwe: CWE-235
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de HttpServletRequest.getParameter() (qui ne
+    retourne que la première valeur silencieusement) dans un contexte de
+    décision de sécurité (autorisation, montant, identifiant), alors que le
+    même paramètre peut être fourni plusieurs fois avec des valeurs
+    contradictoires exploitées différemment par des couches en amont
+    (WAF, proxy, backend).
+  patterns:
+    - "HttpServletRequest.getParameter($name) utilisé directement dans une vérification d'autorisation ou un calcul de prix/montant"
+  exclude_if:
+    - "l'application utilise getParameterValues() et traite explicitement toutes les occurrences avec une logique définie (rejet si >1 valeur)"
+    - "le paramètre concerné n'a aucun impact sur une décision de sécurité ou métier sensible"
+
+message: >
+  Paramètre HTTP potentiellement fourni plusieurs fois utilisé dans une
+  décision sensible sans vérification du nombre d'occurrences — un
+  attaquant peut exploiter une pollution de paramètres pour faire diverger
+  l'interprétation entre couches (WAF/proxy/application) ; utiliser
+  getParameterValues() et rejeter explicitement les doublons sur les
+  paramètres sensibles (voir rules/remediation/http-parameter-pollution.md).
+
+false_positive_notes:
+  - "Si le endpoint est protégé en amont par une validation stricte du schéma de requête (un seul paramètre autorisé, appliqué au niveau gateway), le risque est réduit."
+  - "Les paramètres purement cosmétiques (tri, pagination) sans impact sécurité ne justifient pas une alerte élevée."
+
+remediation_ref: rules/remediation/http-parameter-pollution.md
+knowledge_ref: knowledge/injections/http-parameter-pollution.md

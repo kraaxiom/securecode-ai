@@ -1,0 +1,3 @@
+# Injection LDAP (CWE-90)
+
+Le code vulnérable construit le filtre de recherche LDAP `(uid=...)` par concaténation directe du paramètre `uid` fourni par l'utilisateur, ce qui permet à un attaquant d'injecter des méta-caractères de filtre (`*`, `(`, `)`, `\`) pour modifier la logique de la requête et contourner un contrôle d'authentification ou lister des entrées non autorisées. La version corrigée s'appuie sur `EqualsFilter` de Spring LDAP, qui échappe automatiquement les caractères spéciaux conformément à RFC 4515, et ajoute une validation stricte du format attendu de l'identifiant avant toute construction du filtre.

@@ -1,0 +1,19 @@
+id: stacked-query-sqli
+category: injections
+cwe: CWE-89
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: POST
+  target: paramètre de requête ou champ de formulaire concaténé dans une requête SQL exécutée via un pilote autorisant l'exécution multi-instructions
+  technique: differential-response
+  indicators:
+    - effet observable secondaire (ex. modification d'un compteur ou d'un état applicatif) corrélé à l'injection d'un point-virgule suivi d'une instruction SQL distincte non destructive
+    - délai ou changement de comportement de la réponse après soumission d'une classe d'entrée contenant un séparateur d'instruction SQL
+    - message d'erreur du pilote base de données signalant une seconde instruction inattendue
+false_positive_notes:
+  - de nombreux pilotes désactivent les requêtes empilées par défaut, confirmer que le pilote/driver cible les autorise avant de conclure
+  - vérifier que l'effet observé n'est pas dû à une action légitime concurrente
+remediation_ref: rules/remediation/stacked-query-sqli.md
+knowledge_ref: knowledge/injections/stacked-query-sqli.md

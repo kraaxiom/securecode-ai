@@ -1,0 +1,3 @@
+# Configuration TLS faible
+
+`vulnerable.rs` construit un client HTTP qui désactive explicitement la vérification du certificat et du hostname (`danger_accept_invalid_certs`, `danger_accept_invalid_hostnames`), exposant le canal chiffré à l'interception et à la falsification de trafic (MITM), ce qui correspond à CWE-326 (Inadequate Encryption Strength). `fixed.rs` conserve la vérification stricte du certificat par défaut et impose une version TLS minimale de 1.2 via `min_tls_version`. Cette correction applique la recommandation de `rules/remediation/weak-tls.md` : ne jamais désactiver la vérification de certificat, y compris en développement, et restreindre la configuration à une version minimale TLS 1.2 avec des suites modernes.

@@ -1,0 +1,3 @@
+# Secrets exposés dans le code (CWE-798)
+
+Le code vulnérable code en dur une clé API Stripe, des identifiants AWS et une chaîne de connexion base de données directement dans le source, et les journalise en clair — ces secrets finissent dans l'historique Git et les logs applicatifs, compromis dès leur premier commit. La correction supprime tout secret du code : les identifiants AWS sont résolus via la chaîne de credentials standard du SDK (rôle IAM), les autres secrets sont chargés depuis l'environnement d'exécution alimenté par un gestionnaire de secrets externe, et une implémentation `Debug` masquée empêche toute fuite accidentelle en journalisation. Élimine la classe de vulnérabilité CWE-798 (Use of Hard-coded Credentials).

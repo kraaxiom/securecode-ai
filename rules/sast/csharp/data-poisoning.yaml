@@ -1,0 +1,37 @@
+id: data-poisoning
+language: csharp
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un pipeline de fine-tuning Azure OpenAI/Semantic Kernel qui
+    ingère des données provenant d'une source externe modifiable (upload
+    utilisateur, scraping, contribution communautaire) sans étape de
+    validation/nettoyage/quarantaine avant intégration au jeu d'entraînement.
+  patterns:
+    - "await openAIClient.GetFineTuningJobs().CreateAsync(new FineTuningJobCreationOptions(trainingFile)) où trainingFile provient directement d'un upload utilisateur sans revue"
+    - "File.WriteAllLines(trainingJsonlPath, scrapedContent) — ajout direct de contenu scrapé/collecté sans étape de filtrage à un fichier utilisé pour le fine-tuning"
+    - "dataset.Add(userProvidedRecord) sans validation de schéma/contenu ni détection d'anomalies avant intégration au jeu d'entraînement"
+  exclude_if:
+    - "une étape de validation/assainissement (détection d'anomalies statistiques, revue humaine par échantillonnage, séparation stricte des sources) est appliquée avant intégration au dataset d'entraînement"
+
+message: >
+  Données provenant d'une source externe modifiable intégrées à un pipeline
+  de fine-tuning sans validation ni quarantaine — un attaquant peut
+  empoisonner le jeu de données pour biaiser ou compromettre le modèle
+  (backdoor, dégradation ciblée). Mettre en place une validation de
+  provenance, une détection d'anomalies statistiques, et une séparation
+  stricte entre sources fiables et non fiables — voir
+  rules/remediation/data-poisoning.md.
+
+false_positive_notes:
+  - "Un jeu de données provenant intégralement de sources internes contrôlées (pas d'upload externe) n'est pas concerné."
+  - "Si le fine-tuning est effectué sur un environnement isolé de test sans déploiement en production, la sévérité peut être réduite à `medium`."
+
+remediation_ref: rules/remediation/data-poisoning.md
+knowledge_ref: knowledge/llm/data-poisoning.md

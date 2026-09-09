@@ -1,0 +1,37 @@
+id: reflected-xss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'écriture directe d'un paramètre de requête HTTP dans la
+    réponse (via response.getWriter(), un template Thymeleaf en mode
+    unescaped, ou une redirection JSP `<%= %>`) sans échappement HTML
+    contextuel.
+  patterns:
+    - "response.getWriter().write(request.getParameter($name))"
+    - "response.getWriter().println(string_concat(_, request.getParameter($name), _))"
+    - "th:utext=\"${param.$name}\""
+    - "<%= request.getParameter($name) %>"
+  exclude_if:
+    - "$var passe par StringEscapeUtils.escapeHtml4 ou un encodeur contextuel OWASP Java Encoder avant écriture"
+    - "th:text est utilisé à la place de th:utext (échappement automatique Thymeleaf)"
+
+message: >
+  Paramètre de requête HTTP réinjecté directement dans la réponse HTML sans
+  échappement — un attaquant peut faire exécuter du JavaScript dans le
+  navigateur de la victime via une URL forgée (XSS réfléchi) ; utiliser
+  th:text (jamais th:utext) ou l'OWASP Java Encoder pour tout contenu
+  dynamique inséré en HTML (voir rules/remediation/reflected-xss.md).
+
+false_positive_notes:
+  - "th:text échappe automatiquement en Thymeleaf — seul th:utext/th:inline non échappé est concerné."
+  - "Une réponse strictement typée Content-Type: application/json n'est pas interprétée comme HTML par le navigateur et n'est pas concernée par ce vecteur direct."
+
+remediation_ref: rules/remediation/reflected-xss.md
+knowledge_ref: knowledge/xss/reflected-xss.md

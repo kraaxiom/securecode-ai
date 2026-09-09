@@ -1,0 +1,36 @@
+id: grpc
+language: csharp
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un service gRPC .NET (Grpc.AspNetCore) dont les méthodes RPC ne
+    passent par aucun intercepteur d'authentification/autorisation global,
+    ou dont la réflexion gRPC (Grpc.AspNetCore.Server.Reflection) reste
+    active sans garde d'environnement.
+  patterns:
+    - "public class $Service : $ServiceBase { public override Task<$Resp> $Method($Req request, ServerCallContext context) { ... } }"
+    - "services.AddGrpc()"
+    - "endpoints.MapGrpcReflectionService()"
+    - "services.AddGrpc(options => { options.Interceptors.Clear(); })"
+  exclude_if:
+    - "la méthode ou le service est décoré de [Authorize] avec policy vérifiée, ou un intercepteur global d'authentification est enregistré (options.Interceptors.Add<AuthInterceptor>())"
+    - "MapGrpcReflectionService est appelé uniquement sous une garde if (env.IsDevelopment())"
+
+message: >
+  Service ou méthode gRPC sans intercepteur d'authentification/autorisation,
+  ou réflexion gRPC active sans restriction d'environnement — appliquer un
+  intercepteur global et désactiver la réflexion en production
+  (voir rules/remediation/grpc.md).
+
+false_positive_notes:
+  - "Si la méthode est un simple health check public volontairement non protégé, reclasser en `info`."
+  - "Vérifier qu'un intercepteur global n'est pas déjà enregistré au niveau du serveur (Program.cs) avant de remonter en `high`."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

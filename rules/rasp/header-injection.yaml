@@ -1,0 +1,12 @@
+id: header-injection
+category: injections
+cwe: CWE-113
+type: rasp
+guard:
+  sink: fonction de définition d'en-tête de réponse HTTP (header(), setHeader(), response.headers)
+  block_condition: la valeur passée à la fonction de définition d'en-tête contient un caractère CR ou LF issu d'une entrée non neutralisée
+  action: sanitize
+  fail_mode: fail-closed
+severity: medium
+remediation_ref: rules/remediation/header-injection.md
+knowledge_ref: knowledge/injections/header-injection.md

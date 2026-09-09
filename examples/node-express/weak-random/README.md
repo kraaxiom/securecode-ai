@@ -1,0 +1,3 @@
+## Générateur de nombres aléatoires non cryptographique (CWE-338)
+
+Le code vulnérable génère le token de réinitialisation de mot de passe avec `Math.random()`, un générateur pseudo-aléatoire statistique dont l'état interne peut être déduit ou prédit, rendant les tokens émis potentiellement devinables par un attaquant. La correction utilise `crypto.randomBytes(32)`, un générateur cryptographiquement sûr (CSPRNG) fourni par Node.js, garantissant une entropie suffisante (au moins 128 bits) pour un usage sécuritaire. Cette même règle s'applique à toute génération de clé, sel, IV ou identifiant de session : jamais de PRNG standard, toujours un CSPRNG dédié.

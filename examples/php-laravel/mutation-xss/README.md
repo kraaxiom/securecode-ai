@@ -1,0 +1,3 @@
+# Mutation-based XSS / mXSS (CWE-79)
+
+Le contenu riche d'un article était sanitisé avec `strip_tags()` et une liste blanche de balises, une méthode obsolète qui ne tient pas compte des quirks de reparsing HTML du navigateur pouvant faire réapparaître une structure active après vérification. La correction remplace cette sanitisation par HTMLPurifier, une bibliothèque activement maintenue et conçue pour résister aux vecteurs de mutation connus, appliquée avant stockage. Cela adresse le CWE-79 (Improper Neutralization of Input During Web Page Generation) dans son cas spécifique de contournement par mutation entre sanitisation et rendu final.

@@ -1,0 +1,40 @@
+id: uxss
+language: java
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, côté serveur Java exposant une API/webview mobile hybride
+    (Android WebView via un backend Java partagé, ou passerelle
+    JavaScript-bridge), l'exposition d'une méthode native accessible depuis
+    le contenu web sans validation d'origine, pouvant être détournée pour
+    exécuter du JavaScript dans un contexte privilégié cross-origine
+    (Universal XSS).
+  patterns:
+    - "WebView.addJavascriptInterface($obj, $name) sans restriction @JavascriptInterface sur les méthodes exposées"
+    - "WebViewClient.shouldOverrideUrlLoading sans validation stricte de l'origine avant exécution d'action privilégiée"
+  exclude_if:
+    - "seules les méthodes explicitement annotées @JavascriptInterface sont exposées, avec validation de l'origine appelante"
+    - "targetSdkVersion >= 17 avec annotation @JavascriptInterface obligatoire déjà appliquée strictement"
+
+message: >
+  Interface JavaScript native exposée à un contenu web sans validation
+  stricte d'origine — un attaquant capable d'injecter du contenu dans la
+  WebView (via une page tierce chargée ou un XSS classique) peut détourner
+  le pont natif pour exécuter des actions privilégiées cross-origine
+  (Universal XSS) ; restreindre les méthodes exposées via
+  @JavascriptInterface, valider l'origine à chaque appel, et éviter de
+  charger du contenu non fiable dans la même WebView que le contenu de
+  confiance (voir rules/remediation/uxss.md).
+
+false_positive_notes:
+  - "Confiance faible : nécessite une revue manuelle de l'architecture WebView (origines chargées, sandboxing) pour confirmer l'exploitabilité réelle."
+  - "Une validation stricte de l'origine à chaque appel de méthode exposée réduit fortement le risque."
+
+remediation_ref: rules/remediation/uxss.md
+knowledge_ref: knowledge/xss/uxss.md

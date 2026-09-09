@@ -1,0 +1,35 @@
+id: cookie-poisoning
+language: python
+category: sessions
+cwe: CWE-565
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une valeur de cookie (Flask request.cookies, Django request.COOKIES,
+    FastAPI Cookie()) lue puis utilisée directement pour restaurer un état
+    applicatif (rôle, identifiant utilisateur, prix) sans vérification
+    d'intégrité (signature/HMAC) ni validation côté serveur.
+  patterns:
+    - "request.cookies.get($_) -> utilisé sans vérification dans une décision d'autorisation ou métier"
+    - "request.COOKIES[$_] -> assigné directement à un attribut de session/rôle/prix"
+    - "Cookie($_) (FastAPI) -> valeur injectée telle quelle dans une requête ORM ou un calcul métier"
+  exclude_if:
+    - "Le cookie est signé et vérifié via itsdangerous.URLSafeSerializer / django.core.signing avant usage"
+    - "Le cookie ne contient qu'une préférence non sensible (thème, langue) sans impact sécurité"
+
+message: >
+  Cookie applicatif utilisé sans vérification d'intégrité — un attaquant peut
+  modifier librement son cookie pour altérer son rôle ou l'état métier.
+  Signer le cookie (itsdangerous / django.core.signing) et revalider sa valeur
+  côté serveur avant toute décision d'autorisation.
+
+false_positive_notes:
+  - "Si la valeur du cookie est systématiquement recroisée avec une source de vérité serveur (session store, DB), le risque est réduit — reclasser en `medium`."
+  - "Les cookies Flask/Django de session native (session[...]) sont déjà signés par défaut ; ne pas remonter sauf si SECRET_KEY est faible ou codé en dur."
+
+remediation_ref: rules/remediation/cookie-poisoning.md
+knowledge_ref: knowledge/sessions/cookie-poisoning.md

@@ -1,0 +1,36 @@
+id: css-injection
+language: java
+category: frontend
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une entrée utilisateur injectée dans un attribut style ou une
+    balise <style> via un template Thymeleaf/JSP sans échappement, permettant
+    l'injection de CSS malveillant (exfiltration de données via sélecteurs
+    d'attributs, keylogging CSS).
+  patterns:
+    - "th:attr=\"style=${userControlledValue}\" ou th:style=\"${userControlledValue}\" sans validation de format (couleur/dimension) en Thymeleaf"
+    - "JSP <style>${userControlledValue}</style> ou attribut style=\"<%= request.getParameter(...) %>\" sans échappement ni validation"
+    - "concaténation de valeur utilisateur dans un attribut style HTML généré côté serveur sans passer par th:utext neutralisé ou une liste blanche de valeurs"
+  exclude_if:
+    - "la valeur injectée dans le style est strictement validée par un format contrôlé (regex couleur hexadécimale, valeur numérique bornée)"
+    - "Thymeleaf utilise th:text (échappement HTML par défaut) plutôt que th:utext pour toute valeur utilisateur, empêchant l'injection de balises <style>"
+
+message: >
+  Une valeur contrôlée par l'utilisateur est injectée dans un attribut style
+  ou une feuille de style sans validation — permet l'injection CSS
+  (exfiltration de données via sélecteurs CSS, keylogging visuel). Valider
+  strictement le format attendu (couleur, dimension) avant injection, ou
+  n'utiliser que th:text avec échappement automatique.
+
+false_positive_notes:
+  - "Si la valeur est un simple identifiant de classe CSS choisi dans une liste blanche fixe côté serveur (pas de valeur libre), ce risque ne s'applique pas."
+  - "Thymeleaf échappe par défaut avec th:text — seul th:utext ou th:attr mal utilisé introduit ce risque."
+
+remediation_ref: rules/remediation/css-injection.md
+knowledge_ref: knowledge/frontend/css-injection.md

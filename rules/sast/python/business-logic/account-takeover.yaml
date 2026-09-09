@@ -1,0 +1,37 @@
+id: account-takeover
+language: python
+category: business-logic
+cwe: CWE-640
+owasp: A07:2021-Identification-and-Authentication-Failures
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte des flux Python de réinitialisation de mot de passe ou de
+    changement d'e-mail sans contrôles anti-abus : token prévisible, absence
+    d'expiration, absence de vérification que l'utilisateur courant est bien
+    le propriétaire du compte avant la modification.
+  patterns:
+    - "reset_token = str(uuid.uuid1()) ou random.randint(...)/str(random.random()) utilisé comme token de réinitialisation — générateur non cryptographiquement sûr (au lieu de secrets.token_urlsafe)"
+    - "def reset_password(token, new_password): user = User.objects.get(reset_token=token); user.set_password(new_password) — sans vérification d'expiration du token (created_at/expires_at) ni invalidation après usage"
+    - "def change_email(request): request.user.email = request.POST['email']; request.user.save() — changement d'e-mail sans revérification du mot de passe courant ni confirmation par lien envoyé à l'ancien e-mail"
+  exclude_if:
+    - "le token est généré avec secrets.token_urlsafe()/token_hex(), possède une expiration courte vérifiée, est invalidé après usage, et le changement d'email/mot de passe déclenche une notification/confirmation vers l'adresse existante"
+
+message: >
+  Flux de réinitialisation de mot de passe ou de changement d'e-mail avec
+  contrôles anti-abus insuffisants (token prévisible, pas d'expiration, pas
+  de reconfirmation) — un attaquant peut détourner un compte sans connaître
+  le mot de passe actuel. Utiliser secrets.token_urlsafe() pour les tokens,
+  appliquer une expiration courte et un usage unique, et notifier/confirmer
+  tout changement sensible sur l'ancien canal — voir
+  rules/remediation/account-takeover.md.
+
+false_positive_notes:
+  - "Un token généré par un framework d'authentification reconnu (django.contrib.auth.tokens.PasswordResetTokenGenerator) est déjà cryptographiquement sûr — vérifier son usage correct plutôt que le signaler comme faible."
+  - "Si l'expiration est appliquée au niveau base de données (TTL) plutôt que dans le code applicatif visible, vérifier l'architecture avant de confirmer l'absence de contrôle."
+
+remediation_ref: rules/remediation/account-takeover.md
+knowledge_ref: knowledge/business-logic/account-takeover.md

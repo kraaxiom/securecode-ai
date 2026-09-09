@@ -1,0 +1,33 @@
+id: polyglot-files
+language: python
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Detecte l'acceptation d'un fichier uploade valide selon un seul critere
+    (extension OU magic bytes du debut de fichier) sans analyse structurelle
+    complete, permettant a un fichier polyglotte (valide comme image ET comme
+    script/archive) de passer les controles.
+  patterns:
+    - "Validation basee uniquement sur les premiers octets (ex: signature JPEG en tete) sans verifier l'absence de contenu executable ailleurs dans le fichier"
+    - "PIL.Image.open($_).verify() utilise seul comme unique garantie d'innocuite avant de servir le fichier tel quel (le fichier peut rester un polyglotte JPEG/PHP)"
+  exclude_if:
+    - "Le fichier est systematiquement retranscode (re-encodage complet de l'image, pas simple copie) apres validation, ce qui detruit toute charge polyglotte"
+
+message: >
+  Fichier uploade valide par un seul critere de surface (extension ou
+  en-tete) sans re-encodage - un fichier polyglotte valide a la fois comme
+  image et comme script peut etre servi tel quel et execute selon le contexte
+  d'interpretation. Re-encoder systematiquement les images uploadees
+  (recompression complete) plutot que de conserver le fichier original.
+
+false_positive_notes:
+  - "Si le fichier uploade n'est jamais servi tel quel (toujours re-encode), le risque polyglotte est neutralise - reclasser en `low`."
+
+remediation_ref: rules/remediation/polyglot-files.md
+knowledge_ref: knowledge/upload/polyglot-files.md

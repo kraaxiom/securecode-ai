@@ -1,0 +1,35 @@
+id: http-response-splitting
+language: java
+category: injections
+cwe: CWE-113
+owasp: A03:2021-Injection
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation d'une entrée utilisateur non filtrée dans un
+    en-tête de redirection (Location) ou tout en-tête de réponse HTTP,
+    permettant l'injection de CRLF pour scinder la réponse en deux et
+    empoisonner le cache ou injecter du contenu.
+  patterns:
+    - "HttpServletResponse.sendRedirect(string_concat(_, $var, _))"
+    - "HttpServletResponse.setHeader(\"Location\", string_concat(_, $var, _))"
+  exclude_if:
+    - "$var passe par une validation de format URL stricte (whitelist de domaines, rejet de \\r\\n) avant utilisation"
+    - "$var est un littéral constant"
+
+message: >
+  En-tête de réponse (notamment Location) construit avec une entrée non
+  filtrée — un attaquant peut injecter des séquences CRLF pour scinder la
+  réponse HTTP et injecter du contenu ou empoisonner un cache intermédiaire ;
+  valider strictement l'URL de redirection et rejeter les caractères de
+  contrôle (voir rules/remediation/http-response-splitting.md).
+
+false_positive_notes:
+  - "Les conteneurs Servlet récents neutralisent les CR/LF bruts dans sendRedirect()/setHeader() — vérifier la version du serveur avant de confirmer l'exploitabilité directe."
+  - "Une redirection vers une whitelist de chemins internes fixes n'est pas concernée."
+
+remediation_ref: rules/remediation/http-response-splitting.md
+knowledge_ref: knowledge/injections/http-response-splitting.md

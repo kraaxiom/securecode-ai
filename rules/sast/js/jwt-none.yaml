@@ -1,0 +1,29 @@
+id: jwt-none
+language: js
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'utilisation de jwt.decode() (sans vérification de signature)
+    ou une option verify_signature/verify désactivée pour une décision
+    d'authentification/autorisation.
+  patterns:
+    - "jwt.decode($token) suivi d'une lecture de propriété utilisée dans une condition d'accès (if (payload.role === ...))"
+    - "jwt.verify($_, $_, { algorithms: ['none'] })"
+  exclude_if:
+    - "Le résultat de jwt.decode() n'est utilisé qu'à des fins de journalisation/debug, sans influence sur une décision d'accès"
+
+message: >
+  Décodage JWT sans vérification de signature utilisé pour une décision
+  applicative — voir rules/remediation/jwt-none.md.
+
+false_positive_notes:
+  - "jwt.decode() est légitime pour inspecter un token déjà vérifié ailleurs (ex: extraction du header avant vérification) — vérifier le flux complet avant de confirmer."
+
+remediation_ref: rules/remediation/jwt-none.md
+knowledge_ref: knowledge/auth/jwt-none.md

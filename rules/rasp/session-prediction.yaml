@@ -1,0 +1,15 @@
+id: session-prediction
+category: auth
+cwe: CWE-330
+type: rasp
+guard:
+  sink: fonction d'assignation de l'identifiant de session au cookie/en-tête de réponse
+  block_condition: >
+    L'identifiant de session sur le point d'être émis a été produit par un appel identifié
+    comme un générateur pseudo-aléatoire non cryptographique, ou présente une entropie
+    mesurée inférieure au seuil minimal configuré (128 bits recommandés).
+  action: block
+  fail_mode: fail-closed   # émettre un identifiant de session prévisible expose directement à l'usurpation de session ; blocage strict recommandé par défaut, l'agent RASP devant alors forcer un repli sur le générateur sécurisé du framework
+severity: high
+remediation_ref: rules/remediation/session-prediction.md
+knowledge_ref: knowledge/auth/session-prediction.md

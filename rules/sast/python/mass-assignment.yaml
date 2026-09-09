@@ -1,0 +1,36 @@
+id: mass-assignment
+language: python
+category: authorization
+cwe: CWE-915
+owasp: A08:2021-Software and Data Integrity Failures
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une mise à jour de modèle construite directement à partir du
+    corps de requête sans liste blanche de champs autorisés — ORM Django
+    (Model(**request.POST.dict())), sérialiseur DRF sans fields restreint
+    ou avec exclude au lieu de fields explicite, ou setattr en boucle sur
+    les clés de la requête.
+  patterns:
+    - "$Model.objects.create(**request.POST.dict())"
+    - "for key, value in request.json.items(): setattr($obj, key, value)"
+    - "class $Serializer(ModelSerializer):\n    class Meta:\n        fields = '__all__'"
+  exclude_if:
+    - "la sérialisation utilise une liste explicite et restreinte de champs (fields = [...]) excluant les attributs sensibles (is_staff, is_admin, role, balance)"
+    - "les champs sensibles sont marqués read_only=True dans le sérialiseur"
+
+message: >
+  Mise à jour d'objet construite directement depuis les données brutes de
+  la requête sans liste blanche de champs — un attaquant peut injecter des
+  champs supplémentaires (ex: is_admin=True) non prévus par le formulaire
+  (mass assignment). Restreindre explicitement les champs assignables
+  (voir rules/remediation/mass-assignment.md).
+
+false_positive_notes:
+  - "fields = '__all__' n'est risqué que si le modèle contient des attributs sensibles modifiables — sur un modèle sans champ de rôle/permission/solde, l'impact est réduit mais reste une mauvaise pratique à signaler en `medium`."
+
+remediation_ref: rules/remediation/mass-assignment.md
+knowledge_ref: knowledge/authorization/mass-assignment.md

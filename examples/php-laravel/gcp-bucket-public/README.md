@@ -1,0 +1,3 @@
+# Bucket Google Cloud Storage public
+
+La version vulnérable accorde explicitement le rôle `roles/storage.objectViewer` au membre spécial `allUsers` sur chaque objet publié, rendant le fichier lisible publiquement et de façon permanente par n'importe qui sur Internet, sans authentification (CWE-284, Improper Access Control). La version corrigée n'accorde aucun binding IAM public : l'objet reste privé et le partage ponctuel se fait via une URL signée générée à la demande avec une expiration de 30 minutes, cohérente avec un bucket protégé par `uniform_bucket_level_access` et la prévention d'accès public activée.

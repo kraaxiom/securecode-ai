@@ -1,0 +1,24 @@
+id: jwt-algorithm-confusion
+category: auth
+cwe: CWE-347
+type: iast
+instrumentation:
+  hook_points:
+    - "php: fonction de décodage/vérification JWT (firebase/php-jwt JWT::decode ou équivalent)"
+    - "js: fonction jwt.verify (jsonwebtoken ou équivalent)"
+    - "python: fonction jwt.decode (PyJWT ou équivalent)"
+    - "java: méthode de parsing/vérification JWT (JJWT parser, Nimbus JOSE)"
+    - "csharp: méthode ValidateToken (System.IdentityModel.Tokens.Jwt)"
+    - "go: fonction de vérification jwt.Parse (golang-jwt ou équivalent)"
+  taint_check: >
+    Trace si l'algorithme effectivement utilisé pour vérifier la signature (sink: fonction
+    de vérification cryptographique) est déterminé par la valeur du champ `alg` lu depuis
+    le jeton entrant (source: en-tête du JWT non fiable) plutôt que par une valeur figée
+    côté serveur.
+  trigger_condition: >
+    L'appel à la fonction de vérification JWT ne fournit aucune restriction explicite et
+    figée de la liste d'algorithmes acceptés, et l'algorithme réellement utilisé pour la
+    vérification est observé comme dépendant de la valeur du champ `alg` du jeton présenté.
+severity: critical
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

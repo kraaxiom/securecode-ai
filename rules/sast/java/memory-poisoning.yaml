@@ -1,0 +1,35 @@
+id: memory-poisoning
+language: java
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans du code LangChain4j/Spring AI utilisant une mémoire de
+    conversation persistante (ChatMemory, MessageWindowChatMemory), l'écriture
+    de contenu non validé provenant d'une source externe (résultat d'outil,
+    document récupéré) dans la mémoire partagée entre sessions/utilisateurs
+    sans isolation ni expiration.
+  patterns:
+    - "ChatMemory.add(_) alimenté directement par le résultat d'un appel d'outil externe sans validation avant persistance"
+    - "ChatMemoryStore partagé (clé statique/globale) entre plusieurs utilisateurs au lieu d'une clé par session/utilisateur (memoryId)"
+    - "PersistentChatMemoryStore (base de données) sans TTL/expiration, conservant indéfiniment du contenu potentiellement empoisonné"
+    - "absence de validation avant réinjection d'une mémoire de longue durée (long-term memory / vector-based memory) dans le contexte d'une nouvelle session"
+
+message: >
+  Mémoire de conversation alimentée par du contenu externe non validé et/ou
+  partagée sans isolation par utilisateur — un attaquant peut empoisonner la
+  mémoire persistante (memory poisoning) pour influencer les réponses
+  futures d'autres sessions. Isoler la mémoire par memoryId utilisateur,
+  valider le contenu avant persistance et appliquer une expiration (TTL).
+
+false_positive_notes:
+  - "Si chaque ChatMemory est strictement scopée à un memoryId unique par utilisateur/session et que le contenu est validé avant écriture, reclasser en `low`."
+  - "Les mémoires en RAM non persistées (durée de vie limitée à la requête) présentent un risque réduit."
+
+remediation_ref: rules/remediation/memory-poisoning.md
+knowledge_ref: knowledge/llm/memory-poisoning.md

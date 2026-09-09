@@ -1,0 +1,37 @@
+id: request-desynchronization
+language: csharp
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Kestrel placé derrière un reverse proxy et exposant
+    un traitement manuel/personnalisé des en-têtes `Content-Length` et
+    `Transfer-Encoding`, ou un parsing HTTP maison via `Socket`/`NetworkStream`
+    brut, susceptible d'interpréter différemment les limites de requête que
+    le frontal.
+  patterns:
+    - "parsing manuel d'un NetworkStream/Socket brut reconstruisant une requête HTTP sans utiliser Kestrel/HttpListener standard"
+    - "code qui lit à la fois Request.ContentLength et Request.Headers[\"Transfer-Encoding\"] sans rejeter la requête si les deux sont présents simultanément"
+    - "middleware custom qui fait confiance à Transfer-Encoding: chunked transmis par un proxy sans re-normalisation stricte via AllowSynchronousIO ou équivalent"
+  exclude_if:
+    - "le serveur utilise exclusivement Kestrel standard maintenu à jour sans parsing HTTP manuel de socket brute"
+    - "la requête est explicitement rejetée (400) lorsque Content-Length et Transfer-Encoding sont tous deux présents (comportement par défaut de Kestrel récent, à vérifier si surchargé)"
+
+message: >
+  Traitement HTTP potentiellement divergent entre le reverse proxy et
+  l'application ASP.NET Core (parsing manuel, gestion ambiguë de Content-
+  Length/Transfer-Encoding) — risque de Request Smuggling permettant
+  d'injecter une requête cachée traitée dans le contexte d'un autre
+  utilisateur (voir rules/remediation/request-desynchronization.md).
+
+false_positive_notes:
+  - "Cette classe de vulnérabilité dépend fortement de la combinaison proxy+serveur applicatif ; une confirmation nécessite souvent un test d'intégration, pas seulement une revue de code source."
+  - "Kestrel récent avec un reverse proxy à jour (nginx, IIS, Azure Application Gateway) applique déjà une validation stricte RFC 7230 — vérifier les versions avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

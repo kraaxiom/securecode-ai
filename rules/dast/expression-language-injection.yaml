@@ -1,0 +1,19 @@
+id: expression-language-injection
+category: injections
+cwe: CWE-917
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: POST
+  target: champ de formulaire ou paramètre de requête réinjecté dans une expression JSF/Spring EL/OGNL évaluée côté serveur
+  technique: differential-response
+  indicators:
+    - réponse contenant le résultat d'une opération arithmétique injectée dans l'expression au lieu de la valeur littérale attendue
+    - message d'erreur exposant la pile d'un moteur EL (javax.el, ognl, spring-expression) suite à une entrée malformée
+    - délai de réponse anormal corrélé à une charge utile provoquant une boucle ou un calcul coûteux dans l'expression
+  false_positive_notes:
+    - un simple caractère spécial reflété tel quel sans évaluation ne constitue pas une preuve d'injection EL
+    - vérifier que le comportement diffère bien d'une entrée de contrôle neutre avant de conclure
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

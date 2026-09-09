@@ -1,0 +1,36 @@
+id: oauth-misconfiguration
+language: python
+category: auth
+cwe: CWE-287
+owasp: A07:2021-Identification and Authentication Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration OAuth2/OIDC (authlib, requests-oauthlib)
+    présentant des défauts classiques : absence de vérification du
+    paramètre state (protection CSRF du flux OAuth), redirect_uri non
+    validée contre une liste blanche, ou vérification de signature du
+    jeton d'identité (id_token) désactivée.
+  patterns:
+    - "OAuth2Session($client_id, redirect_uri=$user_redirect_uri)"
+    - "authorize_access_token()  # sans vérification préalable de request.args.get('state')"
+    - "id_token = jwt.decode($id_token, options={'verify_signature': False})"
+  exclude_if:
+    - "le paramètre state est généré aléatoirement, stocké en session, et comparé strictement à la valeur reçue avant tout échange de code"
+    - "redirect_uri est validée contre une liste blanche exacte enregistrée auprès du fournisseur OAuth"
+
+message: >
+  Configuration OAuth2/OIDC incomplète — absence de vérification du
+  paramètre state (CSRF sur le flux d'autorisation) ou redirect_uri non
+  validée, exposant à un vol de code d'autorisation ou une prise de
+  contrôle de compte. Valider systématiquement state et redirect_uri (voir
+  rules/remediation/oauth-misconfiguration.md).
+
+false_positive_notes:
+  - "Certaines bibliothèques (authlib) gèrent la vérification de state en interne de façon transparente — vérifier la documentation de la version utilisée avant de conclure à une absence de protection."
+
+remediation_ref: rules/remediation/oauth-misconfiguration.md
+knowledge_ref: knowledge/auth/oauth-misconfiguration.md

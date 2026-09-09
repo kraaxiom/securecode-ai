@@ -1,0 +1,37 @@
+id: asp-upload
+language: rust
+category: upload
+cwe: CWE-434
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'enregistrement d'un fichier téléversé via un extracteur
+    multipart (actix-multipart, axum) sous un nom/extension non validé,
+    dans un contexte où un serveur web adjacent pourrait interpréter le
+    fichier déposé comme un script exécutable.
+  patterns:
+    - "File::create(string_concat(_, $field.content_disposition().get_filename(), _))"
+    - "File::create($path)"
+    - "field.write_all(_)"
+    - "Multipart::from_request(_)"
+  exclude_if:
+    - "l'extension issue de content_disposition().get_filename() est validée par une liste blanche stricte avant File::create"
+    - "le nom de fichier de destination est généré côté serveur (ex: Uuid::new_v4()) sans réutiliser le nom fourni par le client"
+    - "le répertoire de destination n'est jamais exposé par un serveur web capable d'exécuter des scripts"
+
+message: >
+  Écriture sur disque d'un fichier reçu via un extracteur multipart sans
+  validation stricte de l'extension ni du contenu réel — risque de dépôt
+  d'un fichier interprétable par un serveur web frontal si le répertoire
+  de destination est exposé (voir rules/remediation/asp-upload.md).
+
+false_positive_notes:
+  - "Si le fichier est systématiquement renommé avec un identifiant généré côté serveur et stocké hors de toute racine web exécutable, reclasser en `info`."
+  - "Si une bibliothèque de validation de type par contenu (magic bytes) est appliquée avant l'écriture, le risque résiduel est plus faible mais reste à vérifier manuellement."
+
+remediation_ref: rules/remediation/asp-upload.md
+knowledge_ref: knowledge/upload/asp-upload.md

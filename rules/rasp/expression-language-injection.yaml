@@ -1,0 +1,12 @@
+id: expression-language-injection
+category: injections
+cwe: CWE-917
+type: rasp
+guard:
+  sink: moteur d'évaluation d'expression (javax.el.ExpressionFactory, ognl.Ognl.getValue, SpEL ExpressionParser)
+  block_condition: l'expression évaluée contient un fragment provenant directement d'une entrée de requête HTTP non neutralisée (paramètre, en-tête, corps)
+  action: block
+  fail_mode: fail-closed
+severity: critical
+remediation_ref: rules/remediation/expression-language-injection.md
+knowledge_ref: knowledge/injections/expression-language-injection.md

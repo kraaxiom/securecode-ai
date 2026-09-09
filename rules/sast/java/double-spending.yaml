@@ -1,0 +1,36 @@
+id: double-spending
+language: java
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service Java de transactions financières/soldes
+    (wallet, points fidélité, crédits), une opération de débit lisant le
+    solde puis l'écrivant sans transaction atomique ni verrou, exposée à une
+    exécution concurrente permettant de dépenser plusieurs fois le même
+    solde (race condition classique de double spending).
+  patterns:
+    - "BigDecimal balance = account.getBalance(); if (balance.compareTo(amount) >= 0) { account.setBalance(balance.subtract(amount)); accountRepository.save(account); } sans @Transactional ni verrou pessimiste (SELECT ... FOR UPDATE / @Lock(PESSIMISTIC_WRITE))"
+    - "méthode de débit annotée @Transactional(isolation = Isolation.READ_COMMITTED) ou sans isolation explicite pour une opération financière critique (devrait être SERIALIZABLE ou verrou explicite)"
+    - "absence de contrainte CHECK (balance >= 0) en base de données comme filet de sécurité contre les soldes négatifs issus d'une race condition"
+    - "traitement de webhook de paiement (confirmation) sans vérification d'idempotence (clé d'idempotence stockée et contrôlée) avant de créditer/débiter un compte"
+
+message: >
+  Lecture puis écriture du solde sans transaction atomique ni verrou —
+  exposé à une exécution concurrente permettant de dépenser plusieurs fois
+  le même solde (double spending). Utiliser un verrou pessimiste
+  (@Lock(PESSIMISTIC_WRITE)) ou une opération atomique en base
+  (UPDATE ... SET balance = balance - ? WHERE balance >= ?), et ajouter une
+  contrainte CHECK côté base de données.
+
+false_positive_notes:
+  - "Si le débit est réalisé via une requête UPDATE atomique conditionnelle (WHERE balance >= amount) vérifiant les lignes affectées, ce n'est pas un cas positif même sans verrou explicite."
+  - "Les opérations sur des soldes non critiques (ex: compteur d'affichage, statistique) ne justifient pas la sévérité `critical`."
+
+remediation_ref: rules/remediation/double-spending.md
+knowledge_ref: knowledge/business-logic/double-spending.md

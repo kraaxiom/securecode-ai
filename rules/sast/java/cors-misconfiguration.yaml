@@ -1,0 +1,36 @@
+id: cors-misconfiguration
+language: java
+category: frontend
+cwe: CWE-942
+owasp: A05:2021-Security Misconfiguration
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une configuration CORS Spring (CorsConfiguration /
+    @CrossOrigin) autorisant toute origine en combinaison avec les
+    identifiants (cookies/credentials), ce qui permet à n'importe quel site
+    tiers de lire des réponses authentifiées de l'API.
+  patterns:
+    - "CorsConfiguration avec setAllowedOrigins(List.of(\"*\")) combiné à setAllowCredentials(true)"
+    - "@CrossOrigin(origins = \"*\", allowCredentials = \"true\") sur un contrôleur Spring"
+    - "reflexion dynamique de l'en-tête Origin de la requête dans Access-Control-Allow-Origin sans liste blanche (setAllowedOriginPatterns non restreinte)"
+  exclude_if:
+    - "setAllowedOrigins liste explicitement les domaines de confiance (pas de wildcard) lorsque allowCredentials est true"
+    - "allowCredentials(false) et l'API ne repose sur aucune authentification par cookie/session"
+
+message: >
+  La configuration CORS autorise toute origine (*) tout en acceptant les
+  identifiants (cookies/session) — un site tiers malveillant peut effectuer
+  des requêtes authentifiées et lire les réponses au nom de la victime.
+  Restreindre setAllowedOrigins à une liste blanche explicite de domaines de
+  confiance lorsque allowCredentials(true) est utilisé.
+
+false_positive_notes:
+  - "Une API publique sans authentification par cookie (allowCredentials false) peut légitimement utiliser un wildcard d'origine — reclasser en `low`."
+  - "Vérifier que allowedOriginPatterns n'est pas configuré avec un pattern trop large (ex: https://*.example.com sans restriction supplémentaire) qui recrée le même risque."
+
+remediation_ref: rules/remediation/cors-misconfiguration.md
+knowledge_ref: knowledge/frontend/cors-misconfiguration.md

@@ -1,0 +1,34 @@
+id: price-manipulation
+language: java
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte, dans un service/contrôleur Java de commande/panier, l'acceptation
+    d'un prix ou d'une remise transmis directement par le client (DTO) au
+    lieu de le recalculer/valider côté serveur à partir du catalogue produit,
+    permettant une manipulation du prix final.
+  patterns:
+    - "@RequestBody OrderDto order avec order.getPrice()/order.getUnitPrice() utilisé directement pour créer la commande sans re-consulter productRepository.findById(id).getPrice()"
+    - "calcul du total de commande basé sur BigDecimal total = order.getItems().stream().map(Item::getPrice)...  où Item.price provient du DTO client au lieu du catalogue serveur"
+    - "champ discountPercent ou finalPrice accepté depuis le corps de la requête et appliqué sans revalidation contre les règles de remise serveur (coupon valide, plafond de remise)"
+    - "endpoint de paiement (checkout) initialisant le montant à débiter (ex: Stripe PaymentIntent amount) à partir d'une valeur envoyée par le client sans recalcul serveur"
+
+message: >
+  Prix ou remise acceptés directement depuis les données envoyées par le
+  client sans recalcul serveur à partir du catalogue — permet une
+  manipulation du prix final (price manipulation). Toujours recalculer le
+  prix côté serveur à partir de la source de vérité (catalogue produit,
+  règles de remise) et ignorer tout prix transmis par le client.
+
+false_positive_notes:
+  - "Si le prix du DTO est utilisé uniquement pour affichage/confirmation et que le montant réellement débité est recalculé côté serveur avant paiement, ce n'est pas un cas positif."
+  - "Les champs de prix en lecture seule dans des DTO de réponse (pas de requête entrante) ne sont pas concernés."
+
+remediation_ref: rules/remediation/price-manipulation.md
+knowledge_ref: knowledge/business-logic/price-manipulation.md

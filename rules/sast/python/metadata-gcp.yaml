@@ -1,0 +1,35 @@
+id: metadata-gcp
+language: python
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un SSRF exploitable pour atteindre le service de métadonnées
+    GCP (metadata.google.internal / 169.254.169.254) — requête HTTP
+    sortante vers une URL utilisateur non filtrée, sans vérification de
+    l'en-tête Metadata-Flavor requis par l'API GCP, dans un contexte
+    s'exécutant potentiellement sur GCE/GKE/Cloud Run.
+  patterns:
+    - "requests.get($user_url)"
+    - "requests.get($user_url, headers=_)"
+  exclude_if:
+    - "$user_url est validé contre une liste blanche fermée de domaines externes avant l'appel"
+    - "la résolution IP du host est explicitement rejetée si elle appartient à 169.254.0.0/16 ou si le hostname correspond à metadata.google.internal avant l'envoi de la requête"
+
+message: >
+  Requête HTTP sortante vers une URL contrôlée par l'utilisateur sans
+  exclusion explicite des métadonnées GCP — un attaquant peut atteindre
+  metadata.google.internal et exfiltrer un jeton de service account. Bloquer
+  les plages IP privées/link-local et le hostname de métadonnées avant
+  toute requête sortante (voir rules/remediation/metadata-gcp.md).
+
+false_positive_notes:
+  - "Si l'application ne s'exécute jamais sur une ressource GCP (confirmé), l'impact spécifique GCP ne s'applique pas — traiter via la règle ssrf-classique générique."
+
+remediation_ref: rules/remediation/metadata-gcp.md
+knowledge_ref: knowledge/ssrf/metadata-gcp.md

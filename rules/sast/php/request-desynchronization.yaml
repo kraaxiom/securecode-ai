@@ -1,0 +1,33 @@
+id: request-desynchronization
+language: php
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un endpoint/proxy applicatif PHP qui lit et retransmet manuellement
+    des en-têtes Content-Length et Transfer-Encoding vers un service amont
+    sans rejeter les requêtes portant les deux simultanément.
+  patterns:
+    - "manual proxy code forwarding $_SERVER['HTTP_TRANSFER_ENCODING'] and $_SERVER['CONTENT_LENGTH'] without a check rejecting requests containing both"
+    - "curl_setopt(..., CURLOPT_HTTPHEADER, headers) where headers include both Content-Length and Transfer-Encoding forwarded verbatim from the client"
+  exclude_if:
+    - "une vérification explicite rejette (400) toute requête portant simultanément Content-Length et Transfer-Encoding"
+    - "aucune logique de proxy/retransmission manuelle de requêtes n'est présente dans ce fichier"
+
+message: >
+  Retransmission d'en-têtes Content-Length/Transfer-Encoding sans rejet des
+  requêtes ambiguës — risque de désynchronisation de requêtes HTTP (request
+  smuggling) entre composants de la chaîne (voir
+  rules/remediation/request-desynchronization.md).
+
+false_positive_notes:
+  - "Si la retransmission passe par une bibliothèque HTTP maintenue (Guzzle récent) qui gère nativement ce cas, risque réduit — vérifier la version."
+  - "Applications sans logique de proxy manuel (uniquement client HTTP sortant standard) : non applicable."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

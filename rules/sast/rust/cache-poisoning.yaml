@@ -1,0 +1,36 @@
+id: cache-poisoning
+language: rust
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'usage d'en-têtes non normalisés (`X-Forwarded-Host`,
+    `X-Forwarded-Scheme`, `X-Forwarded-Proto`) pour générer une réponse
+    (redirection, URL absolue construite dans le corps) dans un service
+    actix-web/axum déployé derrière un cache/CDN, sans que ces en-têtes ne
+    fassent partie de la clé de cache ni ne soient validés.
+  patterns:
+    - "let host = req.headers().get(\"X-Forwarded-Host\"); HttpResponse::Found().insert_header((\"Location\", format!(\"https://{}/...\", host))).finish()"
+    - "axum: headers.get(\"x-forwarded-host\") utilisé pour construire une URL absolue dans la réponse sans validation contre une allowlist"
+    - "format!(\"{}://{}{}\", scheme_header, host_header, path) injecté dans le corps HTML rendu, sans vérification"
+  exclude_if:
+    - "l'en-tête est validé contre une allowlist stricte de hosts autorisés avant usage"
+    - "le cache/CDN en amont est configuré pour inclure cet en-tête dans sa clé de cache (Vary: X-Forwarded-Host), neutralisant l'empoisonnement"
+
+message: >
+  En-tête non fiable (X-Forwarded-Host/Proto) utilisé pour générer une
+  réponse mise en cache sans validation ni inclusion dans la clé de cache —
+  un attaquant peut empoisonner le cache et servir du contenu malveillant à
+  tous les visiteurs suivants (voir rules/remediation/cache-poisoning.md).
+
+false_positive_notes:
+  - "Si le service Rust n'est pas placé derrière un cache/CDN partagé (déploiement direct), le risque d'empoisonnement de cache partagé ne s'applique pas, bien que l'open redirect reste possible."
+  - "Si le reverse proxy en amont (nginx, Envoy) réécrit systématiquement ces en-têtes avant qu'ils n'atteignent le service Rust, le risque est réduit — vérifier la configuration du proxy."
+
+remediation_ref: rules/remediation/cache-poisoning.md
+knowledge_ref: knowledge/modern/cache-poisoning.md

@@ -1,0 +1,35 @@
+id: postmessage-abuse
+language: java
+category: frontend
+cwe: CWE-346
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un template Thymeleaf/JSP servi par le backend Java qui émet du
+    JavaScript utilisant window.postMessage avec un targetOrigin générique
+    ("*"), ou un listener message n'ayant pas de vérification stricte de
+    event.origin — code frontend-adjacent généré côté serveur.
+  patterns:
+    - "script inline généré via Thymeleaf émettant postMessage($_, \"*\") au lieu d'une origine cible explicite"
+    - "script inline émettant addEventListener(\"message\", handler) sans vérification de event.origin dans le handler contre une liste blanche"
+  exclude_if:
+    - "targetOrigin est une origine explicite (pas de wildcard) correspondant au domaine attendu du receveur"
+    - "le handler de réception vérifie explicitement event.origin contre une liste blanche avant de traiter le message"
+
+message: >
+  Le script généré côté serveur utilise postMessage avec un targetOrigin
+  générique ('*') ou reçoit des messages sans vérifier l'origine émettrice —
+  expose à une fuite de données vers une origine malveillante ou à l'injection
+  de messages forgés. Spécifier explicitement l'origine cible et valider
+  event.origin dans tout listener 'message'.
+
+false_positive_notes:
+  - "Ce risque dépend fortement du JavaScript client généré, difficilement analysable statiquement côté Java seul — confidence par défaut basse, à valider manuellement."
+  - "Si aucun postMessage/listener n'est émis par les templates du backend, ce risque ne s'applique pas."
+
+remediation_ref: rules/remediation/postmessage-abuse.md
+knowledge_ref: knowledge/frontend/postmessage-abuse.md

@@ -1,0 +1,37 @@
+id: request-desynchronization
+language: python
+category: modern
+cwe: CWE-444
+owasp: A04:2021-Insecure Design
+severity: critical
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un serveur Python (WSGI brut, serveur de développement Werkzeug,
+    Gunicorn sync worker) placé derrière un reverse proxy et exposant un
+    traitement manuel/personnalisé des en-têtes `Content-Length` et
+    `Transfer-Encoding`, ou un parsing de requête HTTP maison, susceptible
+    d'interpréter différemment les limites de requête que le frontal.
+  patterns:
+    - "parsing manuel de socket brute (socket.recv) reconstruisant une requête HTTP sans utiliser une lib HTTP éprouvée (http.server, gunicorn, uvicorn)"
+    - "code qui lit à la fois Content-Length et Transfer-Encoding sans rejeter la requête si les deux sont présents simultanément"
+    - "serveur WSGI custom qui fait confiance à Transfer-Encoding: chunked transmis par un proxy sans re-normalisation stricte"
+  exclude_if:
+    - "le serveur utilise exclusivement une stack HTTP standard et maintenue (Gunicorn+gevent, uvicorn, Hypercorn) sans parsing HTTP manuel"
+    - "la requête est explicitement rejetée (400) lorsque Content-Length et Transfer-Encoding sont tous deux présents"
+
+message: >
+  Traitement HTTP potentiellement divergent entre le reverse proxy et
+  l'application Python (parsing manuel, gestion ambiguë de Content-Length/
+  Transfer-Encoding) — risque de Request Smuggling permettant d'injecter
+  une requête cachée traitée dans le contexte d'un autre utilisateur (voir
+  rules/remediation/request-desynchronization.md).
+
+false_positive_notes:
+  - "Cette classe de vulnérabilité dépend fortement de la combinaison proxy+serveur applicatif ; une confirmation nécessite souvent un test d'intégration, pas seulement une revue de code source."
+  - "Les stacks Python standards (Gunicorn, uvicorn, Hypercorn) avec un reverse proxy à jour (nginx récent) sont rarement vulnérables — vérifier les versions avant de remonter en `critical`."
+
+remediation_ref: rules/remediation/request-desynchronization.md
+knowledge_ref: knowledge/modern/request-desynchronization.md

@@ -1,0 +1,32 @@
+id: double-spending
+language: js
+category: business-logic
+cwe: CWE-362
+owasp: A04:2021-Insecure-Design
+severity: critical
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une lecture de solde suivie d'une mise à jour dans deux appels
+    db.query distincts non enveloppés dans une transaction, ou un handler de
+    webhook de paiement sans vérification d'idempotence.
+  patterns:
+    - "await db.query(\"SELECT balance\", _); ... await db.query(\"UPDATE\", _)"
+    - "app.post(\"/webhook/payment\", async (req, res) => { _ })"
+  exclude_if:
+    - "Les opérations sont encapsulées dans db.transaction() avec SELECT ... FOR UPDATE"
+    - "Le handler vérifie une clé d'idempotence en base avant traitement de l'événement"
+
+message: >
+  Vérification et débit de solde non atomiques, ou webhook sans vérification
+  d'idempotence — risque de double dépense (voir
+  rules/remediation/double-spending.md).
+
+false_positive_notes:
+  - "Un ORM appliquant déjà un verrou optimiste par version peut suffire si la logique de conflit est correctement gérée en erreur."
+  - "Vérifier si une clé d'idempotence est déjà appliquée en amont par un middleware générique (ex: Stripe webhook signature + event ID)."
+
+remediation_ref: rules/remediation/double-spending.md
+knowledge_ref: knowledge/business-logic/double-spending.md

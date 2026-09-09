@@ -1,0 +1,35 @@
+id: browser-storage-leak
+language: php
+category: frontend
+cwe: CWE-312
+owasp: A02:2021-Cryptographic Failures
+severity: medium
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte le code PHP côté serveur qui prépare ou renvoie des données
+    sensibles (jetons, secrets, mots de passe) destinées à être stockées par
+    le frontend dans localStorage/sessionStorage — typiquement une réponse
+    JSON exposant un jeton brut, ou un template PHP injectant directement une
+    valeur sensible dans un appel JS `localStorage.setItem(...)`.
+  patterns:
+    - "echo json_encode(array_contains_key(_, 'token'|'password'|'secret'|'apiKey'))"
+    - "<script>...localStorage.setItem('token', <?= $var ?>)...</script>"
+    - "setcookie(_, _) sans options ['httponly' => true, 'secure' => true]"
+  exclude_if:
+    - "la réponse JSON est consommée uniquement pour poser un cookie HttpOnly côté serveur, sans exposition au JS client"
+    - "le champ concerné est un identifiant non sensible (ex: id public, timestamp)"
+
+message: >
+  Donnée sensible exposée par le backend PHP pour un stockage côté navigateur
+  — privilégier un cookie de session HttpOnly/Secure/SameSite plutôt qu'un
+  jeton renvoyé en clair dans le corps JSON (voir rules/remediation/browser-storage-leak.md).
+
+false_positive_notes:
+  - "Un token d'accès à courte durée de vie destiné à un usage machine-to-machine hors navigateur n'est pas concerné par cette règle."
+  - "Vérifier si la valeur exposée est déjà un cookie HttpOnly dupliqué dans le JSON pour compatibilité legacy — reclasser en `low` si c'est temporaire et documenté."
+
+remediation_ref: rules/remediation/browser-storage-leak.md
+knowledge_ref: knowledge/frontend/browser-storage-leak.md

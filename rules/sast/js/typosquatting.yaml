@@ -1,0 +1,31 @@
+id: typosquatting
+language: javascript
+category: supply-chain
+cwe: CWE-1357
+owasp: A08:2021-Software-and-Data-Integrity-Failures
+severity: high
+confidence_default: medium
+
+match:
+  type: manifest-pattern
+  description: >
+    Détecte, dans package.json, un nom de package présentant une distance
+    d'édition faible (1-2 caractères, permutation, séparateur différent)
+    avec un package npm populaire connu, sans en être l'orthographe exacte.
+  patterns:
+    - "dependencies.<package> avec distance de Levenshtein <= 2 d'un package populaire connu (ex: expresss vs express, reactt vs react)"
+  exclude_if:
+    - "Le nom du package correspond exactement à l'orthographe officielle du package populaire visé"
+    - "Le package est un fork/scope officiel légitime documenté (ex: @org/express interne assumé)"
+
+message: >
+  Nom de dépendance très proche d'un package populaire connu — vérifier
+  qu'il ne s'agit pas d'un typosquat et corriger vers l'orthographe exacte
+  du package officiel (voir rules/remediation/typosquatting.md).
+
+false_positive_notes:
+  - "Certains scopes légitimes ont des noms proches par convention — vérifier le dépôt source et le nombre de téléchargements avant de bloquer."
+  - "Si le package a un historique de releases long et une forte adoption vérifiable, reclasser en `info`."
+
+remediation_ref: rules/remediation/typosquatting.md
+knowledge_ref: knowledge/supply-chain/typosquatting.md

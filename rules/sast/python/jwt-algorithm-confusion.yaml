@@ -1,0 +1,36 @@
+id: jwt-algorithm-confusion
+language: python
+category: auth
+cwe: CWE-347
+owasp: A02:2021-Cryptographic Failures
+severity: critical
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un décodage JWT (PyJWT) qui accepte plusieurs familles
+    d'algorithmes (symétrique HS256 et asymétrique RS256 simultanément) ou
+    qui n'impose pas explicitement l'algorithme attendu — un attaquant
+    connaissant la clé publique RSA peut forger un jeton HS256 signé avec
+    cette clé publique comme secret partagé.
+  patterns:
+    - "jwt.decode($token, $key, algorithms=['HS256', 'RS256'])"
+    - "jwt.decode($token, $key)"
+    - "jwt.decode($token, $key, algorithms=None)"
+  exclude_if:
+    - "algorithms= contient une liste fermée d'un seul algorithme, cohérent avec le type de clé utilisée ($key est bien une clé publique RSA pour RS256, ou un secret pour HS256)"
+
+message: >
+  Décodage JWT acceptant plusieurs algorithmes de signature (ou n'en
+  spécifiant aucun) — un attaquant peut exploiter la confusion entre
+  HS256 et RS256 en signant un jeton avec la clé publique connue,
+  utilisée comme secret HMAC. Toujours restreindre algorithms= à un seul
+  algorithme correspondant strictement au type de clé (voir
+  rules/remediation/jwt-algorithm-confusion.md).
+
+false_positive_notes:
+  - "Une liste algorithms= contenant plusieurs variantes du même type (ex: ['RS256', 'RS384']) reste risquée si non justifiée — signaler mais avec confiance réduite si la clé est bien toujours asymétrique."
+
+remediation_ref: rules/remediation/jwt-algorithm-confusion.md
+knowledge_ref: knowledge/auth/jwt-algorithm-confusion.md

@@ -1,0 +1,37 @@
+id: business-rule-bypass
+language: go
+category: business-logic
+cwe: CWE-840
+owasp: A04:2021-Insecure-Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte une règle métier appliquée uniquement côté client/frontend ou
+    dans un état transmis par le client (paramètre de requête, champ caché)
+    et acceptée telle quelle côté serveur Go, sans revalidation applicative
+    indépendante.
+  patterns:
+    - "func Checkout(w http.ResponseWriter, r *http.Request) { var req CheckoutRequest; json.NewDecoder(r.Body).Decode(&req); order := Order{Total: req.Total}; db.Create(&order) } — montant total transmis par le client et utilisé directement au lieu d'être recalculé côté serveur à partir du panier"
+    - "func ApplyDiscount(w http.ResponseWriter, r *http.Request) { if r.FormValue(\"is_eligible\") == \"true\" { ... } } — statut d'éligibilité déclaré par le client au lieu d'être vérifié côté serveur"
+    - "étape de workflow (ex: validation KYC, étape de paiement) marquée complétée via un paramètre client (req.Step == \"completed\") sans vérification des étapes précédentes en base"
+  exclude_if:
+    - "toute donnée influençant une décision métier sensible (prix, éligibilité, étape de workflow) est recalculée/revérifiée côté serveur à partir de l'état persisté, indépendamment de ce que le client a soumis"
+
+message: >
+  Règle métier acceptée depuis une valeur fournie par le client sans
+  revalidation côté serveur — un attaquant peut manipuler la requête pour
+  contourner une contrainte métier (prix, éligibilité, étape de workflow).
+  Toujours recalculer/revérifier les valeurs sensibles côté serveur à partir
+  de l'état persisté, jamais faire confiance à une valeur transmise par le
+  client pour une décision métier — voir
+  rules/remediation/business-rule-bypass.md.
+
+false_positive_notes:
+  - "Une valeur transmise par le client mais systématiquement recalculée et comparée côté serveur avant usage n'est pas vulnérable, même si le paramètre existe dans la requête."
+  - "Les champs strictement informatifs (préférences d'affichage) sans impact sur une décision métier sensible sont hors périmètre."
+
+remediation_ref: rules/remediation/business-rule-bypass.md
+knowledge_ref: knowledge/business-logic/business-rule-bypass.md

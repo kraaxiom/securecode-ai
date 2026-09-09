@@ -1,0 +1,32 @@
+id: dos-query
+language: php
+category: graphql
+cwe: CWE-400
+owasp: A04:2021-Insecure Design
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un resolver qui utilise directement un argument de pagination
+    fourni par le client (`$args['first']`, `$args['limit']`) sans plafond
+    appliqué avant la requête base de données.
+  patterns:
+    - "->limit($args['first'])"
+    - "->limit($args['limit'])"
+    - "->take($args[_])"
+  exclude_if:
+    - "La valeur est passée par min((int) $args[...], CONST_MAX) avant utilisation"
+    - "Une règle QueryComplexity est configurée globalement dans le bootstrap du schéma"
+
+message: >
+  Argument de pagination GraphQL utilisé sans plafond — risque de déni de
+  service par requête coûteuse (voir rules/remediation/dos-query.md).
+
+false_positive_notes:
+  - "Si une analyse de complexité de requête est déjà appliquée en amont dans un fichier de bootstrap non analysé, vérifier manuellement avant de remonter en `high`."
+  - "Si le champ n'est accessible qu'à des utilisateurs internes de confiance avec des quotas séparés, reclasser en `medium`."
+
+remediation_ref: rules/remediation/dos-query.md
+knowledge_ref: knowledge/graphql/dos-query.md

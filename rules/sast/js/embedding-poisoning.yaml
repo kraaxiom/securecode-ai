@@ -1,0 +1,32 @@
+id: embedding-poisoning
+language: javascript
+category: llm
+cwe: CWE-349
+owasp: LLM04:2025-Data-and-Model-Poisoning
+severity: medium
+confidence_default: low
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte l'indexation directe d'un embedding généré à partir de contenu
+    utilisateur dans un vector store, sans modération de contenu préalable
+    ni limite de débit par source.
+  patterns:
+    - "await vectorStore.upsert(await embeddingModel.embed(userContent), ...) sans appel préalable à contentModeration.isAllowed"
+    - "Boucle d'indexation d'embeddings sans vérification de rateLimiter.exceeded par source"
+  exclude_if:
+    - "Le contenu passe par contentModeration.isAllowed() avant embed()"
+    - "Une limite de débit par source est appliquée avant l'indexation"
+
+message: >
+  Embedding généré et indexé sans modération de contenu ni limite de débit
+  par source — risque de pollution de l'espace vectoriel (voir
+  rules/remediation/embedding-poisoning.md).
+
+false_positive_notes:
+  - "Si le contenu indexé provient exclusivement d'une source interne de confiance (pas d'entrée utilisateur), le risque est réduit."
+  - "Vérifier l'existence d'une détection de densité anormale côté vector store avant de considérer la remédiation absente."
+
+remediation_ref: rules/remediation/embedding-poisoning.md
+knowledge_ref: knowledge/llm/embedding-poisoning.md

@@ -1,0 +1,18 @@
+id: uxss
+category: xss
+cwe: CWE-79
+owasp: A03:2021-Injection
+severity: critical
+type: dast
+test:
+  method: GET
+  target: page intégrant des scripts tiers, iframes tierces ou widgets embarqués
+  technique: differential-response
+  indicators:
+    - "absence d'attribut integrity (Subresource Integrity) sur une balise script chargée depuis une origine tierce, observable dans le HTML servi, combinée à l'absence de directive Content-Security-Policy restreignant les sources de script"
+    - "présence d'iframes tierces sans attribut sandbox restrictif ou avec des valeurs sandbox permissives (allow-scripts et allow-same-origin combinés), observable dans le HTML servi"
+    - "absence d'en-tête Permissions-Policy limitant les capacités des composants tiers embarqués dans la réponse HTTP"
+false_positive_notes:
+  - "Un composant tiers chargé depuis une origine de confiance interne au périmètre applicatif (pas un CDN public) réduit le risque mais ne l'élimine pas — documenter la relation de confiance."
+remediation_ref: rules/remediation/uxss.md
+knowledge_ref: knowledge/xss/uxss.md

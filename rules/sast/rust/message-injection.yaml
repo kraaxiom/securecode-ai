@@ -1,0 +1,37 @@
+id: message-injection
+language: rust
+category: websocket
+cwe: CWE-20
+owasp: A03:2021-Injection
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un message reçu sur un canal WebSocket (tokio-tungstenite
+    `ws.next().await`, ou actix-web-actors `StreamHandler<Result<Message,
+    ProtocolError>>::handle`) utilisé directement dans une requête SQL, une
+    commande système, ou rediffusé (broadcast) à d'autres clients sans
+    validation ni échappement préalable.
+  patterns:
+    - "while let Some(msg) = ws.next().await { let msg = msg?; ... sqlx::query(&format!(\"...{}\", msg.to_text()?)).execute(&pool).await; }"
+    - "while let Some(msg) = ws.next().await { ... Command::new(\"sh\").arg(\"-c\").arg(msg.to_text()?).spawn(); }"
+    - "impl StreamHandler<Result<Message, ProtocolError>> for MyWs { fn handle(&mut self, item: Result<Message, ProtocolError>, ctx: &mut Self::Context) { if let Ok(Message::Text(text)) = item { ctx.text(text) } } } sans validation ni schéma"
+    - "impl StreamHandler<...> for MyWs { ... self.room_addr.do_send(Broadcast(text.clone())) } sans validation du contenu avant rediffusion"
+  exclude_if:
+    - "le message est désérialisé et validé contre un type fortement typé via serde (ex: serde_json::from_str::<MyMessage>(&text)) avant tout usage en aval"
+    - "le message est transmis à une requête paramétrée (sqlx::query! avec bind, ou paramètres liés) ou à Command avec une liste d'arguments fixe sans shell"
+
+message: >
+  Contenu d'un message WebSocket utilisé sans validation dans une requête,
+  une commande système ou une rediffusion — vulnérable à l'injection SQL, de
+  commande ou XSS diffusé en temps réel (voir
+  rules/remediation/message-injection.md).
+
+false_positive_notes:
+  - "Si le message est immédiatement désérialisé via serde vers un type strict (struct avec champs typés) avant tout traitement en aval, reclasser en `low`."
+  - "Un simple relais (echo/broadcast) vers d'autres clients sans traitement serveur applicatif reste un risque XSS côté client à évaluer séparément."
+
+remediation_ref: rules/remediation/message-injection.md
+knowledge_ref: knowledge/websocket/message-injection.md

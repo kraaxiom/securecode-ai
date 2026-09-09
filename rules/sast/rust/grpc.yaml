@@ -1,0 +1,35 @@
+id: grpc
+language: rust
+category: api
+cwe: CWE-306
+owasp: API2:2023-Broken Authentication
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un service tonic (implémentation gRPC de référence en Rust)
+    dont le serveur est démarré sans intercepteur d'authentification
+    (tonic::service::interceptor), ou dont la réflexion gRPC
+    (tonic-reflection) est enregistrée sans garde d'environnement.
+  patterns:
+    - "Server::builder().add_service($ServiceServer::new($svc)).serve($addr)"
+    - "tonic_reflection::server::Builder::configure()"
+    - "async fn $method(&self, request: Request<$Req>) -> Result<Response<$Resp>, Status> { ... }"
+  exclude_if:
+    - "le service est enveloppé via .add_service(InterceptedService::new($svc, $auth_interceptor)) vérifiant un token avant l'appel"
+    - "la réflexion gRPC est enregistrée uniquement sous une garde conditionnelle d'environnement"
+
+message: >
+  Serveur gRPC (tonic) sans intercepteur d'authentification global, ou
+  réflexion gRPC active sans restriction d'environnement — ajouter un
+  InterceptedService vérifiant le token sur toutes les méthodes et
+  désactiver la réflexion en production (voir rules/remediation/grpc.md).
+
+false_positive_notes:
+  - "Si la méthode est un simple health check public volontairement non protégé, reclasser en `info`."
+  - "Vérifier qu'un intercepteur global n'est pas déjà appliqué ailleurs dans l'initialisation du serveur avant de remonter en `high`."
+
+remediation_ref: rules/remediation/grpc.md
+knowledge_ref: knowledge/api/grpc.md

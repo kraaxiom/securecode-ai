@@ -1,0 +1,3 @@
+# Data Poisoning
+
+La version vulnérable construit le jeu de données de fine-tuning en récupérant et fusionnant le contenu de chaque source sans vérifier sa provenance ni son intégrité et sans détecter d'anomalies statistiques, exposant le pipeline à l'injection d'exemples empoisonnés (biais, portes dérobées comportementales) par une source compromise (CWE-349, Acceptance of Extraneous Untrusted Data With Trust). La version corrigée restreint l'ingestion aux sources explicitement approuvées, vérifie l'intégrité de chaque source via une empreinte signée, filtre les valeurs aberrantes statistiques avant intégration, et compare les performances du modèle obtenu à un jeu de référence fixe pour détecter toute dérive suspecte après le cycle d'entraînement.

@@ -1,0 +1,34 @@
+id: azure-pipeline-leak
+language: config
+category: cicd
+cwe: CWE-798
+owasp: A05:2021-Security Misconfiguration
+severity: critical
+confidence_default: medium
+
+match:
+  type: config-pattern
+  description: >
+    Détecte un secret en clair dans `azure-pipelines.yml`, une variable non
+    marquée secrète dans un Variable Group, ou une étape de script imprimant
+    une variable sensible.
+  patterns:
+    - "script: |\n  ... (password|token|key|secret)\\s*[:=]\\s*['\"][A-Za-z0-9+/=_-]{8,}['\"]"
+    - "Write-Host $(SENSITIVE_VAR)"
+    - "echo $(API_KEY)"
+    - "trigger: ... pr: automatique sans restriction combiné à une service connection à accès global"
+  exclude_if:
+    - "variable référencée depuis un Variable Group lié à Azure Key Vault, marquée secret"
+    - "valeur clairement un placeholder de documentation (ex: <votre-token-ici>)"
+
+message: >
+  Un identifiant apparaît en clair dans le pipeline Azure DevOps, ou une
+  variable secrète est affichée dans les logs — voir
+  rules/remediation/azure-pipeline-leak.md.
+
+false_positive_notes:
+  - "Si la chaîne détectée est un exemple de documentation en commentaire, ne pas remonter."
+  - "Vérifier si la variable est bien marquée 'secret' dans Azure DevOps malgré son apparition littérale dans un exemple de config non exécuté."
+
+remediation_ref: rules/remediation/azure-pipeline-leak.md
+knowledge_ref: knowledge/cicd/azure-pipeline-leak.md

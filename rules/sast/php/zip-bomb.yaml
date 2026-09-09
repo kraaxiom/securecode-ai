@@ -1,0 +1,32 @@
+id: zip-bomb
+language: php
+category: upload
+cwe: CWE-409
+owasp: A05:2021-Security Misconfiguration
+severity: medium
+confidence_default: high
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte un appel à ZipArchive::extractTo() sur une archive téléversée
+    sans vérification préalable de la taille décompressée totale ni du ratio
+    de compression, permettant une bombe de décompression (déni de service).
+  patterns:
+    - "(new ZipArchive())->extractTo(_)"
+    - "$zip->extractTo(_) // sans boucle statIndex()/numFiles précédente dans la même fonction"
+  exclude_if:
+    - "une boucle sur statIndex()/numFiles calcule la taille totale décompressée et le ratio de compression, avec rejet au-delà d'un seuil, avant l'appel à extractTo()"
+    - "numFiles est comparé à une limite maximale avant extraction"
+
+message: >
+  Extraction d'archive sans vérification préalable de taille décompressée ni de
+  ratio de compression — risque de bombe de décompression (déni de service),
+  voir rules/remediation/zip-bomb.md.
+
+false_positive_notes:
+  - "Si l'extraction s'exécute dans un environnement avec quotas systèmes stricts (cgroups, timeout process) documentés en dehors du code applicatif, le risque est atténué mais la vérification applicative reste recommandée en défense en profondeur."
+  - "Une archive dont la source est strictement interne (générée par l'application, pas d'upload utilisateur) n'est pas concernée — reclasser en `info`."
+
+remediation_ref: rules/remediation/zip-bomb.md
+knowledge_ref: knowledge/upload/zip-bomb.md

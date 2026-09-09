@@ -1,0 +1,33 @@
+id: elasticsearch-ssrf
+language: java
+category: ssrf
+cwe: CWE-918
+owasp: A10:2021-Server-Side Request Forgery (SSRF)
+severity: high
+confidence_default: medium
+
+match:
+  type: ast-pattern
+  description: >
+    Détecte la construction d'un client Elasticsearch (`RestHighLevelClient`, `RestClient`)
+    ou d'une URL vers l'API REST d'un cluster de recherche à partir d'un hôte/port fourni
+    par l'utilisateur, sans whitelist stricte limitant la destination au cluster attendu.
+  patterns:
+    - "RestClient.builder(new HttpHost($userHost, $userPort, ...))"
+    - "new URL(\"http://\" + $userHost + \":\" + $userPort + \"/_search\")"
+  exclude_if:
+    - "$userHost/$userPort sont issus exclusivement d'une configuration serveur fixe (pas d'entrée utilisateur)"
+    - "une whitelist stricte limite la destination au seul hôte Elasticsearch attendu"
+
+message: >
+  Hôte/port du cluster Elasticsearch construit à partir d'une entrée utilisateur — ne jamais
+  laisser l'utilisateur contrôler la destination réseau du cluster ; utiliser une
+  configuration serveur fixe et activer l'authentification sur l'API (voir
+  rules/remediation/elasticsearch-ssrf.md).
+
+false_positive_notes:
+  - "Si l'hôte du cluster est toujours défini en configuration applicative (Spring properties) et jamais dérivé d'une requête, ce n'est pas exploitable."
+  - "Un cluster déjà protégé par authentification/ACL réduit l'impact mais ne supprime pas le risque de SSRF vers d'autres services internes via le même chemin de code."
+
+remediation_ref: rules/remediation/elasticsearch-ssrf.md
+knowledge_ref: knowledge/ssrf/elasticsearch-ssrf.md
