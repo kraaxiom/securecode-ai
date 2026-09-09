@@ -1,3 +1,5 @@
+> **English speaker?** This file is in French — the workflow itself is simple: fork, one topic per PR, follow the template for the file type you're touching (see below), no functional exploits, real CWE/OWASP only, never merged without a maintainer's review. Open an issue in English any time if that's easier than reading French templates.
+
 # Contribuer à SecureCode AI
 
 Ce document explique le format attendu pour ajouter ou modifier une entrée de la base de connaissance ou du moteur de règles. Il complète `AGENT_BUILD_GUIDE.md` (destiné aux agents IA qui construisent le contenu) et `SPEC.md` (vision produit complète).
